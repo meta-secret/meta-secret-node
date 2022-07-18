@@ -1,0 +1,13 @@
+[package]
+name = "meta-secret-cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+meta-secret-core = { path = "../core" }
+clap = { version = "3.2.6", features = ["derive"] }
+base64 = "0.13.0"
+
+serde = "1.0.137"
+serde_json = "1.0.81"
+serde_yaml = "0.8.24"
