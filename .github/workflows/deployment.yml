@@ -39,5 +39,5 @@ jobs:
 
       - name: Build and push meta-secret-cli docker image
         run: |
-          docker build -t ghcr.io/meta-secret-cli:latest --file Dockerfile-cli .
-          docker push ghcr.io/meta-secret-cli:latest
+          docker build -t ghcr.io/meta-secret/meta-secret-cli:latest --file Dockerfile-cli .
+          docker push ghcr.io/meta-secret/meta-secret-cli:latest
