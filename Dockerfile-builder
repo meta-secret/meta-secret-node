@@ -7,7 +7,7 @@ COPY Cargo.lock /src/Cargo.lock
 COPY cli /src/cli
 COPY core /src/core
 
-RUN cargo update
+RUN cargo
 
 WORKDIR /src
 CMD cargo build --release

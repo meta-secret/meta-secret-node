@@ -10,4 +10,4 @@
 docker build -t meta-secret-builder --file Dockerfile-builder .
 docker run -ti --rm -v $(pwd)/target:/src/target meta-secret-builder
 
-docker build -t ghcr.io/meta-secret-cli:latest --file Dockerfile-cli
+docker build -t ghcr.io/meta-secret/meta-secret-cli:latest --file Dockerfile-cli .
