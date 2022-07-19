@@ -38,7 +38,6 @@ jobs:
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
 
       - name: Build and push meta-secret-cli docker image
-        working-directory: cli
         run: |
           docker build -t ghcr.io/meta-secret-cli:latest --file Dockerfile-cli .
           docker push ghcr.io/meta-secret-cli:latest
