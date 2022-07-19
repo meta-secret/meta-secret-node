@@ -4,4 +4,4 @@ COPY target/release/meta-secret-cli /app/meta-secret-cli
 COPY cli/config.yaml /app/config.yaml
 
 WORKDIR /app
-CMD ./meta-secret-cli
+ENTRYPOINT ["./meta-secret-cli"]
