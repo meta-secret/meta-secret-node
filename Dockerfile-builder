@@ -1,0 +1,13 @@
+FROM rust:1.62.0-alpine3.15
+
+RUN apk update && apk add musl-dev
+
+COPY Cargo.toml /src/Cargo.toml
+COPY Cargo.lock /src/Cargo.lock
+COPY cli /src/cli
+COPY core /src/core
+
+RUN cargo update
+
+WORKDIR /src
+CMD cargo build --release
