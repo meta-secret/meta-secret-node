@@ -23,11 +23,6 @@ jobs:
             ~/.cargo/git/db/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Build meta-secret-cli binary
-        run: |
-          cargo clean
-          cargo build --release
-
       # Docker
       - name: Setup BuildX
         uses: docker/setup-buildx-action@v2
@@ -38,5 +33,5 @@ jobs:
 
       - name: Build and push meta-secret-cli docker image
         run: |
-          docker build -t ghcr.io/meta-secret/meta-secret-cli:latest --file Dockerfile-cli .
+          builder.sh
           docker push ghcr.io/meta-secret/meta-secret-cli:latest
