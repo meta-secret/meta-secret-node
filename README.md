@@ -21,8 +21,8 @@ It will generate json/qr(jpg) files (shares of your secert) in the `secrets` dir
 <p>
 Restore:
 </p>
-When it comes to restore the secret, put json or qr files (shares of your secret) into the `secrets` directory.
-Then run in case of qr (if you want restore from json, just pass `--from json`):
+When it comes to restore the secret, put json or qr files (shares of your secret) into the ```secrets``` directory.
+Then run in case of qr (if you want restore from json, just pass ```--from json```):
 
 ```bash
 $ docker run -ti --rm -v $(pwd)/secrets:/app/secrets ghcr.io/meta-secret/meta-secret-cli:latest restore --from qr 
