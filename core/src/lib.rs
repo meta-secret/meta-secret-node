@@ -1,13 +1,19 @@
 pub mod shared_secret;
 
+use std::ffi::OsStr;
 use std::fs;
 use std::fs::File;
 use std::io::BufReader;
+use std::ops::Not;
+use std::path::Path;
 use crate::shared_secret::data_block::common::SharedSecretConfig;
 use crate::shared_secret::data_block::shared_secret_data_block::SharedSecretBlock;
 use crate::shared_secret::shared_secret::{
     PlainText, SharedSecret, SharedSecretEncryption, UserShareDto,
 };
+
+use image;
+use rqrr;
 
 pub fn restore() -> PlainText {
     //read json files
@@ -15,8 +21,19 @@ pub fn restore() -> PlainText {
 
     let mut users_shares_dto: Vec<UserShareDto> = vec![];
     for secret_share_file in shares {
+        let file_path = secret_share_file.unwrap().path();
+
+        let extension = file_path
+            .extension()
+            .and_then(OsStr::to_str)
+            .unwrap();
+
+        if !extension.eq("json") {
+            continue;
+        }
+
         // Open the file in read-only mode with buffer.
-        let file = File::open(secret_share_file.unwrap().path())
+        let file = File::open(file_path)
             .expect("Unable to open file");
         let reader = BufReader::new(file);
 
@@ -63,10 +80,62 @@ pub fn split(secret: String, config: SharedSecretConfig) {
     for share_index in 0..config.number_of_shares {
         let share: UserShareDto = shared_secret.get_share(share_index);
         let share_json = serde_json::to_string_pretty(&share).unwrap();
-        //println!("index: {share_index} share: {:#}", share_json);
-        //println!();
 
         // Save the JSON structure into the output file
-        fs::write(format!("secrets/shared-secret-{share_index}.json"), share_json).unwrap();
+        fs::write(
+            format!("secrets/shared-secret-{share_index}.json"),
+            share_json.clone(),
+        ).unwrap();
+
+        //generate qr code
+        generate_qr_code(
+            share_json.as_str(),
+            format!("secrets/shared-secret-{share_index}.png").as_str(),
+        )
     }
+}
+
+pub fn generate_qr_code(data: &str, path: &str) {
+    use qrcode_generator::QrCodeEcc;
+
+    qrcode_generator::to_png_to_file(data, QrCodeEcc::High, data.len(), path)
+        .unwrap();
+}
+
+pub fn convert_qr_images_to_json_files() {
+    let shares = fs::read_dir("secrets").unwrap();
+
+    let mut share_index = 0;
+    for secret_share_file in shares {
+        let file_path = secret_share_file.unwrap().path();
+
+        let extension = file_path
+            .extension()
+            .and_then(OsStr::to_str)
+            .unwrap();
+
+        if !extension.eq("png") {
+            continue;
+        }
+
+        let json_str = read_qr_code(file_path.as_path());
+        fs::write(
+            format!("secrets/shared-secret-{share_index}.json"),
+            json_str,
+        ).unwrap();
+
+        share_index += 1;
+    }
+}
+
+pub fn read_qr_code(path: &Path) -> String {
+    let img = image::open(path).unwrap().to_luma8();
+    // Prepare for detection
+    let mut img = rqrr::PreparedImage::prepare(img);
+    // Search for grids, without decoding
+    let grids = img.detect_grids();
+    assert_eq!(grids.len(), 1);
+    // Decode the grid
+    let (meta, content) = grids[0].decode().unwrap();
+    return content;
 }

@@ -1,9 +1,13 @@
+extern crate core;
+
+use std::ffi::OsStr;
+use std::fs;
 use std::fs::File;
 
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ArgEnum};
 use serde::{Deserialize, Serialize};
 
-use meta_secret_core::{restore, split};
+use meta_secret_core::{convert_qr_images_to_json_files, restore, split};
 use meta_secret_core::shared_secret::data_block::common::SharedSecretConfig;
 
 #[derive(Debug, Parser)]
@@ -17,11 +21,19 @@ struct CmdLine {
 #[derive(Subcommand, Debug)]
 enum Command {
     Split {
+        #[clap(short, long)]
         secret: String
     },
     Restore {
-
+        #[clap(short, long, arg_enum)]
+        from: RestoreType
     },
+}
+
+#[derive(Debug, Clone, ArgEnum, Eq, PartialEq)]
+#[clap(rename_all = "kebab_case")]
+enum RestoreType {
+    Qr, Json
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -41,11 +53,23 @@ fn main() {
         Command::Split { secret } => {
             split(secret, shared_secret_config);
         }
-        Command::Restore {} => {
-            let text = restore();
-            println!("Restored: {:?}", String::from_utf8(text.text).unwrap());
+        Command::Restore {from} => {
+            match from {
+                RestoreType::Qr => {
+                    convert_qr_images_to_json_files();
+                    restore_from_json();
+                }
+                RestoreType::Json => {
+                    restore_from_json();
+                }
+            }
         }
     }
 
     println!("Finished")
+}
+
+fn restore_from_json() {
+    let text = restore();
+    println!("Restored: {:?}", String::from_utf8(text.text).unwrap());
 }
