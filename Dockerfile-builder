@@ -6,6 +6,7 @@ COPY Cargo.toml /src/Cargo.toml
 COPY Cargo.lock /src/Cargo.lock
 COPY cli /src/cli
 COPY core /src/core
+COPY dashboard /src/dashboard
 
 RUN cargo
 
