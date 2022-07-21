@@ -10,7 +10,7 @@
 You can split and restore your secrets by using meta-secret cli app in docker
 
 ```bash
-$ mkdir secerts
+$ mkdir secrets
 $ docker run -ti --rm -v $(pwd)/secrets:/app/secrets ghcr.io/meta-secret/meta-secret-cli:latest split --secret top$ecret 
 ```
 
