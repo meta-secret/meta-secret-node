@@ -45,6 +45,6 @@ Congrats! Save these codes in secure place!
 Below is optional
 If you would like to extract data from QR's
   * Just take a phone to scan QR
-  * or screenshot the terminal and upload it on this website: [webqr.com](webqr.com)
+  * or screenshot the terminal and upload it on this website: [webqr.com](https://webqr.com)
 
 <br>
