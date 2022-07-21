@@ -7,7 +7,8 @@
 ## Command Line App
 
 #### Split secrets:
-You can split and restore your secrets by using meta-secret cli app in docker
+You can split and restore your secrets by using meta-secret cli app in docker.
+Imagine that we want to split `top$ecret`, then the command will be: 
 
 ```bash
 $ mkdir secrets
