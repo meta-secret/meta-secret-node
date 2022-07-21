@@ -31,6 +31,7 @@ If you don't want to use FileZilla to download QR-codes to see on your computer,
 
 #### Installation
 ```bash
+$ brew install qrencode (MacOS)
 $ apt-get install qrencode (Debian/Ubuntu)
 $ dnf install qrencode (CentOS/Rocky/Alma)
 ```
