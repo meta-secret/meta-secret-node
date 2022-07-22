@@ -29,9 +29,14 @@ jobs:
           cp config.yaml ../target/release/config.yaml
 
       - name: Tarball For Linux Cli
-        working-directory: target/release
+        working-directory: target
         run: |
-          tar -cvzf meta-secret-cli-x86_64-unknown-linux-gnu.tar.gz config.yaml meta-secret-cli
+          ls -la .
+          ls -la release
+          ls -la x86_64-unknown-linux-gnu
+          ls -la x86_64-unknown-linux-gnu/release
+          
+          tar -cvzf release/meta-secret-cli-x86_64-unknown-linux-gnu.tar.gz config.yaml meta-secret-cli
 
       - name: Upload linux tarball
         uses: actions/upload-artifact@v3
