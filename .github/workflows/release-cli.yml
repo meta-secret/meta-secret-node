@@ -6,7 +6,7 @@ on:
       - "cli-*.*.*"
 
 jobs:
-  build-cli-linux-distribution:
+  cli-linux-distribution:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -39,7 +39,7 @@ jobs:
           name: cli-linux-package
           path: target/x86_64-unknown-linux-gnu/release/meta-secret-cli-x86_64-unknown-linux-gnu.tar.gz
 
-  build-cli-windows-distribution:
+  cli-windows-distribution:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -75,6 +75,39 @@ jobs:
           name: cli-windows-package
           path: target/x86_64-pc-windows-gnu/release/meta-secret-cli-x86_64-pc-windows-gnu.tar.gz
 
+  cli-macos-distribution:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/release
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build cli for macOS
+        working-directory: cli
+        run: |
+          cargo build --release
+          cp config.yaml ../target/release/config.yaml
+
+      - name: Tarball For macOS cli
+        working-directory: target/release
+        run: |
+          tar -cvzf meta-secret-cli-x86_64-apple-darwin.tar.gz config.yaml meta-secret-cli
+
+      - name: Upload macOS tarball
+        uses: actions/upload-artifact@v3
+        with:
+          name: cli-macos-package
+          path: target/release/meta-secret-cli-x86_64-apple-darwin.tar.gz
+
+  # Publishing
   publish_release:
     runs-on: ubuntu-latest
     needs: [build-cli-linux-distribution, build-cli-windows-distribution]
@@ -89,9 +122,15 @@ jobs:
         with:
           name: cli-windows-package
 
+      - name: Download macOS cli build
+        uses: actions/download-artifact@v3
+        with:
+          name: cli-macos-package
+
       - name: Publish Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
             meta-secret-cli-x86_64-unknown-linux-gnu.tar.gz
             meta-secret-cli-x86_64-pc-windows-gnu.tar.gz
+            meta-secret-cli-x86_64-apple-darwin.tar.gz
