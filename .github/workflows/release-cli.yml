@@ -48,9 +48,23 @@ jobs:
         run: |
           tar -cvzf meta-secret-cli-x86_64-pc-windows-gnu.tar.gz config.yaml meta-secret-cli.exe
 
-      - name: Release packages
+      - name: Upload linux tarball
+        uses: actions/upload-artifact@v3
+        with:
+          name: cli-linux-package
+          path: target/release/meta-secret-cli-x86_64-unknown-linux-gnu.tar.gz
+
+  publish_release:
+    runs-on: ubuntu-latest
+    needs: build-cli-release
+    steps:
+      - name: Download math result for job 1
+        uses: actions/download-artifact@v3
+        with:
+          name: cli-linux-package
+
+      - name: Publish Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
             target/release/meta-secret-cli-x86_64-unknown-linux-gnu.tar.gz
-            target/x86_64-pc-windows-gnu/release/meta-secret-cli-x86_64-pc-windows-gnu.tar.gz
