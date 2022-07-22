@@ -26,7 +26,7 @@ jobs:
         run: |
           rustup target add x86_64-unknown-linux-gnu
           cargo build --target x86_64-unknown-linux-gnu --release
-                    ls -la ../target/x86_64-unknown-linux-gnu
+          ls -la ../target/release
           ls -la ../target/x86_64-unknown-linux-gnu
 
   docker-push:
