@@ -107,10 +107,9 @@ jobs:
           name: cli-macos-package
           path: target/release/meta-secret-cli-x86_64-apple-darwin.tar.gz
 
-  # Publishing
   publish_release:
     runs-on: ubuntu-latest
-    needs: [build-cli-linux-distribution, build-cli-windows-distribution]
+    needs: [cli-linux-distribution, cli-macos-distribution, cli-windows-distribution]
     steps:
       - name: Download linux cli build
         uses: actions/download-artifact@v3
