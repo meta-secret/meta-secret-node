@@ -21,20 +21,36 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Build cli
+      - name: Build cli for linux
         working-directory: cli
         run: |
           rustup target add x86_64-unknown-linux-gnu
           cargo build --target x86_64-unknown-linux-gnu --release
           cp config.yaml ../target/release/config.yaml
 
-      - name: Tarball Linux package
+      - name: Tarball For Linux Cli
         working-directory: target/release
         run: |
-          tar -cvzf meta-secret-linux.tar.gz config.yaml meta-secret-cli
+          tar -cvzf meta-secret-cli-x86_64-unknown-linux-gnu.tar.gz config.yaml meta-secret-cli
 
-      - name: Release Linux package
+      - name: Build cli for Windows
+        working-directory: cli
+        run: |
+          apt update
+          apt install -y build-essential
+          apt install gcc-mingw-w64
+          rustup target add x86_64-pc-windows-gnu
+          cargo build --target x86_64-pc-windows-gnu --release
+          cp config.yaml ../target/x86_64-pc-windows-gnu/release/config.yaml
+
+      - name: Tarball For Windows Cli
+        working-directory: target/x86_64-pc-windows-gnu/release
+        run: |
+          tar -cvzf meta-secret-cli-x86_64-pc-windows-gnu.tar.gz config.yaml meta-secret-cli.exe
+
+      - name: Release packages
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            target/release/meta-secret-linux.tar.gz
+            target/release/meta-secret-cli-x86_64-unknown-linux-gnu.tar.gz
+            target/x86_64-pc-windows-gnu/release/meta-secret-cli-x86_64-pc-windows-gnu.tar.gz
