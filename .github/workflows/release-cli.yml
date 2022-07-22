@@ -1,0 +1,42 @@
+name: meta-secret releases
+
+on:
+  push:
+    tags:
+      - "cli-*.*.*"
+
+jobs:
+  build-cli-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build cli
+        working-directory: cli
+        run: |
+          rustup target add x86_64-unknown-linux-gnu
+          cargo build --target x86_64-unknown-linux-gnu --release
+          rustup target add x86_64-pc-windows-gnu
+          cargo build --target x86_64-pc-windows-gnu --release
+          cp config.yaml ../target/config.yaml
+
+      - name: Tarball Linux package
+        working-directory: target
+        run: |
+          tar -cvzf meta-secret-linux.tar.gz release/meta-secret-cli config.yaml
+
+      - name: Release Linux package
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            target/meta-secret-linux.tar.gz
