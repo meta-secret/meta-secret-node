@@ -18,7 +18,7 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            target
+            target/x86_64-unknown-linux-gnu/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build cli for linux
@@ -29,14 +29,14 @@ jobs:
           cp config.yaml ../target/release/config.yaml
 
       - name: Tarball For Linux Cli
-        working-directory: target
+        working-directory: target/x86_64-unknown-linux-gnu/release
         run: |
           ls -la .
           ls -la release
           ls -la x86_64-unknown-linux-gnu
           ls -la x86_64-unknown-linux-gnu/release
           
-          tar -cvzf release/meta-secret-cli-x86_64-unknown-linux-gnu.tar.gz config.yaml meta-secret-cli
+          tar -cvzf meta-secret-cli-x86_64-unknown-linux-gnu.tar.gz config.yaml meta-secret-cli
 
       - name: Upload linux tarball
         uses: actions/upload-artifact@v3
@@ -56,7 +56,7 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            target
+            target/x86_64-pc-windows-gnu
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build cli for Windows
