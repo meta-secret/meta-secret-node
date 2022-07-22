@@ -4,7 +4,6 @@ use std::ffi::OsStr;
 use std::fs;
 use std::fs::File;
 use std::io::BufReader;
-use std::ops::Not;
 use std::path::Path;
 use crate::shared_secret::data_block::common::SharedSecretConfig;
 use crate::shared_secret::data_block::shared_secret_data_block::SharedSecretBlock;
@@ -136,6 +135,6 @@ pub fn read_qr_code(path: &Path) -> String {
     let grids = img.detect_grids();
     assert_eq!(grids.len(), 1);
     // Decode the grid
-    let (meta, content) = grids[0].decode().unwrap();
+    let (_, content) = grids[0].decode().unwrap();
     return content;
 }

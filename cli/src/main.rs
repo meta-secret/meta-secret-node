@@ -1,7 +1,5 @@
 extern crate core;
 
-use std::ffi::OsStr;
-use std::fs;
 use std::fs::File;
 
 use clap::{Parser, Subcommand, ArgEnum};
