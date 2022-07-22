@@ -26,16 +26,11 @@ jobs:
         run: |
           rustup target add x86_64-unknown-linux-gnu
           cargo build --target x86_64-unknown-linux-gnu --release
-          cp config.yaml ../target/release/config.yaml
+          cp config.yaml ..target/x86_64-unknown-linux-gnu/release/config.yaml
 
       - name: Tarball For Linux Cli
         working-directory: target/x86_64-unknown-linux-gnu/release
         run: |
-          ls -la .
-          ls -la release
-          ls -la x86_64-unknown-linux-gnu
-          ls -la x86_64-unknown-linux-gnu/release
-          
           tar -cvzf meta-secret-cli-x86_64-unknown-linux-gnu.tar.gz config.yaml meta-secret-cli
 
       - name: Upload linux tarball
