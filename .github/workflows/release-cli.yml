@@ -26,12 +26,12 @@ jobs:
         run: |
           rustup target add x86_64-unknown-linux-gnu
           cargo build --target x86_64-unknown-linux-gnu --release
-          cp config.yaml ../target/config.yaml
+          cp config.yaml ../target/release/config.yaml
 
       - name: Tarball Linux package
-        working-directory: target
+        working-directory: target/release
         run: |
-          tar -cvzf meta-secret-linux.tar.gz config.yaml -C release meta-secret-cli
+          tar -cvzf meta-secret-linux.tar.gz config.yaml meta-secret-cli
 
       - name: Release Linux package
         uses: softprops/action-gh-release@v1
