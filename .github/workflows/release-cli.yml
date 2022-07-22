@@ -36,7 +36,9 @@ jobs:
       - name: Build cli for Windows
         working-directory: cli
         run: |
-          
+          sudo apt update
+          sudo apt install -y build-essential
+          sudo apt install -y gcc-mingw-w64
           rustup target add x86_64-pc-windows-gnu
           cargo build --target x86_64-pc-windows-gnu --release
           cp config.yaml ../target/x86_64-pc-windows-gnu/release/config.yaml
