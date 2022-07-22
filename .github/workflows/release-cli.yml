@@ -31,7 +31,7 @@ jobs:
       - name: Tarball Linux package
         working-directory: target
         run: |
-          tar -cvzf meta-secret-linux.tar.gz release/meta-secret-cli config.yaml
+          tar -cvzf meta-secret-linux.tar.gz config.yaml -C release meta-secret-cli
 
       - name: Release Linux package
         uses: softprops/action-gh-release@v1
