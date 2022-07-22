@@ -6,6 +6,29 @@ on:
       - main
 
 jobs:
+  build-cli:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build cli for linux
+        working-directory: cli
+        run: |
+          rustup target add x86_64-unknown-linux-gnu
+          cargo build --target x86_64-unknown-linux-gnu --release
+                    ls -la ../target/x86_64-unknown-linux-gnu
+          ls -la ../target/x86_64-unknown-linux-gnu
+
   docker-push:
     runs-on: ubuntu-latest
     permissions:
