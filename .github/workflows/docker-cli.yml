@@ -1,4 +1,4 @@
-name: meta-secret deployment
+name: docker deployment
 
 on:
   push:
@@ -6,7 +6,6 @@ on:
       - main
     paths:
       - '.github/workflows/docker-cli.yml'
-      - 'core'
       - 'cli'
 
 jobs:

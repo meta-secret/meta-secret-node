@@ -1,4 +1,4 @@
-name: meta-secret releases
+name: cli releases
 
 on:
   push:

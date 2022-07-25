@@ -1,9 +1,12 @@
-name: meta-secret web-cli deployment
+name: web-cli deployment
 
 on:
   push:
     branches:
       - main
+    paths:
+      - '.github/workflows/web-cli.yml'
+      - 'web-cli'
 
 jobs:
   web-cli-wasm-build:
