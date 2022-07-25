@@ -1433,7 +1433,7 @@ version = "0.1.0"
 dependencies = [
  "base64 0.13.0",
  "clap",
- "meta-secret-core 1.0.1",
+ "meta-secret-core",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -1442,25 +1442,6 @@ dependencies = [
 [[package]]
 name = "meta-secret-core"
 version = "1.0.1"
-dependencies = [
- "base64 0.13.0",
- "ed25519-dalek",
- "image",
- "qrcode-generator",
- "rqrr",
- "serde",
- "serde-big-array",
- "serde_bytes",
- "serde_json",
- "shamirsecretsharing",
- "solana-sdk",
-]
-
-[[package]]
-name = "meta-secret-core"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "beb8f63f53c6fe2cea27eb8cec256c3180a87ed90e9a076e2794b1685b5212d8"
 dependencies = [
  "base64 0.13.0",
  "ed25519-dalek",
@@ -1488,7 +1469,7 @@ name = "meta-secret-web-cli"
 version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
- "meta-secret-core 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "meta-secret-core",
  "serde",
  "serde_json",
  "wasm-bindgen",

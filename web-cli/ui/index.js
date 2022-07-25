@@ -1,4 +1,4 @@
-import * as wasm from "meta-secret-wasm";
+import * as wasm from "meta-secret-web-cli";
 import QRCode from 'qrcode'
 
 let splitButton = document.getElementById("splitButton");

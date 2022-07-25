@@ -3,5 +3,5 @@ members = [
     "core",
     "cli",
     "dashboard",
-    "web-cli/web-cli-wasm"
+    "web-cli/wasm"
 ]

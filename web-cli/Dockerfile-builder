@@ -7,4 +7,6 @@ RUN cargo install cargo-generate
 RUN export USER=root && wasm-pack new hello-wasm
 RUN cd hello-wasm && export USER=root && wasm-pack build
 
+COPY target/core /core
+
 WORKDIR /app

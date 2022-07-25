@@ -27,7 +27,7 @@
   },
   "homepage": "https://github.com/rustwasm/create-wasm-app#readme",
   "dependencies": {
-    "meta-secret-wasm": "file:../pkg",
+    "meta-secret-wasm": "file:wasm/pkg",
     "qrcode": "^1.5.1"
   },
   "devDependencies": {
