@@ -1,0 +1,35 @@
+name: meta-secret releases
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  web-cli-wasm-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build wasm package
+        working-directory: web-cli/wasm
+        run: |
+          curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+          cargo install cargo-generate
+          wasm-pack build
+
+      - name: Upload wasm package
+        uses: actions/upload-artifact@v3
+        with:
+          name: web-cli-wasm-package
+          path: web-cli/wasm/pkg
