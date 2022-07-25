@@ -29,7 +29,8 @@ jobs:
         run: |
           curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf -o init.sh
           sh init.sh
-          cargo install cargo-generate --force
+          cargo version 
+          cargo install cargo-generate -Z install-upgrade
 
       - name: Build wasm package
         working-directory: web-cli/wasm
