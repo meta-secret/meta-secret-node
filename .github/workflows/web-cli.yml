@@ -54,10 +54,7 @@ jobs:
           path: web-cli/ui/pkg
 
       - name: npm build
-        working-directory: web-cli/ui/
+        working-directory: web-cli/ui
         run: |
-          echo ls ui
-          ls -la 
-          
-          echo ls pkg
-          ls -la pkg
+          npm run build
+          ls -la dist
