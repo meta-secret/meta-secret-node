@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+    paths:
+      - '.github/workflows/docker-cli.yml'
+      - 'core'
+      - 'cli'
 
 jobs:
   docker-push:

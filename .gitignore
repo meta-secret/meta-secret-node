@@ -6,3 +6,4 @@ core/target
 core/Cargo.lock
 
 cli/secrets
+/retag.sh
