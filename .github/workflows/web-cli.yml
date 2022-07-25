@@ -1,4 +1,4 @@
-name: meta-secret releases
+name: meta-secret web-cli deployment
 
 on:
   push:
