@@ -41,3 +41,23 @@ jobs:
         with:
           name: web-cli-wasm-package
           path: web-cli/wasm/pkg
+
+  web-cli-npm-build:
+    runs-on: ubuntu-latest
+    needs: [web-cli-wasm-build]
+
+    steps:
+      - name: Download wasm package
+        uses: actions/download-artifact@v3
+        with:
+          name: web-cli-wasm-package
+          path: web-cli/ui/pkg
+
+      - name: npm build
+        working-directory: web-cli/ui/
+        run: |
+          echo ls ui
+          ls -la 
+          
+          echo ls pkg
+          ls -la pkg
