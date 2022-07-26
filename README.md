@@ -33,6 +33,9 @@ sequenceDiagram
     User ->> World: save qr codes in different places
 
     note over User: Recover from 2 shares
+    User ->> World: get qr1
+    User ->> World: get qr3
+
     User ->> MetaSecret: recover password
     User -->> MetaSecret: provide qr1
     User -->> MetaSecret: provide qr3
