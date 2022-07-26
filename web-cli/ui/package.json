@@ -28,7 +28,8 @@
   "homepage": "https://github.com/rustwasm/create-wasm-app#readme",
   "dependencies": {
     "meta-secret-web-cli": "file:./pkg",
-    "qrcode": "^1.5.1"
+    "qrcode": "^1.5.1",
+    "qr-code-styling": "1.5.0"
   },
   "devDependencies": {
     "copy-webpack-plugin": "^5.1.2",
