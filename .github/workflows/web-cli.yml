@@ -62,4 +62,3 @@ jobs:
         working-directory: web-cli/ui
         run: |
           npm run build
-          ls -la dist
