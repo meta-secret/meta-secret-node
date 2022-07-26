@@ -5,6 +5,7 @@
 
 ## Application Design
 
+#### Activity Diagram
 ```mermaid
 graph TD
     User --> |split password| MSS{MetaSecret}
@@ -18,6 +19,25 @@ graph TD
     HH1 --> RecoverAlgo[Meta Secret: Recovery Algorithm]
     HH2 --> RecoverAlgo
     RecoverAlgo --> RP[Recovered Password]
+```
+
+#### Sequence Diagram
+```mermaid
+sequenceDiagram
+    note over User: Split to 3 shares
+    User->>+MetaSecret: Split password
+    
+    MetaSecret->>User: show qr1 (of hash1)
+    MetaSecret->>User: show qr2 (of hash2)
+    MetaSecret->>-User: show qr3 (of hash3)
+    User ->> World: save qr codes in different places
+
+    note over User: Recover from 2 shares
+    User ->> MetaSecret: recover password
+    User -->> MetaSecret: provide qr1
+    User -->> MetaSecret: provide qr3
+    MetaSecret ->> MetaSecret: recover password
+    MetaSecret ->> User: show password
 ```
 
 
