@@ -50,6 +50,8 @@ jobs:
     needs: [web-cli-wasm-build]
 
     steps:
+      - uses: actions/checkout@v3
+
       - name: Download wasm package
         uses: actions/download-artifact@v3
         with:
