@@ -15,8 +15,10 @@ graph TD
     User --> |recover password| MSR{MetaSecret}
     MSR --> |read| HH1[Hash1]
     MSR --> |read| HH2[Hash2]
-    HH1 --> |recovered| RP[Recovered Passwrod]
-    HH2 --> |recovered| RP[Recovered Passwrod]
+    HH1 --> RecoverAlgo[Meta Secret: Recovery Algorithm]
+    HH2 --> RecoverAlgo
+    RecoverAlgo --> RP[Recovered Password]
+    RP --> User
 ```
 
 
