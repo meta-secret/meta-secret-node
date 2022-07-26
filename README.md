@@ -7,17 +7,16 @@
 
 ```mermaid
 graph TD
-    User --> Password
-    Password -->|Split| MSS{MetaSecret}
+    User --> |split password| MSS{MetaSecret}
     MSS --> |split| Hash1
     MSS --> |split| Hash2
     MSS --> |split| Hash3
-
-    Hash1 --> |retore| MSR{MetaSecret}
-    Hash2 --> |retore| MSR
-    Hash3 --> |retore| MSR
-    MSR --> RP[Recovered Password]
-    RP --> User
+    
+    User --> |recover password| MSR{MetaSecret}
+    MSR --> |read| HH1[Hash1]
+    MSR --> |read| HH2[Hash2]
+    HH1 --> |recovered| RP[Recovered Passwrod]
+    HH2 --> |recovered| RP[Recovered Passwrod]
 ```
 
 
