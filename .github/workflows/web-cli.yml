@@ -24,13 +24,15 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: install web assembly
+      - name: install wasm-pack
         working-directory: /tmp
         run: |
-          curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf -o init.sh
-          sh init.sh
-          cargo version 
-          cargo install cargo-generate --force
+          curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Install cargo-generate
+        uses: baptiste0928/cargo-install@v1
+        with:
+          crate: cargo-generate
 
       - name: Build wasm package
         working-directory: web-cli/wasm
