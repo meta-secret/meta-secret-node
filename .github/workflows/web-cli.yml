@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - '.github/workflows/web-cli.yml'
-      - 'web-cli'
+      - 'web-cli/**'
 
 jobs:
   web-cli-wasm-build:
