@@ -3,6 +3,23 @@
   <img alt="Meta Secret" src="https://github.com/meta-secret/meta-secret-node/blob/main/docs/img/meta-secret-logo.jpg" width="250" />
 </p>
 
+## Application Design
+
+```mermaid
+graph TD
+    User --> Password
+    Password -->|Split| MSS{MetaSecret}
+    MSS --> |split| Hash1
+    MSS --> |split| Hash2
+    MSS --> |split| Hash3
+
+    Hash1 --> |retore| MSR{MetaSecret}
+    Hash2 --> |retore| MSR
+    Hash3 --> |retore| MSR
+    MSR --> RP[Recovered Password]
+    RP --> User
+```
+
 
 ## Command Line App
 
