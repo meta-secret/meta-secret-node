@@ -18,7 +18,6 @@ graph TD
     HH1 --> RecoverAlgo[Meta Secret: Recovery Algorithm]
     HH2 --> RecoverAlgo
     RecoverAlgo --> RP[Recovered Password]
-    RP --> User
 ```
 
 
