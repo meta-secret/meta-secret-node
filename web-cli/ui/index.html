@@ -1,30 +1,13 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <meta charset="utf-8">
-    <title>Meta Secret Web Cli</title>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Meta Secret App</title>
   </head>
   <body>
-    <noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript>
-    <script src="./bootstrap.js"></script>
-
-    <div>
-      <label for="note1">Note1:</label>
-      <input type="text" id="note1" value="" max="10" size="10">
-      <br>
-      <br>
-      <label for="note2">Note2:</label>
-      <input type="text" id="note2" value="" max="10" size="10">
-      <br>
-      <br>
-
-      <label for="password">password:</label>
-      <input type="text" id="password" value="top$ecret" size="150">
-      <input type="button" id="splitButton" value="split">
-    </div>
-
-    <div id="shares"></div>
-
-    <div id="qr-images"></div>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
