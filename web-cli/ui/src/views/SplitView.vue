@@ -212,7 +212,7 @@ export default {
 .submit-button {
   background-color: #FFFFFF;
   border: 1px solid rgb(209, 213, 219);
-  border-radius: .5rem;
+  border-radius: .3rem;
   box-sizing: border-box;
   color: #111827;
   font-family: "Inter var", ui-sans-serif, system-ui, -apple-system, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
