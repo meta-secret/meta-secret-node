@@ -11,6 +11,10 @@ on:
 jobs:
   web-cli-wasm-build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+
     steps:
       - uses: actions/checkout@v3
 
@@ -84,3 +88,12 @@ jobs:
           external_repository: meta-secret/meta-secret.github.io
           publish_branch: main
           publish_dir: web-cli/ui/dist
+
+      - name: Deploy web-cli (cloudflare pages)
+        uses: cloudflare/pages-action@1
+        with:
+          apiToken: ${{ secrets.CLOUD_FLARE_PAGES_TOKEN }}
+          accountId: ${{ secrets.CLOUD_FLARE_ACCOUNT_ID }}
+          projectName: meta-secret-web-cli
+          directory: web-cli/ui/dist
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
