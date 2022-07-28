@@ -1,6 +1,8 @@
 
 <p align="center">
   <img alt="Meta Secret" src="https://github.com/meta-secret/meta-secret-node/blob/main/docs/img/meta-secret-logo.jpg" width="250" />
+  
+  <h4 align="center"> https://meta-secret.github.io </h4>
 </p>
 
 ## Application Design
@@ -43,6 +45,8 @@ sequenceDiagram
     MetaSecret ->> User: show password
 ```
 
+## Web Application
+Meta Secret Web Cli is available on https://meta-secret.github.io
 
 ## Command Line App
 
