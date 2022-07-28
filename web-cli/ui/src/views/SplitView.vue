@@ -167,21 +167,25 @@ export default {
 </script>
 
 <template>
+  <h1 align="center">Split Password</h1>
   <div class="container">
-    <div>
-      <label for="note1">Note1:</label>
-      <input type="text" id="note1" value="" max="10" size="10">
-    </div>
+    <div style="display: flex; flex-direction: column; align-items: flex-start">
+      <div>
+        <label for="note1">Note1:</label>
+        <input class="input-element" type="text" id="note1" value="" max="10" size="10">
+      </div>
 
-    <div>
-      <label for="note2">Note2:</label>
-      <input type="text" id="note2" value="" max="10" size="10">
-    </div>
+      <div>
+        <label for="note2">Note2:</label>
+        <input class="input-element" type="text" id="note2" value="" max="10" size="10">
+      </div>
 
-    <div>
       <label for="password">password:</label>
-      <input type="text" id="password" value="top$ecret" size="150">
-      <input type="button" id="splitButton" value="split" @click="splitPassword">
+      <div style="display: flex; flex-direction: column; align-items: stretch">
+
+        <input class="input-element" type="text" id="password" value="top$ecret" size="150">
+        <input class="submit-button" type="button" id="splitButton" value="Split" @click="splitPassword">
+      </div>
     </div>
   </div>
 
@@ -189,3 +193,53 @@ export default {
 
   <div id="qr-images"></div>
 </template>
+
+<style>
+.input-element {
+  width: 100%;
+  padding: 12px;
+  margin: 6px 0 4px;
+  border: 1px solid #ccc;
+  background: #fafafa;
+  color: #000;
+  font-family: sans-serif;
+  font-size: 12px;
+  line-height: normal;
+  box-sizing: border-box;
+  border-radius: 2px;
+}
+
+.submit-button {
+  background-color: #FFFFFF;
+  border: 1px solid rgb(209, 213, 219);
+  border-radius: .5rem;
+  box-sizing: border-box;
+  color: #111827;
+  font-family: "Inter var", ui-sans-serif, system-ui, -apple-system, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  font-size: .875rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+  padding: .75rem 1rem;
+  text-align: center;
+  text-decoration: none #D1D5DB solid;
+  text-decoration-thickness: auto;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.submit-button:hover {
+  background-color: rgb(249, 250, 251);
+}
+
+.submit-button:focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.submit-button:focus-visible {
+  box-shadow: none;
+}
+</style>
