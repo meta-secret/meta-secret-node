@@ -13,7 +13,7 @@ const router = createRouter({
     {
       path: "/split",
       name: "split",
-      component: SplitView,
+      component: () => import("../views/SplitView.vue"),
     },
     {
       path: "/about",

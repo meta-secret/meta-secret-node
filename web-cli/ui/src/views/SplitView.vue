@@ -1,9 +1,8 @@
-<script setup lang="js">
+<script lang="js">
 import QRCode from "qrcode";
 import QRCodeStyling from "qr-code-styling";
 
 import init, {split} from "meta-secret-web-cli";
-//import * as wasm from "meta-secret-web-cli";
 
 export default {
   methods: {
@@ -19,20 +18,23 @@ export default {
         }
 
         let shares = split(password);
+        this.sharesProcessing(shares, qrImages);
+      });
+    },
 
-        shares.forEach(share => {
-          let qr = document.createElement('canvas');
-          qrImages.appendChild(qr);
+    sharesProcessing: function (shares, qrImages) {
+      shares.forEach(share => {
+        let qr = document.createElement('canvas');
+        qrImages.appendChild(qr);
 
-          let shareIdText = 'share: ' + share['share_id'];
-          let note1Text = document.getElementById('note1').value;
-          let note2Text = document.getElementById('note2').value;
+        let shareIdText = 'share: ' + share['share_id'];
+        let note1Text = document.getElementById('note1').value;
+        let note2Text = document.getElementById('note2').value;
 
-          let textImage = this.textToImage(note1Text, note2Text, shareIdText);
-          let qrCodeStyling = this.generateQrCodeStyling(JSON.stringify(share), textImage);
-          qrCodeStyling.append(qrImages);
-          //generateQrCode(qr, share);
-        });
+        let textImage = this.textToImage(note1Text, note2Text, shareIdText);
+        let qrCodeStyling = this.generateQrCodeStyling(JSON.stringify(share), textImage);
+        qrCodeStyling.append(qrImages);
+        //generateQrCode(qr, share);
       });
     },
 

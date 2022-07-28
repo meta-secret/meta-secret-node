@@ -89,6 +89,14 @@ jobs:
           publish_branch: main
           publish_dir: web-cli/ui/dist
 
+      - name: Deploy static web site (github pages)
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          deploy_key: ${{ secrets.META_SECRET_IO_DEPLOY_KEY }}
+          external_repository: meta-secret/meta-secret.github.io
+          publish_branch: main
+          publish_dir: web-cli/ui/dist
+
       - name: Deploy web-cli (cloudflare pages)
         uses: cloudflare/pages-action@1
         with:

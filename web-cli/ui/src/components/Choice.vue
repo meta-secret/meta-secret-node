@@ -29,8 +29,8 @@
 <template>
   <div style="margin: 50px auto"></div>
   <div class="center">
-    <router-link class="btn-lg btn-trans" to="/split">Split</router-link>
+    <RouterLink class="btn-lg btn-trans" to="/split">Split</RouterLink>
     <div style="margin-left: 30px; margin-right: 30px"></div>
-    <router-link class="btn-lg btn-trans" to="/split">Recover</router-link>
+    <RouterLink class="btn-lg btn-trans" to="/split">Recover</RouterLink>
   </div>
 </template>
