@@ -53,7 +53,7 @@ Imagine that we want to split `top$ecret`, then the command will be:
 
 ```bash
 $ mkdir secrets
-$ docker run -ti --rm -v $(pwd)/secrets:/app/secrets ghcr.io/meta-secret/meta-secret-cli:latest split --secret top$ecret 
+$ docker run -ti --rm -v "$(pwd)/secrets:/app/secrets" ghcr.io/meta-secret/meta-secret-cli:latest split --secret top$ecret 
 ```
 
 It will generate json/qr(jpg) files (shares of your secert) in the `secrets` directory.
@@ -63,7 +63,7 @@ When it comes to restore the secret, put json or qr files (shares of your secret
 Then run in case of qr (if you want restore from json, just pass --from json ):
 
 ```bash
-$ docker run -ti --rm -v $(pwd)/secrets:/app/secrets ghcr.io/meta-secret/meta-secret-cli:latest restore --from qr 
+$ docker run -ti --rm -v "$(pwd)/secrets:/app/secrets" ghcr.io/meta-secret/meta-secret-cli:latest restore --from qr 
 ```
 
 ## Advice for VPS-users
