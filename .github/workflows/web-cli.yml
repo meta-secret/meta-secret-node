@@ -73,6 +73,7 @@ jobs:
       - name: npm build
         working-directory: web-cli/ui
         run: |
+          npm install vue-tsc
           npm install
           npm run build
 
