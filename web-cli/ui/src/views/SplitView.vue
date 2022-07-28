@@ -24,9 +24,6 @@ export default {
 
     sharesProcessing: function (shares, qrImages) {
       shares.forEach(share => {
-        let qr = document.createElement('canvas');
-        qrImages.appendChild(qr);
-
         let shareIdText = 'share: ' + share['share_id'];
         let note1Text = document.getElementById('note1').value;
         let note2Text = document.getElementById('note2').value;
@@ -189,9 +186,8 @@ export default {
     </div>
   </div>
 
-  <div id="shares"></div>
+  <div style="display: flex; flex-direction: column; align-items: flex-start" id="qr-images"></div>
 
-  <div id="qr-images"></div>
 </template>
 
 <style>
