@@ -37,7 +37,7 @@ jobs:
       - name: Build wasm package
         working-directory: web-cli/wasm
         run: |
-          wasm-pack build
+          wasm-pack build --target web
 
       - name: Upload wasm package
         uses: actions/upload-artifact@v3
