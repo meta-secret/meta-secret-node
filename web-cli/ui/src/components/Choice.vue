@@ -27,7 +27,6 @@
 </style>
 
 <template>
-  <div style="margin: 50px auto"></div>
   <div class="center" style="justify-content: space-evenly;max-width: 600px;margin: 0 auto;">
     <RouterLink class="btn-lg btn-trans" to="/split">Split</RouterLink>
     <RouterLink class="btn-lg btn-trans" to="/recover">Recover</RouterLink>

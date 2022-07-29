@@ -3,5 +3,11 @@ import TheChoice from "@/components/Choice.vue";
 </script>
 
 <template>
-    <TheChoice />
+  <div style="display: flex; justify-content: center">
+    <h1>Password Management</h1>
+  </div>
+
+  <div style="margin: 50px auto"></div>
+
+  <TheChoice/>
 </template>

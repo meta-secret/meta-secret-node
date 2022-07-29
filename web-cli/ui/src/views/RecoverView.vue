@@ -1,11 +1,28 @@
 <script lang="js">
 
-import init from "meta-secret-web-cli";
+import init, {split} from "meta-secret-web-cli";
+import QrScanner from 'qr-scanner';
 
 export default {
   methods: {
     recoverPassword() {
-      alert("not yet!");
+      init().then(() => {
+        let imagesElement = document.getElementById("qrImages");
+        let qrCodes = imagesElement.getElementsByTagName('img');
+
+        let asyncShares = [];
+
+        Array.from(qrCodes).forEach(qr => {
+          asyncShares.push(QrScanner.scanImage(qr, {returnDetailedScanResult: true}));
+        });
+
+        Promise.all(asyncShares).then(shares => {
+          //use wasm to recover from json files
+          shares.forEach(share => {
+            alert("Password share: " + share.data);
+          });
+        });
+      });
     },
 
     openFile(event) {
