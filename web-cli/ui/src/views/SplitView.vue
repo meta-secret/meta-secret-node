@@ -179,7 +179,6 @@ export default {
 
       <label for="password">password:</label>
       <div style="display: flex; flex-direction: column; align-items: stretch">
-
         <input class="input-element" type="text" id="password" value="top$ecret" size="150">
         <input class="submit-button" type="button" id="splitButton" value="Split" @click="splitPassword">
       </div>
@@ -208,7 +207,7 @@ export default {
 .submit-button {
   background-color: #FFFFFF;
   border: 1px solid rgb(209, 213, 219);
-  border-radius: .3rem;
+  border-radius: .1rem;
   box-sizing: border-box;
   color: #111827;
   font-family: "Inter var", ui-sans-serif, system-ui, -apple-system, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
