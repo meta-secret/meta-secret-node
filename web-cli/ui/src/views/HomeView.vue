@@ -3,8 +3,9 @@ import TheChoice from "@/components/Choice.vue";
 </script>
 
 <template>
-  <div style="display: flex; justify-content: center">
+  <div style="display: flex; flex-direction: column; justify-content: center; align-items: center">
     <h1>Password Management</h1>
+    <h3>Securely split and restore your passwords</h3>
   </div>
 
   <div style="margin: 50px auto"></div>
