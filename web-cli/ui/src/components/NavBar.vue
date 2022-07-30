@@ -22,9 +22,11 @@
             <RouterLink to="/">Home</RouterLink>
           </li>
           <li>
-            <RouterLink to="/about">About</RouterLink>
+            <a href="https://github.com/meta-secret/meta-secret-node">GitHub</a>
           </li>
-          <li><a href="#">Contact</a></li>
+          <li>
+            <RouterLink to="/contact">Contact</RouterLink>
+          </li>
         </ul>
       </div>
 
