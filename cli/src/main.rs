@@ -5,7 +5,7 @@ use std::fs::File;
 use clap::{Parser, Subcommand, ArgEnum};
 use serde::{Deserialize, Serialize};
 
-use meta_secret_core::{convert_qr_images_to_json_files, restore, split};
+use meta_secret_core::{convert_qr_images_to_json_files, recover, split};
 use meta_secret_core::shared_secret::data_block::common::SharedSecretConfig;
 
 #[derive(Debug, Parser)]
@@ -68,6 +68,6 @@ fn main() {
 }
 
 fn restore_from_json() {
-    let text = restore();
+    let text = recover().unwrap();
     println!("Restored: {:?}", String::from_utf8(text.text).unwrap());
 }

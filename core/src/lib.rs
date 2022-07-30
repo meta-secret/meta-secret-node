@@ -14,8 +14,43 @@ use crate::shared_secret::shared_secret::{
 use image;
 use rqrr;
 
-pub fn restore() -> PlainText {
-    //read json files
+pub fn recover_from_shares(users_shares: Vec<UserShareDto>) -> Result<PlainText, String> {
+    let mut secret_blocks: Vec<SharedSecretBlock> = vec![];
+
+    let blocks_num: usize = users_shares[0].share_blocks.len();
+
+    for block_index in 0..blocks_num {
+        let mut encrypted_data_blocks = vec![];
+
+        for user_share in users_shares.iter() {
+            let encrypted_data_block = user_share.get_encrypted_data_block(block_index);
+            encrypted_data_blocks.push(encrypted_data_block);
+        }
+
+        let curr_block = &users_shares[0].share_blocks[block_index];
+        let secret_block = SharedSecretBlock {
+            config: curr_block.config,
+            meta_data: curr_block.meta_data.clone(),
+            shares: encrypted_data_blocks,
+        };
+
+        secret_blocks.push(secret_block);
+    }
+
+    let secret = SharedSecret {
+        secret_blocks
+    };
+
+    return secret.recover();
+}
+
+pub fn recover() -> Result<PlainText, String> {
+    let users_shares = load_users_shares();
+    return recover_from_shares(users_shares);
+}
+
+fn load_users_shares() -> Vec<UserShareDto> {
+//read json files
     let shares = fs::read_dir("secrets").unwrap();
 
     let mut users_shares_dto: Vec<UserShareDto> = vec![];
@@ -40,34 +75,7 @@ pub fn restore() -> PlainText {
         let secret_share: UserShareDto = serde_json::from_reader(reader).unwrap();
         users_shares_dto.push(secret_share);
     }
-
-    let mut secret_blocks: Vec<SharedSecretBlock> = vec![];
-
-    let blocks_num: usize = users_shares_dto[0].share_blocks.len();
-
-    for block_index in 0..blocks_num {
-        let mut encrypted_data_blocks = vec![];
-
-        for user_share in users_shares_dto.iter() {
-            let encrypted_data_block = user_share.get_encrypted_data_block(block_index);
-            encrypted_data_blocks.push(encrypted_data_block);
-        }
-
-        let curr_block = &users_shares_dto[0].share_blocks[block_index];
-        let secret_block = SharedSecretBlock {
-            config: curr_block.config,
-            meta_data: curr_block.meta_data.clone(),
-            shares: encrypted_data_blocks,
-        };
-
-        secret_blocks.push(secret_block);
-    }
-
-    let secret = SharedSecret {
-        secret_blocks
-    };
-
-    secret.restore()
+    users_shares_dto
 }
 
 pub fn split(secret: String, config: SharedSecretConfig) {

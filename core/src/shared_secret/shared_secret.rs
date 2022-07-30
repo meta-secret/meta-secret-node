@@ -9,6 +9,7 @@ use crate::shared_secret::data_block::plain_data_block::{PLAIN_DATA_BLOCK_SIZE, 
 use crate::shared_secret::data_block::shared_secret_data_block::SharedSecretBlock;
 
 #[derive(Debug, Eq, PartialEq)]
+#[derive(Serialize, Deserialize)]
 pub struct PlainText {
     pub text: Vec<u8>,
 }
@@ -77,7 +78,7 @@ impl SharedSecretEncryption {
 }
 
 impl SharedSecret {
-    pub fn restore(self) -> PlainText {
+    pub fn recover(self) -> Result<PlainText, String> {
         let mut plain_text = String::new();
 
         let secret_blocks = self.secret_blocks;
@@ -90,17 +91,22 @@ impl SharedSecret {
                 .map(|share| share.data.to_vec())
                 .collect();
 
-            let restored: Vec<u8> = shamirsecretsharing::combine_shares(&shares)
-                .unwrap()
-                .unwrap();
+            let maybe_restored = shamirsecretsharing::combine_shares(&shares)
+                .map_err(|err| err.to_string())?;
 
+            if maybe_restored.is_none() {
+                return Err(String::from("Invalid shares, secret block can't be recovered"));
+            }
+
+            let restored = maybe_restored.unwrap();
             let restored: &[u8] = restored.split_at(secret_block.meta_data.size).0;
 
-            let restored_str = String::from_utf8(restored.to_vec()).unwrap();
+            let restored_str = String::from_utf8(restored.to_vec())
+                .map_err(|err| "Non uft8 characters")?;
             plain_text.push_str(restored_str.as_str())
         }
 
-        PlainText { text: plain_text.into_bytes() }
+        Ok(PlainText { text: plain_text.into_bytes() })
     }
 
     pub fn get_share(&self, share_index: usize) -> UserShareDto {
@@ -151,7 +157,7 @@ mod test {
             &plain_text,
         );
 
-        let secret_message = secret.restore();
+        let secret_message = secret.recover().unwrap();
         assert_eq!(&plain_text.text, &secret_message.text);
         println!("message: {:?}", str::from_utf8(&secret_message.text).unwrap())
     }

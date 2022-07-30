@@ -164,7 +164,10 @@ export default {
 </script>
 
 <template>
-  <h1 align="center">Split Password</h1>
+  <div style="display:flex; justify-content: center">
+    <h1>Split Password</h1>
+  </div>
+
   <div class="container">
     <div style="display: flex; flex-direction: column; align-items: flex-start">
       <div>
