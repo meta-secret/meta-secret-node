@@ -42,6 +42,21 @@ import TheChoice from "@/components/Choice.vue";
       </ol>
     </div>
 
+    <div style="margin: 30px auto"></div>
+
+    <div class="container" style="display: flex; flex-direction: column; max-width: 800px; min-width: 800px">
+      <h2>Security Aspect:</h2>
+      <ol>
+        <li>
+          <p>This site is a simple HTML page that run only on your local computer, so it's completely secure to use it</p>
+          <p>There is no any other 3-rd parties involved</p>
+        </li>
+        <li>
+          <a href="https://github.com/meta-secret/meta-secret-node">Open Source</a>
+        </li>
+      </ol>
+    </div>
+
 
     <div style="margin: 30px auto"></div>
   </div>
