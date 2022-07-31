@@ -5,11 +5,18 @@ import QRCodeStyling from "qr-code-styling";
 import init, {split} from "meta-secret-web-cli";
 
 export default {
+  data() {
+    return {
+      password: "top$ecret",
+      note1: '',
+      note2: ''
+    }
+  },
+
   methods: {
     splitPassword() {
       init().then(() => {
-        let password = document.getElementById("password").value;
-        console.log("Split password: ", password);
+        console.log("Split password: ", this.password);
 
         let qrImages = document.getElementById('qr-images');
 
@@ -17,7 +24,7 @@ export default {
           qrImages.removeChild(qrImages.firstChild);
         }
 
-        let shares = split(password);
+        let shares = split(this.password);
         this.sharesProcessing(shares, qrImages);
       });
     },
@@ -25,10 +32,7 @@ export default {
     sharesProcessing: function (shares, qrImages) {
       shares.forEach(share => {
         let shareIdText = 'share: ' + share['share_id'];
-        let note1Text = document.getElementById('note1').value;
-        let note2Text = document.getElementById('note2').value;
-
-        let textImage = this.textToImage(note1Text, note2Text, shareIdText);
+        let textImage = this.textToImage(this.note1, this.note2, shareIdText);
         let qrCodeStyling = this.generateQrCodeStyling(JSON.stringify(share), textImage);
         qrCodeStyling.append(qrImages);
         //generateQrCode(qr, share);
@@ -172,17 +176,17 @@ export default {
     <div style="display: flex; flex-direction: column; align-items: flex-start">
       <div>
         <label for="note1">Note1:</label>
-        <input class="input-element" type="text" id="note1" value="" max="10" size="10">
+        <input class="input-element" type="text" v-model="note1" max="10" size="10">
       </div>
 
       <div>
         <label for="note2">Note2:</label>
-        <input class="input-element" type="text" id="note2" value="" max="10" size="10">
+        <input class="input-element" type="text" id="note2" v-model="note2" max="10" size="10">
       </div>
 
       <label for="password">password:</label>
       <div style="display: flex; flex-direction: column; align-items: stretch">
-        <input class="input-element" type="text" id="password" value="top$ecret" size="150">
+        <input class="input-element" type="text" id="password" v-model="password" size="150">
         <input class="submit-button" type="button" id="splitButton" value="Split" @click="splitPassword">
       </div>
     </div>
