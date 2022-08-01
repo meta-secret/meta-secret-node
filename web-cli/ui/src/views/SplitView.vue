@@ -50,14 +50,14 @@ export default {
 
     textToImage(line1, line2, line3, id) {
       let canvas = document.createElement("canvas");
-      canvas.width = 400;
-      canvas.height = 400;
+      canvas.width = 300;
+      canvas.height = 300;
       canvas.id = 'canvas' + id;
       let ctx = canvas.getContext('2d');
       ctx.font = "80px Arial";
-      ctx.fillText(line1, 25, 100);
-      ctx.fillText(line2, 25, 175);
-      ctx.fillText(line3, 25, 350);
+      ctx.fillText(line1, 15, 75);
+      ctx.fillText(line2, 15, 150);
+      ctx.fillText(line3, 15, 225);
       return canvas.toDataURL();
     },
 

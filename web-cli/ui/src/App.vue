@@ -7,7 +7,7 @@ import NavBar from "@/components/NavBar.vue";
     <NavBar/>
   </header>
 
-  <div style="padding: 15px"/>
+  <div class="py-4"/>
 
   <div>
     <RouterView />
