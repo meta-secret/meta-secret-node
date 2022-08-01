@@ -12,7 +12,7 @@
     <div class="container flex flex-col" style="max-width: 800px;">
       <p class="text-lg">Split Password:</p>
       <ul class="list-disc px-8">
-        <li>Go to "Split" page</li>
+        <li>Go to "Split" page - <RouterLink class="font-bold" to="/split">click on "Split" button on this page</RouterLink></li>
         <li>Type your password and notes</li>
         <li>Click on "split" button, which generates qr codes (password shares)</li>
         <li>Save qr codes on you computer: right click on each qr code and then click "Save Image As..."</li>

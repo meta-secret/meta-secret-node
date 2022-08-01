@@ -26,15 +26,35 @@ export default {
 
         let shares = split(this.password);
         this.sharesProcessing(shares, qrImages);
+        //this.downloadQrCodes();
       });
     },
 
     sharesProcessing: function (shares, qrImages) {
       shares.forEach(share => {
-        let shareIdText = '    ' + share['share_id'] + ' / ' + shares.length + '    ';
-        let textImage = this.textToImage(this.note1, this.note2, shareIdText, share['share_id']);
+        let shareId = share['share_id'];
+        let shareIdText = '    ' + shareId + ' / ' + shares.length + '    ';
+        let textImage = this.textToImage(this.note1, this.note2, shareIdText, shareId);
         let qrCodeStyling = this.generateQrCodeStyling(JSON.stringify(share), textImage);
-        qrCodeStyling.append(qrImages);
+
+        let canvasDiv = document.createElement("div");
+        canvasDiv.id = 'qrCanvas' + shareId;
+
+        qrCodeStyling.append(canvasDiv);
+        qrImages.appendChild(canvasDiv);
+
+        let downloadLink = document.createElement("button");
+        downloadLink.onclick = function (e) {
+          qrCodeStyling.download({ name: "qr", extension: "png" });
+        }
+        downloadLink.id = "downloadQr-" + shareId;
+        downloadLink.innerHTML = "download";
+        downloadLink.style.marginLeft = "30px";
+        downloadLink.className = "submit-button";
+
+        let qrDiv = document.getElementById('qrCanvas' + shareId)
+        qrDiv.appendChild(downloadLink);
+
         //generateQrCode(qr, share);
       });
     },
@@ -64,101 +84,102 @@ export default {
     generateQrCodeStyling(share, textImage) {
       return new QRCodeStyling(
           {
-            "width": 400,
-            "height": 400,
-            "data": share,
-            "margin": 3,
-            "qrOptions": {
-              "typeNumber": "0",
-              "mode": "Byte",
-              "errorCorrectionLevel": "H"
+            width: 400,
+            height: 400,
+            type: "svg",
+            data: share,
+            margin: 3,
+            qrOptions: {
+              typeNumber: 0,
+              mode: "Byte",
+              errorCorrectionLevel: "H"
             },
-            "imageOptions": {
-              "hideBackgroundDots": true,
-              "imageSize": 0.2,
-              "margin": 1
+            imageOptions: {
+              hideBackgroundDots: true,
+              imageSize: 0.2,
+              margin: 1
             },
-            "dotsOptions": {
-              "type": "dots",
-              "color": "#000000",
-              "gradient": null
+            dotsOptions: {
+              type: "dots",
+              color: "#000000",
+              gradient: null
             },
-            "backgroundOptions": {
-              "color": "#ffffff"
+            backgroundOptions: {
+              color: "#ffffff"
             },
-            "image": textImage,
-            "dotsOptionsHelper": {
-              "colorType": {
-                "single": true,
-                "gradient": false
+            image: textImage,
+            dotsOptionsHelper: {
+              colorType: {
+                single: true,
+                gradient: false
               },
-              "gradient": {
-                "linear": true,
-                "radial": false,
-                "color1": "#6a1a4c",
-                "color2": "#6a1a4c",
-                "rotation": "0"
+              gradient: {
+                linear: true,
+                radial: false,
+                color1: "#6a1a4c",
+                color2: "#6a1a4c",
+                rotation: "0"
               }
             },
-            "cornersSquareOptions": {
-              "type": "square",
-              "color": "#000000",
-              "gradient": {
-                "type": "linear",
-                "rotation": 0,
-                "colorStops": [
+            cornersSquareOptions: {
+              type: "square",
+              color: "#000000",
+              gradient: {
+                type: "linear",
+                rotation: 0,
+                colorStops: [
                   {
-                    "offset": 0,
-                    "color": "#000000"
+                    offset: 0,
+                    color: "#000000"
                   },
                   {
-                    "offset": 1,
-                    "color": "#8d8b8b"
+                    offset: 1,
+                    color: "#8d8b8b"
                   }
                 ]
               }
             },
-            "cornersSquareOptionsHelper": {
-              "colorType": {
-                "single": true,
-                "gradient": false
+            cornersSquareOptionsHelper: {
+              colorType: {
+                single: true,
+                gradient: false
               },
-              "gradient": {
-                "linear": true,
-                "radial": false,
-                "color1": "#000000",
-                "color2": "#000000",
-                "rotation": "0"
+              gradient: {
+                linear: true,
+                radial: false,
+                color1: "#000000",
+                color2: "#000000",
+                rotation: "0"
               }
             },
-            "cornersDotOptions": {
-              "type": "",
-              "color": "#000000"
+            cornersDotOptions: {
+              type: "",
+              color: "#000000"
             },
-            "cornersDotOptionsHelper": {
-              "colorType": {
-                "single": true,
-                "gradient": false
+            cornersDotOptionsHelper: {
+              colorType: {
+                single: true,
+                gradient: false
               },
-              "gradient": {
-                "linear": true,
-                "radial": false,
-                "color1": "#000000",
-                "color2": "#000000",
-                "rotation": "0"
+              gradient: {
+                linear: true,
+                radial: false,
+                color1: "#000000",
+                color2: "#000000",
+                rotation: "0"
               }
             },
-            "backgroundOptionsHelper": {
-              "colorType": {
-                "single": true,
-                "gradient": false
+            backgroundOptionsHelper: {
+              colorType: {
+                single: true,
+                gradient: false
               },
-              "gradient": {
-                "linear": true,
-                "radial": false,
-                "color1": "#ffffff",
-                "color2": "#ffffff",
-                "rotation": "0"
+              gradient: {
+                linear: true,
+                radial: false,
+                color1: "#ffffff",
+                color2: "#ffffff",
+                rotation: "0"
               }
             }
           }
