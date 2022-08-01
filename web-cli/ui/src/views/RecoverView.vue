@@ -4,8 +4,15 @@ import init, {restore_password} from "meta-secret-web-cli";
 import QrScanner from 'qr-scanner';
 
 export default {
+  data() {
+    return {
+      recoveredPassword: ''
+    }
+  },
+
   methods: {
     recoverPassword() {
+
       init().then(() => {
         let imagesElement = document.getElementById("qrImages");
         let qrCodes = imagesElement.getElementsByTagName('img');
@@ -18,16 +25,10 @@ export default {
 
         Promise.all(asyncShares)
             .then(qrShares => {
-              let passwordBox = document.getElementById("securityBox");
-
               //use wasm to recover from json files
               let shares = qrShares.map(share => JSON.parse(share.data));
               console.log("restore password, js!");
-              let password = JSON.stringify(restore_password(shares));
-
-              let passwordEl = document.createElement("div");
-              passwordEl.innerHTML = password;
-              passwordBox.appendChild(passwordEl);
+              this.recoveredPassword = JSON.stringify(restore_password(shares));
             })
             .catch(err => {
               alert("Error recovering password: " + err)
@@ -88,7 +89,7 @@ export default {
 
       <div id="securityBox" class="container security-box" style="flex-wrap: wrap">
         <h3>Recovered Password:</h3>
-        <p id="passwordBox"></p>
+        <input id="passwordBox" v-model="recoveredPassword">
       </div>
     </div>
   </div>
