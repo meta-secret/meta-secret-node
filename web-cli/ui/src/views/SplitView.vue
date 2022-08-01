@@ -31,8 +31,8 @@ export default {
 
     sharesProcessing: function (shares, qrImages) {
       shares.forEach(share => {
-        let shareIdText = 'share: ' + share['share_id'];
-        let textImage = this.textToImage(this.note1, this.note2, shareIdText);
+        let shareIdText = '    ' + share['share_id'] + ' / ' + shares.length + '    ';
+        let textImage = this.textToImage(this.note1, this.note2, shareIdText, share['share_id']);
         let qrCodeStyling = this.generateQrCodeStyling(JSON.stringify(share), textImage);
         qrCodeStyling.append(qrImages);
         //generateQrCode(qr, share);
@@ -48,23 +48,24 @@ export default {
       });
     },
 
-    textToImage(line1, line2, line3) {
+    textToImage(line1, line2, line3, id) {
       let canvas = document.createElement("canvas");
-      canvas.width = 600;
-      canvas.height = 600;
+      canvas.width = 400;
+      canvas.height = 400;
+      canvas.id = 'canvas' + id;
       let ctx = canvas.getContext('2d');
-      ctx.font = "100px Arial";
-      ctx.fillText(line1, 50, 150);
-      ctx.fillText(line2, 50, 300);
-      ctx.fillText(line3, 50, 450);
+      ctx.font = "80px Arial";
+      ctx.fillText(line1, 25, 100);
+      ctx.fillText(line2, 25, 175);
+      ctx.fillText(line3, 25, 350);
       return canvas.toDataURL();
     },
 
     generateQrCodeStyling(share, textImage) {
       return new QRCodeStyling(
           {
-            "width": 600,
-            "height": 600,
+            "width": 400,
+            "height": 400,
             "data": share,
             "margin": 3,
             "qrOptions": {
@@ -168,12 +169,12 @@ export default {
 </script>
 
 <template>
-  <div style="display:flex; justify-content: center">
-    <h1>Split Password</h1>
+  <div class="flex justify-center">
+    <p class="text-2xl">Split Password</p>
   </div>
 
-  <div class="container">
-    <div style="display: flex; flex-direction: column; align-items: flex-start">
+  <div class="container px-4">
+    <div class="flex flex-col items-start">
       <div>
         <label for="note1">Note1:</label>
         <input class="input-element" type="text" v-model="note1" max="10" size="10">
@@ -185,14 +186,14 @@ export default {
       </div>
 
       <label for="password">password:</label>
-      <div style="display: flex; flex-direction: column; align-items: stretch">
+      <div class="flex flex-col items-stretch">
         <input class="input-element" type="text" id="password" v-model="password" size="150">
         <input class="submit-button" type="button" id="splitButton" value="Split" @click="splitPassword">
       </div>
     </div>
   </div>
 
-  <div style="display: flex; flex-direction: column; align-items: flex-start" id="qr-images"></div>
+  <div class="container flex flex-col items-start" id="qr-images"></div>
 
 </template>
 
