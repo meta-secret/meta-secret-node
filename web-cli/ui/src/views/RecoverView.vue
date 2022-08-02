@@ -66,7 +66,7 @@ export default {
 
   <div class="py-4"/>
 
-  <div class="container px-4 py-4">
+  <div class="container flex justify-center px-4 py-4">
     <div class="flex flex-col">
       <label for="file-upload" class="custom-file-upload">
         Choose QR codes
@@ -87,23 +87,18 @@ export default {
       >
       <div class="py-2"/>
 
-      <div id="securityBox" class="container security-box" style="flex-wrap: wrap">
+      <div id="securityBox" class="container flex flex-col items-start px-2 py-2 mt-2 security-box-border">
         <h3>Recovered Password:</h3>
         <input class="dark:bg-gray-800" id="passwordBox" v-model="recoveredPassword">
       </div>
     </div>
   </div>
 
-  <div class="flex flex-col items-start" id="qrImages"></div>
+  <div class="container flex flex-col justify-center items-center" id="qrImages"></div>
 </template>
 
 <style>
-.security-box {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  margin-top: 25px;
-  padding: 10px;
+.security-box-border {
   border: 1px solid rgb(209, 213, 219);
 }
 </style>

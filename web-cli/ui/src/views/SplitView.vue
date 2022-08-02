@@ -183,7 +183,7 @@ export default {
     <p class="text-2xl">Split Password</p>
   </div>
 
-  <div class="container px-4">
+  <div class="container flex justify-center px-4">
     <div class="flex flex-col items-start">
       <div>
         <label for="note1">Note1:</label>
@@ -197,13 +197,13 @@ export default {
 
       <label for="password">password:</label>
       <div class="flex flex-col items-stretch">
-        <input class="input-element" type="text" id="password" v-model="password" size="150">
+        <input class="input-element" type="text" id="password" v-model="password" size="50">
         <input class="submit-button dark:text-white" type="button" id="splitButton" value="Split" @click="splitPassword">
       </div>
     </div>
   </div>
 
-  <div class="container flex flex-col items-start py-4" id="qr-images"></div>
+  <div class="container flex flex-col justify-center items-center py-4" id="qr-images"></div>
 
 </template>
 
