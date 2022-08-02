@@ -102,7 +102,7 @@ impl SharedSecret {
             let restored: &[u8] = restored.split_at(secret_block.meta_data.size).0;
 
             let restored_str = String::from_utf8(restored.to_vec())
-                .map_err(|err| "Non uft8 characters")?;
+                .map_err(|_err| "Non uft8 characters")?;
             plain_text.push_str(restored_str.as_str())
         }
 
