@@ -18,7 +18,7 @@ const navigation = [
             <div class="flex items-center flex-shrink-0">
               <img class="h-8 w-8" src="/logo.jpeg" alt="Workflow"/>
               <div class="px-6">
-                <RouterLink to="/">Meta Secret</RouterLink>
+                <RouterLink class="dark:text-black" to="/">Meta Secret</RouterLink>
               </div>
             </div>
             <div class="hidden md:block">

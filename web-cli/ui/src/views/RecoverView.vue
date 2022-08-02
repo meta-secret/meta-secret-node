@@ -28,7 +28,7 @@ export default {
               //use wasm to recover from json files
               let shares = qrShares.map(share => JSON.parse(share.data));
               console.log("restore password, js!");
-              this.recoveredPassword = JSON.stringify(restore_password(shares));
+              this.recoveredPassword = restore_password(shares);
             })
             .catch(err => {
               alert("Error recovering password: " + err)
@@ -89,7 +89,7 @@ export default {
 
       <div id="securityBox" class="container security-box" style="flex-wrap: wrap">
         <h3>Recovered Password:</h3>
-        <input id="passwordBox" v-model="recoveredPassword">
+        <input class="dark:bg-gray-800" id="passwordBox" v-model="recoveredPassword">
       </div>
     </div>
   </div>

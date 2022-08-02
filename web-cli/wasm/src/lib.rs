@@ -41,7 +41,7 @@ pub fn split(pass: &str) -> JsValue {
 }
 
 #[wasm_bindgen]
-pub fn restore_password(shares_json: JsValue) -> JsValue {
+pub fn restore_password(shares_json: JsValue) -> &str {
     log("wasm: restore password, core functionality");
 
     let user_shares = shares_json.into_serde::<Vec<UserShareDto>>()
@@ -53,7 +53,7 @@ pub fn restore_password(shares_json: JsValue) -> JsValue {
         Ok(plain_text) => {
             let password = String::from_utf8(plain_text.text)
                 .unwrap();
-            return JsValue::from_serde(&password).unwrap();
+            return password.as_str();
         }
         Err(error) => {
             panic!("umerlo");

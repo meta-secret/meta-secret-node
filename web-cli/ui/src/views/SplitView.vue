@@ -1,5 +1,4 @@
 <script lang="js">
-import QRCode from "qrcode";
 import QRCodeStyling from "qr-code-styling";
 
 import init, {split} from "meta-secret-web-cli";
@@ -26,7 +25,6 @@ export default {
 
         let shares = split(this.password);
         this.sharesProcessing(shares, qrImages);
-        //this.downloadQrCodes();
       });
     },
 
@@ -50,21 +48,12 @@ export default {
         downloadLink.id = "downloadQr-" + shareId;
         downloadLink.innerHTML = "download";
         downloadLink.style.marginLeft = "30px";
-        downloadLink.className = "submit-button";
+        downloadLink.className = "submit-button m-2";
 
         let qrDiv = document.getElementById('qrCanvas' + shareId)
         qrDiv.appendChild(downloadLink);
 
         //generateQrCode(qr, share);
-      });
-    },
-
-    generateQrCode(qrHtml, share) {
-      QRCode.toCanvas(qrHtml, JSON.stringify(share), {errorCorrectionLevel: 'H'}, function (error) {
-        if (error) {
-          console.error(error)
-        }
-        console.log('success!');
       });
     },
 
@@ -209,12 +198,12 @@ export default {
       <label for="password">password:</label>
       <div class="flex flex-col items-stretch">
         <input class="input-element" type="text" id="password" v-model="password" size="150">
-        <input class="submit-button" type="button" id="splitButton" value="Split" @click="splitPassword">
+        <input class="submit-button dark:text-white" type="button" id="splitButton" value="Split" @click="splitPassword">
       </div>
     </div>
   </div>
 
-  <div class="container flex flex-col items-start" id="qr-images"></div>
+  <div class="container flex flex-col items-start py-4" id="qr-images"></div>
 
 </template>
 
@@ -252,10 +241,6 @@ export default {
   user-select: none;
   -webkit-user-select: none;
   touch-action: manipulation;
-}
-
-.submit-button:hover {
-  background-color: rgb(249, 250, 251);
 }
 
 .submit-button:focus {
