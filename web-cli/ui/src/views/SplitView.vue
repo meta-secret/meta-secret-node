@@ -33,7 +33,7 @@ export default {
     sharesProcessing: function (shares, qrImages) {
       shares.forEach(share => {
         let shareId = share['share_id'];
-        let shareIdText = '    ' + shareId + ' / ' + shares.length + '    ';
+        let shareIdText = 'part: ' + shareId + '/' + shares.length;
         let textImage = this.textToImage(this.note1, this.note2, shareIdText, shareId);
         let qrCodeStyling = this.generateQrCodeStyling(JSON.stringify(share), textImage);
 
@@ -74,10 +74,10 @@ export default {
       canvas.height = 300;
       canvas.id = 'canvas' + id;
       let ctx = canvas.getContext('2d');
-      ctx.font = "80px Arial";
+      ctx.font = "70px Arial";
       ctx.fillText(line1, 15, 75);
       ctx.fillText(line2, 15, 150);
-      ctx.fillText(line3, 15, 225);
+      ctx.fillText(line3, 15, 250);
       return canvas.toDataURL();
     },
 
