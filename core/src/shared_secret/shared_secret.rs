@@ -126,7 +126,7 @@ impl SharedSecret {
             index += 1;
         }
 
-        UserShareDto { share_id: share_index, share_blocks }
+        UserShareDto { share_id: share_index + 1, share_blocks }
     }
 }
 

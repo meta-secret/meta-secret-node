@@ -45,7 +45,7 @@ export default {
 
         let downloadLink = document.createElement("button");
         downloadLink.onclick = function (e) {
-          qrCodeStyling.download({ name: "qr", extension: "png" });
+          qrCodeStyling.download({ name: "qr" + shareId, extension: "png" });
         }
         downloadLink.id = "downloadQr-" + shareId;
         downloadLink.innerHTML = "download";
