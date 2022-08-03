@@ -5,7 +5,6 @@ import GithubButton from 'vue-github-button'
 </script>
 
 <template>
-  <!-- style="display: flex; flex-direction: column; justify-content: center; align-items: center" -->
   <div class="flex flex-col content-center items-center">
     <h1 class="text-2xl">Password Management</h1>
     <h3 class="text-lg">Securely split and restore your passwords</h3>
