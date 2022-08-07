@@ -3,5 +3,6 @@ members = [
     "core",
     "cli",
     "dashboard",
-    "web-cli/wasm"
+    "web-cli/wasm",
+    "vault/vault-cli"
 ]
