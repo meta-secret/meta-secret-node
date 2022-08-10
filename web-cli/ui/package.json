@@ -52,7 +52,7 @@
     "vite-plugin-wasm": "^2.1.0",
     "vite-plugin-wasm-pack": "^0.1.12",
     "vitest": "^0.19.1",
-    "vue-tsc": "^0.39.2",
+    "vue-tsc": "^0.39.5",
     "webpack": "^5.74.0",
     "webpack-cli": "^4.10.0"
   }

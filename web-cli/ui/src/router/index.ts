@@ -2,6 +2,7 @@ import {createRouter, createWebHistory} from "vue-router";
 import HomeView from "../views/HomeView.vue";
 import SplitView from "../views/SplitView.vue";
 import RecoverView from "../views/RecoverView.vue";
+import VaultView from "../views/VaultView.vue";
 import ContactView from "../views/ContactView.vue";
 import NotFoundView from "../views/404View.vue";
 
@@ -17,7 +18,13 @@ const router = createRouter({
             path: "/split",
             name: "split",
             component: SplitView,
-        }, {
+        },
+        {
+            path: "/vault",
+            name: "vault",
+            component: VaultView,
+        },
+        {
             path: "/recover",
             name: "recover",
             component: RecoverView,
