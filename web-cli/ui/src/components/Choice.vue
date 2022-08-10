@@ -14,7 +14,7 @@
   font-size: 16px;
 }
 
-.btn-group-lg > .btn-lg {
+.btn-group-lg > .btn, .btn-lg {
   padding: 10px 16px;
   font-size: 18px;
   line-height: 1.3333333;
