@@ -3,14 +3,14 @@
 extern crate rocket;
 
 #[get("/")]
-async fn index() -> &'static str {
+async fn hi() -> &'static str {
     "Hello, world!"
 }
 
 #[rocket::main]
 async fn main() -> Result<(), rocket::Error> {
     let _rocket = rocket::build()
-        .mount("/", routes![index])
+        .mount("/", routes![hi])
         .launch()
         .await?;
 
