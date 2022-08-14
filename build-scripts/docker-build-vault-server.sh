@@ -11,7 +11,7 @@ cp -rf target/release/meta-secret-vault-server ${VAULT_SERVER_TARGET_DIR}
 chmod +x ${VAULT_SERVER_TARGET_DIR}/meta-secret-vault-server
 
 cd ${VAULT_SERVER_DIR}
-docker build -t "meta-secret/vault-server:latest" .
+docker build -t "ghcr.io/meta-secret/vault-server:latest" .
 
 #echo "run meta-secret-server"
-#docker run -ti --rm -p 8000:8000 --name meta-secret-vault-server meta-secret/vault-server:latest
+#docker run -ti --rm -p 8000:8000 --name meta-secret-vault-server  ghcr.io/meta-secret/vault-server:latest
