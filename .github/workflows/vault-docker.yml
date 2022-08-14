@@ -12,6 +12,6 @@ on:
 
 jobs:
   vault-server-deployment:
-    uses: ./.github/workflows/cargo-build-component.yml@main
+    uses: ./.github/workflows/cargo-build-component.yml
     with:
       target: x86_64-unknown-linux-gnu
