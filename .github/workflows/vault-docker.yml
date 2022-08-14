@@ -1,4 +1,4 @@
-name: Vault Server Docker Deployment
+name: Vault Server Docker Push
 
 on:
   workflow_dispatch:
@@ -12,14 +12,10 @@ on:
 
 jobs:
   vault-server-deployment:
-    runs-on: ubuntu-latest
+    uses: .github/workflows/cargo-build-component.yml@main
+    with:
+      target: x86_64-unknown-linux-gnu
 
-    steps:
-      - name: build meta-secret project
-        uses: meta-secret/meta-secret-node/.github/workflows/cargo-build-component.yml@main
-        with:
-          target: x86_64-unknown-linux-gnu
-
-      - name: show target dir
-        run: |
-          ls -la target/release
+    - name: show target dir
+      run: |
+        ls -la target/release
