@@ -21,6 +21,11 @@ jobs:
     needs:
       - vault-server-deployment
     steps:
+      - name: Download cargo target dir
+        uses: actions/download-artifact@v3
+        with:
+          name: cargo-build-target-dir
+          path: target/
       - name: show target dir
         run: |
           ls -la target/release

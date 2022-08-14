@@ -28,3 +28,9 @@ jobs:
         run: |
           rustup target add ${{inputs.target}}
           cargo build --target ${{inputs.target}} --release
+
+      - name: Upload target dir
+        uses: actions/upload-artifact@v3
+        with:
+          name: cargo-build-target-dir
+          path: target
