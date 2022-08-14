@@ -9,7 +9,7 @@ on:
       - 'cli/**'
 
 jobs:
-  docker-push:
+  docker-cli-push:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3

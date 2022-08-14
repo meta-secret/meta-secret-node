@@ -1,0 +1,25 @@
+name: Vault Server Docker Deployment
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/docker-cli.yml'
+      - 'vault/vault-server/**'
+
+
+jobs:
+  vault-server-deployment:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: build meta-secret project
+        uses: meta-secret/meta-secret-node/.github/workflows/cargo-build-component.yml@main
+        with:
+          target: x86_64-unknown-linux-gnu
+
+      - name: show target dir
+        run: |
+          ls -la target/release

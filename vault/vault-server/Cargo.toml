@@ -1,5 +1,5 @@
 [package]
-name = "meta-secret-dashboard"
+name = "meta-secret-vault-server"
 version = "0.1.0"
 edition = "2021"
 
