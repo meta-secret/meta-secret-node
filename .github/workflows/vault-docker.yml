@@ -9,23 +9,14 @@ on:
       - '.github/workflows/docker-cli.yml'
       - 'vault/vault-server/**'
 
-
 jobs:
   vault-server-deployment:
-    uses: ./.github/workflows/cargo-build-component.yml
-    with:
-      target: x86_64-unknown-linux-gnu
-
-  target-dir:
     runs-on: ubuntu-latest
-    needs:
-      - vault-server-deployment
+
     steps:
-      - name: Download cargo target dir
-        uses: actions/download-artifact@v3
-        with:
-          name: cargo-build-target-dir
-          path: target/
-      - name: show target dir
+      - uses: actions/checkout@v3
+      - uses: ./.github/workflows/actions/project-cache
+
+      - name: hello world
         run: |
-          ls -la target/release
+          ls -la
