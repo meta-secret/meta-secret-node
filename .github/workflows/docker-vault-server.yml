@@ -1,16 +1,22 @@
-name: "cli: docker push"
+name: Vault-Server Docker Push
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
     paths:
       - '.github/workflows/docker-cli.yml'
-      - 'cli/**'
+      - 'vault/vault-server/**'
+
+env:
+  TARGET_PLATFORM: x86_64-unknown-linux-gnu
+  IMAGE_NAME: vault-server
 
 jobs:
-  docker-cli-push:
+  docker-push:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/workflows/actions/project-cache
@@ -20,9 +26,9 @@ jobs:
       - name: Login to the Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
 
-      - name: Build cli for linux
+      - name: build/push vault-server image
         run: |
-          rustup target add x86_64-unknown-linux-gnu
-          cargo build -p meta-secret-cli --target x86_64-unknown-linux-gnu --release
-          docker build -t ghcr.io/meta-secret/meta-secret-cli:latest --file Dockerfile-cli .
-          docker push ghcr.io/meta-secret/meta-secret-cli:latest       
+          rustup target add $TARGET_PLATFORM
+          cargo build -p meta-secret-vault-server --target $TARGET_PLATFORM --release
+          build-scripts/docker-build-vault-server.sh
+          docker push ghcr.io/meta-secret/$IMAGE_NAME:latest
