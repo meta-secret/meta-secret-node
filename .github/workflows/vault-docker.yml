@@ -1,4 +1,4 @@
-name: Vault Server Docker Push
+name: Vault-Server Docker Push
 
 on:
   workflow_dispatch:
@@ -10,7 +10,7 @@ on:
       - 'vault/vault-server/**'
 
 jobs:
-  vault-server-deployment:
+  docker-push:
     runs-on: ubuntu-latest
 
     steps:
