@@ -16,6 +16,11 @@ jobs:
     with:
       target: x86_64-unknown-linux-gnu
 
-    - name: show target dir
-      run: |
-        ls -la target/release
+  target-dir:
+    runs-on: ubuntu-latest
+    needs:
+      - vault-server-deployment
+    steps:
+      - name: show target dir
+        run: |
+          ls -la target/release
