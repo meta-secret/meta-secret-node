@@ -15,3 +15,7 @@ jobs:
     uses: ./.github/workflows/cargo-build-component.yml
     with:
       target: x86_64-unknown-linux-gnu
+
+    - name: show target dir
+      run: |
+        ls -la target/release

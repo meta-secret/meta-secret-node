@@ -24,7 +24,7 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Build cli for linux
+      - name: Build project
         run: |
-          rustup target add ${{inputs.image_name}}
-          cargo build --target ${{inputs.image_name}} --release
+          rustup target add ${{inputs.target}}
+          cargo build --target ${{inputs.target}} --release
