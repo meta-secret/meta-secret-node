@@ -26,6 +26,7 @@ async fn main() -> Result<(), rocket::Error> {
     Ok(())
 }
 
+/// https://github.com/testcontainers/testcontainers-rs/blob/dev/testcontainers/tests/images.rs
 #[cfg(test)]
 mod test {
     use mongodb::{Client, bson, options::ClientOptions};
