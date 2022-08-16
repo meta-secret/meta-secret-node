@@ -71,6 +71,7 @@ async fn register(user_request_json: Json<UserRequest>) -> Json<RegisterResponse
             Json(RegisterResponse { result: String::from("error, user already exists") })
         }
     }
+
 }
 
 #[rocket::main]
