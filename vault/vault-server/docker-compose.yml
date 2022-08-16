@@ -1,0 +1,31 @@
+version: '3.7'
+services:
+  meta-secret-db:
+    image: mongo:latest
+    container_name: meta-secret-db
+    #environment:
+    #  MONGO_INITDB_ROOT_USERNAME: root
+    #  MONGO_INITDB_ROOT_PASSWORD: rootpassword
+    ports:
+      - 27017:27017
+    volumes:
+      - meta_secret_data_container:/data/db
+    networks:
+      - meta_secret
+
+  meta-secret-vault-server:
+    image: ghcr.io/meta-secret/vault-server:latest
+    container_name: meta-secret-vault-server
+    depends_on:
+      - meta-secret-db
+    ports:
+      - "8000:8000"
+    networks:
+      - meta_secret
+
+volumes:
+  meta_secret_data_container:
+
+networks:
+  meta_secret:
+    driver: bridge

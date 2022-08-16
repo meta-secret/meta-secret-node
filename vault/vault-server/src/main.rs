@@ -1,62 +1,87 @@
+mod Db;
+
+use std::borrow::Borrow;
+use mongodb::{Client, bson};
 use rocket::serde::json::Json;
 use serde::{Deserialize, Serialize};
-use mongodb::{Client, options::ClientOptions};
+use crate::bson::Document;
+
+use tracing_subscriber;
+use tracing::{info, instrument};
 
 #[macro_use]
 extern crate rocket;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct UserRequest {
     user_name: String,
-    public_key: String
+    public_key: String,
 }
 
-#[get("/register")]
-async fn register() -> String {
-    String::from("yay")
+impl UserRequest {
+    pub fn to_user_doc(&self) -> UserDoc {
+        UserDoc { user_name: self.user_name.clone(), public_key: self.public_key.clone() }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RegisterResponse {
+    result: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct UserDoc {
+    user_name: String,
+    public_key: String,
+}
+
+/// Request example:
+/// curl -X POST http://localhost:8000/register -H 'Content-Type: application/json' -d '{"userName":"meta_dude","publicKey":"some_public_key"}'
+///
+#[instrument]
+#[post("/register", format = "json", data = "<user_request_json>")]
+async fn register(user_request_json: Json<UserRequest>) -> Json<RegisterResponse> {
+    info!("Register user");
+
+    let url = format!("mongodb://meta-secret-db:{}/", 27017);
+    let client: Client = Client::with_uri_str(&url).await.unwrap();
+    let db = client.database("meta-secret");
+    let user_col = db.collection::<UserDoc>("users");
+
+    let user_request = user_request_json.into_inner();
+
+    //find user
+    let maybe_user: Option<UserDoc> = user_col
+        .find_one(bson::doc! { "userName": user_request.user_name.clone() }, None)
+        .await.unwrap();
+
+    match maybe_user {
+        None => {
+            //create a new user:
+            user_col.insert_one(user_request.to_user_doc(), None)
+                .await.unwrap();
+            Json(RegisterResponse { result: String::from("user hase been created") })
+        }
+        Some(user_doc) => {
+            //if user already exists
+            //ask another device to allow a second device to be added to the cluster
+            Json(RegisterResponse { result: String::from("error, user already exists") })
+        }
+    }
 }
 
 #[rocket::main]
 async fn main() -> Result<(), rocket::Error> {
+    // install global collector configured based on RUST_LOG env var.
+    tracing_subscriber::fmt::init();
+
     let _rocket = rocket::build()
         .mount("/", routes![register])
         .launch()
         .await?;
 
     Ok(())
-}
-
-/// https://github.com/testcontainers/testcontainers-rs/blob/dev/testcontainers/tests/images.rs
-#[cfg(test)]
-mod test {
-    use mongodb::{Client, bson, options::ClientOptions};
-    use testcontainers::{clients, images::mongo};
-
-    #[tokio::test]
-    async fn test_mongodb() {
-        let _ = pretty_env_logger::try_init();
-        let docker = clients::Cli::default();
-        let node = docker.run(mongo::Mongo::default());
-        let host_port = node.get_host_port_ipv4(27017);
-        let url = format!("mongodb://127.0.0.1:{}/", host_port);
-
-        let client: Client = Client::with_uri_str(&url).await.unwrap();
-        let db = client.database("some_db");
-        let coll = db.collection("some-coll");
-
-        let insert_one_result = coll.insert_one(bson::doc! { "x": 42 }, None).await.unwrap();
-        assert!(!insert_one_result
-            .inserted_id
-            .as_object_id()
-            .unwrap()
-            .to_hex()
-            .is_empty());
-
-        let find_one_result: bson::Document = coll
-            .find_one(bson::doc! { "x": 42 }, None)
-            .await
-            .unwrap()
-            .unwrap();
-        assert_eq!(42, find_one_result.get_i32("x").unwrap())
-    }
 }

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # Must be run from root directory
 cargo build -p meta-secret-vault-server --release
 
@@ -14,4 +16,4 @@ cd ${VAULT_SERVER_DIR}
 docker build -t "ghcr.io/meta-secret/vault-server:latest" .
 
 #echo "run meta-secret-server"
-#docker run -ti --rm -p 8000:8000 --name meta-secret-vault-server  ghcr.io/meta-secret/vault-server:latest
+#docker run -ti --rm -p 8000:8000 --name meta-secret-vault-server ghcr.io/meta-secret/vault-server:latest
