@@ -1,49 +1,31 @@
-mod Db;
-
-use std::borrow::Borrow;
-use mongodb::{Client, bson};
-use rocket::serde::json::Json;
-use serde::{Deserialize, Serialize};
-use crate::bson::Document;
-
-use tracing_subscriber;
-use tracing::{info, instrument};
-
 #[macro_use]
 extern crate rocket;
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct UserRequest {
-    user_name: String,
-    public_key: String,
-}
+use std::borrow::Borrow;
 
-impl UserRequest {
-    pub fn to_user_doc(&self) -> UserDoc {
-        UserDoc { user_name: self.user_name.clone(), public_key: self.public_key.clone() }
-    }
-}
+use ed25519_dalek::{Keypair, PublicKey, Signature, Verifier};
+use mongodb::{bson, Client};
+use rand::rngs::OsRng;
+use rocket::serde::json::Json;
+use serde::{Deserialize, Serialize};
+use tracing::info;
+use tracing_subscriber;
+use tracing_subscriber::FmtSubscriber;
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct RegisterResponse {
-    result: String,
-}
+use api::{RegisterResponse, UserDoc, UserRequest};
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct UserDoc {
-    user_name: String,
-    public_key: String,
-}
+use crate::bson::Document;
+
+mod db;
+mod crypto;
+mod api;
+
 
 /// Request example:
-/// curl -X POST http://localhost:8000/register -H 'Content-Type: application/json' -d '{"userName":"meta_dude","publicKey":"some_public_key"}'
+/// curl -X POST http://localhost:8000/register -H 'Content-Type: application/json' -d '{"userName":"test_user","publicKey":"922JB+F8ktWuQxeHWzlHZ3XH3/5/2EGma0aHa4Yu1FU=","signatureOfUserName":"c92vK/pMACBEZKV76DSirQuw38PcDcOYjBrotVM00x35AhwWrW4POLhdh3+Ssaw0Wg8pUL1EWSY6+2WjbCNiDA=="}'
 ///
-#[instrument]
-#[post("/register", format = "json", data = "<user_request_json>")]
-async fn register(user_request_json: Json<UserRequest>) -> Json<RegisterResponse> {
+#[post("/register", format = "json", data = "<user_request>")]
+async fn register(user_request: Json<UserRequest>) -> Json<RegisterResponse> {
     info!("Register user");
 
     let url = format!("mongodb://meta-secret-db:{}/", 27017);
@@ -51,7 +33,14 @@ async fn register(user_request_json: Json<UserRequest>) -> Json<RegisterResponse
     let db = client.database("meta-secret");
     let user_col = db.collection::<UserDoc>("users");
 
-    let user_request = user_request_json.into_inner();
+    let user_request = user_request.into_inner();
+
+    println!("verify: {:?}", user_request);
+    let is_valid = crypto::verify(&user_request);
+
+    if !is_valid {
+        panic!("Can't pass signature verification");
+    }
 
     //find user
     let maybe_user: Option<UserDoc> = user_col
@@ -71,13 +60,16 @@ async fn register(user_request_json: Json<UserRequest>) -> Json<RegisterResponse
             Json(RegisterResponse { result: String::from("error, user already exists") })
         }
     }
-
 }
 
 #[rocket::main]
 async fn main() -> Result<(), rocket::Error> {
     // install global collector configured based on RUST_LOG env var.
     tracing_subscriber::fmt::init();
+    let subscriber = FmtSubscriber::new();
+    tracing::subscriber::set_global_default(subscriber)
+        .map_err(|_err| eprintln!("Unable to set global default subscriber"));
+    //.expect("TODO: can't configure logger");
 
     let _rocket = rocket::build()
         .mount("/", routes![register])

@@ -1,17 +1,15 @@
-
-
 /// https://github.com/testcontainers/testcontainers-rs/blob/dev/testcontainers/tests/images.rs
 #[cfg(test)]
 mod test {
-    use mongodb::{Client, bson, options::ClientOptions};
+    use mongodb::{bson, Client, options::ClientOptions};
     use testcontainers::{clients, images::mongo};
 
     #[tokio::test]
     async fn test_mongodb() {
-        //let _ = pretty_env_logger::try_init();
-        //let docker = clients::Cli::default();
-        //let node = docker.run(mongo::Mongo::default());
-        //let host_port = node.get_host_port_ipv4(27017);
+        let _ = pretty_env_logger::try_init();
+        let docker = clients::Cli::default();
+        let node = docker.run(mongo::Mongo::default());
+        let host_port = node.get_host_port_ipv4(27017);
         let host_port = 27017;
         let url = format!("mongodb://127.0.0.1:{}/", host_port);
 
