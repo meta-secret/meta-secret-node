@@ -67,7 +67,14 @@ async fn register(register_request: Json<UserSignature>) -> Json<RegistrationRes
             })
         }
         Some(mut vault_doc) => {
-            //if user already exists
+            //if vault already exists
+            if vault_doc.signatures.contains(&vault_request) {
+                return Json(RegistrationResponse {
+                    status: RegistrationStatus::Registered,
+                    result: "Vault already exists and you are one of the members".to_string()
+                })
+            }
+
             vault_doc.pending_joins.push(vault_request.clone());
 
             let vault_name = vault_request.vault_name.clone();
