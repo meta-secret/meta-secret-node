@@ -4,7 +4,8 @@ extern crate rocket;
 use std::borrow::Borrow;
 
 use ed25519_dalek::{Keypair, PublicKey, Signature, Verifier};
-use mongodb::{bson, Client};
+use mongodb::{bson, Client, Collection};
+use mongodb::options::FindOneAndUpdateOptions;
 use rand::rngs::OsRng;
 use rocket::serde::json::Json;
 use serde::{Deserialize, Serialize};
@@ -12,54 +13,154 @@ use tracing::info;
 use tracing_subscriber;
 use tracing_subscriber::FmtSubscriber;
 
-use api::{RegisterResponse, UserDoc, UserRequest};
+use db::VaultDoc;
 
+use crate::api::{JoinRequest, RegisterResponse, UserSignature};
 use crate::bson::Document;
+use crate::db::{DbSchema};
 
 mod db;
 mod crypto;
 mod api;
 
 
-/// Request example:
-/// curl -X POST http://localhost:8000/register -H 'Content-Type: application/json' -d '{"userName":"test_user","publicKey":"922JB+F8ktWuQxeHWzlHZ3XH3/5/2EGma0aHa4Yu1FU=","signatureOfUserName":"c92vK/pMACBEZKV76DSirQuw38PcDcOYjBrotVM00x35AhwWrW4POLhdh3+Ssaw0Wg8pUL1EWSY6+2WjbCNiDA=="}'
+/// Register a new distributed vault
+/// Registration example:
+/// first device: curl -X POST http://localhost:8000/register -H 'Content-Type: application/json' -d '{"vaultName":"test_vault","publicKey":"ZE+rI1+X7IsWkCbnTamDtfvvavrIp7UfAtpUVJXfBZ8=","signature":"OOshi5j4XmhxJfCtd3DiQkPIe87NxEc5TvSkqlma+0qxAEWKBpvy4HCR+yKll5p8R1ttKKL9UG9IO2rIIxm6DQ=="}'
+/// second device: curl -X POST http://localhost:8000/register -H 'Content-Type: application/json' -d '{"vaultName":"test_vault","publicKey":"Mi6MUjlvim7r2Qz5Ug63ZnkXhaDoBWh3os/ItPzP3Aw=","signature":"haE9QJfSZyLYuKOP9dao0gI2i/bCnjFh6Zph72xgpftuTdzAOotnB5D8r8+IsPFWhqEIpKzEBGsrA59H433xBw=="}'
 ///
-#[post("/register", format = "json", data = "<user_request>")]
-async fn register(user_request: Json<UserRequest>) -> Json<RegisterResponse> {
-    info!("Register user");
+#[post("/register", format = "json", data = "<register_request>")]
+async fn register(register_request: Json<UserSignature>) -> Json<RegisterResponse> {
+    info!("Register a new vault or join");
 
-    let url = format!("mongodb://meta-secret-db:{}/", 27017);
-    let client: Client = Client::with_uri_str(&url).await.unwrap();
-    let db = client.database("meta-secret");
-    let user_col = db.collection::<UserDoc>("users");
+    let vaults_col = get_vaults_col().await;
 
-    let user_request = user_request.into_inner();
+    let vault_request = register_request.into_inner();
 
-    println!("verify: {:?}", user_request);
-    let is_valid = crypto::verify(&user_request);
+    info!("verify: {:?}", vault_request);
+    let is_valid = crypto::verify(&vault_request);
 
     if !is_valid {
         panic!("Can't pass signature verification");
     }
 
     //find user
-    let maybe_user: Option<UserDoc> = user_col
-        .find_one(bson::doc! { "userName": user_request.user_name.clone() }, None)
-        .await.unwrap();
+    let vault_filter = bson::doc! {
+        "vaultName": vault_request.vault_name.clone()
+    };
 
-    match maybe_user {
+    let maybe_vault: Option<VaultDoc> = vaults_col
+        .find_one(vault_filter, None)
+        .await
+        .unwrap();
+
+    return match maybe_vault {
         None => {
             //create a new user:
-            user_col.insert_one(user_request.to_user_doc(), None)
-                .await.unwrap();
-            Json(RegisterResponse { result: String::from("user hase been created") })
+            vaults_col.insert_one(vault_request.to_initial_vault_doc(), None)
+                .await
+                .unwrap();
+
+            Json(RegisterResponse { result: String::from("Vault hase been created") })
         }
-        Some(user_doc) => {
+        Some(mut vault_doc) => {
             //if user already exists
-            //ask another device to allow a second device to be added to the cluster
-            Json(RegisterResponse { result: String::from("error, user already exists") })
+            vault_doc.pending_joins.push(vault_request.clone());
+
+            let vault_name = vault_request.vault_name.clone();
+            let vault_filter = bson::doc! {
+                "vaultName": vault_name
+            };
+            vaults_col.replace_one(vault_filter, vault_doc.clone(), None)
+                .await
+                .unwrap();
+
+            Json(RegisterResponse {
+                result: serde_json::to_string_pretty(&vault_doc.clone()).unwrap()
+            })
+        }
+    };
+}
+
+/// Accept join request
+/// example:
+/// curl -X POST http://localhost:8000/accept -H 'Content-Type: application/json' -d '{"member": {"vaultName":"test_vault","publicKey":"ZE+rI1+X7IsWkCbnTamDtfvvavrIp7UfAtpUVJXfBZ8=","signature":"OOshi5j4XmhxJfCtd3DiQkPIe87NxEc5TvSkqlma+0qxAEWKBpvy4HCR+yKll5p8R1ttKKL9UG9IO2rIIxm6DQ=="}, "candidate": {"vaultName":"test_vault","publicKey":"Mi6MUjlvim7r2Qz5Ug63ZnkXhaDoBWh3os/ItPzP3Aw=","signature":"haE9QJfSZyLYuKOP9dao0gI2i/bCnjFh6Zph72xgpftuTdzAOotnB5D8r8+IsPFWhqEIpKzEBGsrA59H433xBw=="}}'
+#[post("/accept", format = "json", data = "<join_request>")]
+async fn accept(join_request: Json<JoinRequest>) -> Json<String> {
+    let join_request = join_request.into_inner();
+    info!("Accept join request");
+
+    let vaults_col = get_vaults_col().await;
+
+    let vaults_filter = bson::doc! {
+        "vaultName": join_request.member.vault_name.clone()
+    };
+    let maybe_vault: Option<VaultDoc> = vaults_col
+        .find_one(vaults_filter, None)
+        .await.unwrap();
+
+    return match maybe_vault {
+        //user not found
+        None => {
+            panic!("User not found!");
+        }
+        Some(mut vault_doc) => {
+            if vault_doc.signatures.contains(&join_request.candidate) {
+                remove_candidate_from_pending_queue(&join_request, &mut vault_doc);
+                update_vault(join_request, vaults_col, vault_doc).await;
+                return Json("Candidate is already a member of the vault".to_string())
+            }
+
+            if vault_doc.signatures.contains(&join_request.member) {
+                if vault_doc.pending_joins.contains(&join_request.candidate) {
+                    if crypto::verify(&join_request.candidate) {
+                        //we can add a new user signature into a vault
+                        remove_candidate_from_pending_queue(&join_request, &mut vault_doc);
+
+                        vault_doc.signatures.push(join_request.candidate.clone());
+
+                        update_vault(join_request, vaults_col, vault_doc).await;
+                    }
+                }
+            }
+
+            Json(String::from("Successful"))
         }
     }
+}
+
+async fn update_vault(join_request: JoinRequest, vaults_col: Collection<VaultDoc>, mut vault_doc: VaultDoc) {
+    let candidate_vault = join_request.candidate.vault_name.clone();
+    let vault_filter = bson::doc! {
+                            "vaultName": candidate_vault
+                         };
+
+    vaults_col.replace_one(vault_filter, vault_doc, None)
+        .await
+        .unwrap();
+}
+
+fn remove_candidate_from_pending_queue(join_request: &JoinRequest, vault_doc: &mut VaultDoc) {
+    let index = vault_doc
+        .pending_joins
+        .iter()
+        .position(|sig| *sig == join_request.candidate)
+        .unwrap();
+
+
+    vault_doc.pending_joins
+        //remove signature from pending
+        .remove(index);
+}
+
+async fn get_vaults_col() -> Collection<VaultDoc> {
+    let db_schema = DbSchema::default();
+
+    let url = format!("mongodb://meta-secret-db:{}/", 27017);
+    let client: Client = Client::with_uri_str(&url).await.unwrap();
+    let db = client.database(db_schema.db_name.as_str());
+    let vaults_col = db.collection::<VaultDoc>(db_schema.vault_col.as_str());
+    vaults_col
 }
 
 #[rocket::main]
@@ -72,7 +173,7 @@ async fn main() -> Result<(), rocket::Error> {
     //.expect("TODO: can't configure logger");
 
     let _rocket = rocket::build()
-        .mount("/", routes![register])
+        .mount("/", routes![register, accept])
         .launch()
         .await?;
 

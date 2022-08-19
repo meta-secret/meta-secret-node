@@ -1,28 +1,36 @@
 use serde::{Deserialize, Serialize};
+use crate::db::VaultDoc;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserRequest {
-    pub user_name: String,
+pub struct UserSignature {
+    /// distributed vault, unique across entire system
+    pub vault_name: String,
     pub public_key: String,
-    pub signature_of_user_name: String,
+    /// Users' signature. Can be verified by:
+    ///     ```signature == ed_dsa::verify(message: user_name, key: public_key)```
+    pub signature: String
 }
 
-impl UserRequest {
-    pub fn to_user_doc(&self) -> UserDoc {
-        UserDoc { user_name: self.user_name.clone(), public_key: self.public_key.clone() }
+impl UserSignature {
+    pub fn to_initial_vault_doc(self) -> VaultDoc {
+        VaultDoc {
+            vault_name: self.vault_name.clone(),
+            signatures: vec![self],
+            pending_joins: vec![],
+        }
     }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RegisterResponse {
-    pub(crate) result: String,
+    pub result: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct UserDoc {
-    user_name: String,
-    public_key: String,
+pub struct JoinRequest {
+    pub member: UserSignature,
+    pub candidate: UserSignature
 }

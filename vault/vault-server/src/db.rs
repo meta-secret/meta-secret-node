@@ -1,3 +1,28 @@
+use serde::{Deserialize, Serialize};
+use crate::UserSignature;
+
+pub struct DbSchema {
+    pub db_name: String,
+    pub vault_col: String
+}
+
+impl Default for DbSchema {
+    fn default() -> Self {
+        DbSchema {
+            db_name: "meta-secret".to_string(),
+            vault_col: "vaults".to_string()
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct VaultDoc {
+    pub vault_name: String,
+    pub signatures: Vec<UserSignature>,
+    pub pending_joins: Vec<UserSignature>,
+}
+
 /// https://github.com/testcontainers/testcontainers-rs/blob/dev/testcontainers/tests/images.rs
 #[cfg(test)]
 mod test {
