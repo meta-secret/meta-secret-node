@@ -24,8 +24,15 @@ impl UserSignature {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct RegisterResponse {
+pub struct RegistrationResponse {
+    pub status: RegistrationStatus,
     pub result: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum RegistrationStatus {
+    Registered, AlreadyExists
 }
 
 #[derive(Debug, Serialize, Deserialize)]

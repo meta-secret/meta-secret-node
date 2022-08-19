@@ -15,7 +15,7 @@ use tracing_subscriber::FmtSubscriber;
 
 use db::VaultDoc;
 
-use crate::api::{JoinRequest, RegisterResponse, UserSignature};
+use crate::api::{JoinRequest, RegistrationResponse, RegistrationStatus, UserSignature};
 use crate::bson::Document;
 use crate::db::{DbSchema};
 
@@ -30,7 +30,7 @@ mod api;
 /// second device: curl -X POST http://localhost:8000/register -H 'Content-Type: application/json' -d '{"vaultName":"test_vault","publicKey":"Mi6MUjlvim7r2Qz5Ug63ZnkXhaDoBWh3os/ItPzP3Aw=","signature":"haE9QJfSZyLYuKOP9dao0gI2i/bCnjFh6Zph72xgpftuTdzAOotnB5D8r8+IsPFWhqEIpKzEBGsrA59H433xBw=="}'
 ///
 #[post("/register", format = "json", data = "<register_request>")]
-async fn register(register_request: Json<UserSignature>) -> Json<RegisterResponse> {
+async fn register(register_request: Json<UserSignature>) -> Json<RegistrationResponse> {
     info!("Register a new vault or join");
 
     let vaults_col = get_vaults_col().await;
@@ -61,7 +61,10 @@ async fn register(register_request: Json<UserSignature>) -> Json<RegisterRespons
                 .await
                 .unwrap();
 
-            Json(RegisterResponse { result: String::from("Vault hase been created") })
+            Json(RegistrationResponse {
+                status: RegistrationStatus::Registered,
+                result: "Vault has been created".to_string()
+            })
         }
         Some(mut vault_doc) => {
             //if user already exists
@@ -75,8 +78,9 @@ async fn register(register_request: Json<UserSignature>) -> Json<RegisterRespons
                 .await
                 .unwrap();
 
-            Json(RegisterResponse {
-                result: serde_json::to_string_pretty(&vault_doc.clone()).unwrap()
+            Json(RegistrationResponse {
+                status: RegistrationStatus::AlreadyExists,
+                result: "Added to pending requests".to_string()
             })
         }
     };
@@ -129,6 +133,21 @@ async fn accept(join_request: Json<JoinRequest>) -> Json<String> {
     }
 }
 
+#[get("/getVault", format = "json", data = "<user_signature>")]
+async fn get_vault(user_signature: Json<UserSignature>) -> Json<VaultDoc> {
+    let vaults_col = get_vaults_col().await;
+    let vaults_filter = bson::doc! {
+        "vaultName": user_signature.vault_name.clone()
+    };
+
+    let maybe_vault: Option<VaultDoc> = vaults_col
+        .find_one(vaults_filter, None)
+        .await
+        .unwrap();
+
+    return Json(maybe_vault.unwrap());
+}
+
 async fn update_vault(join_request: JoinRequest, vaults_col: Collection<VaultDoc>, mut vault_doc: VaultDoc) {
     let candidate_vault = join_request.candidate.vault_name.clone();
     let vault_filter = bson::doc! {
@@ -173,7 +192,7 @@ async fn main() -> Result<(), rocket::Error> {
     //.expect("TODO: can't configure logger");
 
     let _rocket = rocket::build()
-        .mount("/", routes![register, accept])
+        .mount("/", routes![register, accept, get_vault])
         .launch()
         .await?;
 
