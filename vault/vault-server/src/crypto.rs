@@ -31,10 +31,20 @@ mod test {
     use crate::crypto;
     use crate::UserSignature;
 
+    use openssl::encrypt::{Encrypter, Decrypter};
+    use openssl::rsa::{Rsa, Padding};
+    use openssl::pkey::PKey;
+
     #[test]
     fn verify() {
         let mut csprng = OsRng {};
         let keypair: Keypair = Keypair::generate(&mut csprng);
+
+        // Generate a keypair
+        let rsa_keypair = Rsa::generate(4096).unwrap();
+        let rsa_keypair = PKey::from_rsa(rsa_keypair).unwrap();
+        let rsa_public_key = rsa_keypair.public_key_to_pem().unwrap();
+        let rsa_public_key = String::from_utf8(rsa_public_key).unwrap();
 
         let vault_name = String::from("test_vault");
         let signature = base64::encode(keypair.sign(vault_name.as_bytes()).as_bytes());
@@ -42,6 +52,7 @@ mod test {
         let user_signature = UserSignature {
             vault_name: vault_name.clone(),
             public_key: base64::encode(keypair.public.as_bytes()),
+            rsa_public_key: rsa_public_key.clone(),
             signature: signature.clone(),
         };
 
@@ -54,6 +65,7 @@ mod test {
         let invalid_user_request = UserSignature {
             vault_name: String::from("another_user"),
             public_key: base64::encode(keypair.public.as_bytes()),
+            rsa_public_key: rsa_public_key.clone(),
             signature,
         };
         let is_valid = crypto::verify(&invalid_user_request);

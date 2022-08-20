@@ -6,7 +6,10 @@ use crate::db::VaultDoc;
 pub struct UserSignature {
     /// distributed vault, unique across entire system
     pub vault_name: String,
+
     pub public_key: String,
+    pub rsa_public_key: String,
+
     /// Users' signature. Can be verified by:
     ///     ```signature == ed_dsa::verify(message: user_name, key: public_key)```
     pub signature: String
