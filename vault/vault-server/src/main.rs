@@ -1,5 +1,6 @@
 #[macro_use]
 extern crate rocket;
+extern crate core;
 
 use std::borrow::Borrow;
 
