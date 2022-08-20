@@ -140,7 +140,7 @@ async fn accept(join_request: Json<JoinRequest>) -> Json<String> {
     }
 }
 
-#[get("/getVault", format = "json", data = "<user_signature>")]
+#[post("/getVault", format = "json", data = "<user_signature>")]
 async fn get_vault(user_signature: Json<UserSignature>) -> Json<VaultDoc> {
     let vaults_col = get_vaults_col().await;
     let vaults_filter = bson::doc! {
