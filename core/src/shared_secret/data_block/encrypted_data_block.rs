@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 use serde_big_array::BigArray;
-use solana_sdk::hash::Hash;
 
 use crate::shared_secret::data_block::common;
 use crate::shared_secret::data_block::common::{
@@ -13,7 +12,6 @@ pub const SECRET_DATA_BLOCK_SIZE: usize = 113;
 #[derive(Clone, Debug)]
 #[derive(Serialize, Deserialize)]
 pub struct EncryptedDataBlock {
-    pub hash: Hash,
     #[serde(with = "BigArray")]
     pub data: [u8; SECRET_DATA_BLOCK_SIZE],
 }
@@ -32,7 +30,6 @@ impl EncryptedDataBlock {
         }
 
         let share = Self {
-            hash: solana_sdk::hash::hash(data),
             data: common::parse_data::<SECRET_DATA_BLOCK_SIZE>(data),
         };
 
