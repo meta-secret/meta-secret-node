@@ -19,6 +19,7 @@ jobs:
           target-dir: core/target
 
       - name: Publish core
+        working-directory: core
         run: cargo publish --token ${CRATES_TOKEN}
         env:
           CRATES_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
