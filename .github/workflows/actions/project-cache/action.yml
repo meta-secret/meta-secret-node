@@ -1,6 +1,12 @@
 name: 'Project Cache'
 description: 'Cache rust packages and target directory'
 
+inputs:
+  target-dir:
+    required: true
+    description: "Project target directory"
+    default: target
+
 runs:
   using: "composite"
   steps:
@@ -11,5 +17,5 @@ runs:
           ~/.cargo/registry/index/
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
-          target/
+          ${{ inputs.target-dir }}
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
