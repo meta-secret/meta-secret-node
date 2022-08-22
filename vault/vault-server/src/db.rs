@@ -29,7 +29,8 @@ mod test {
     use mongodb::{bson, Client, options::ClientOptions};
     use testcontainers::{clients, images::mongo};
 
-    #[tokio::test]
+    #[ignore]
+    //#[tokio::test]
     async fn test_mongodb() {
         let _ = pretty_env_logger::try_init();
         let docker = clients::Cli::default();
