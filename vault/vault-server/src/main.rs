@@ -114,7 +114,7 @@ async fn accept(join_request: Json<JoinRequest>) -> Json<String> {
     return match maybe_vault {
         //user not found
         None => {
-            panic!("User not found!");
+            panic!("Vault not found!");
         }
         Some(mut vault_doc) => {
             if vault_doc.signatures.contains(&join_request.candidate) {
@@ -168,16 +168,16 @@ async fn update_vault(join_request: JoinRequest, vaults_col: Collection<VaultDoc
 }
 
 fn remove_candidate_from_pending_queue(join_request: &JoinRequest, vault_doc: &mut VaultDoc) {
-    let index = vault_doc
+    let maybe_index = vault_doc
         .pending_joins
         .iter()
-        .position(|sig| *sig == join_request.candidate)
-        .unwrap();
+        .position(|sig| *sig == join_request.candidate);
 
-
-    vault_doc.pending_joins
-        //remove signature from pending
-        .remove(index);
+    if let Some(index) = maybe_index {
+        vault_doc.pending_joins
+            //remove signature from pending
+            .remove(index);
+    }
 }
 
 async fn get_vaults_col() -> Collection<VaultDoc> {

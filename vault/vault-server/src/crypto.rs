@@ -23,6 +23,7 @@ pub fn verify(user_signature: &UserSignature) -> bool {
 
 #[cfg(test)]
 mod test {
+    use std::fs::File;
     use ed25519_dalek::{Keypair, Signer};
     use ed25519_dalek::ed25519::signature::Signature;
     use rand::rngs::OsRng;
@@ -55,6 +56,11 @@ mod test {
             rsa_public_key: rsa_public_key.clone(),
             signature: signature.clone(),
         };
+
+        //let user_request_json_str = serde_json::to_string(&user_signature).unwrap();
+        //println!("user request: {:?}", user_request_json_str);
+        //let json_file = &File::create("user_request.json").unwrap();
+        //serde_json::to_writer(json_file, &user_signature).unwrap();
 
         let is_valid = crypto::verify(&user_signature);
         assert!(is_valid);
