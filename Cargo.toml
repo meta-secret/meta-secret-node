@@ -1,6 +1,5 @@
 [workspace]
 members = [
-    "cli",
     "vault/vault-cli",
     "vault/vault-server"
 ]
@@ -8,5 +7,6 @@ members = [
 # Temporaly exclude wasm from the project workspace, since cyclic dependency issue in ahash 0.7.6
 exclude = [
     "web-cli/wasm",
-    "core"
+    "core",
+    "cli"
 ]
