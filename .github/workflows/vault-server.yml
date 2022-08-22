@@ -30,6 +30,7 @@ jobs:
       - name: build/push vault-server image
         working-directory: vault/vault-server
         run: |
+          cargo test
           cargo build --release
           docker build -t ghcr.io/meta-secret/$IMAGE_NAME:latest .
           docker push ghcr.io/meta-secret/$IMAGE_NAME:latest

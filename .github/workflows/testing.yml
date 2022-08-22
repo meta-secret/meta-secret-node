@@ -12,5 +12,6 @@ jobs:
     - uses: actions/checkout@v3
     - uses: ./.github/workflows/actions/project-cache
 
-    - name: run unit tests
+    - name: core unit tests
+      working-directory: core
       run: cargo test

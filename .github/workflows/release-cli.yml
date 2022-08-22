@@ -11,16 +11,18 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/workflows/actions/project-cache
+        with:
+          target-dir: cli/target
 
       - name: Build cli for linux
         working-directory: cli
         run: |
           rustup target add x86_64-unknown-linux-gnu
           cargo build --target x86_64-unknown-linux-gnu --release
-          cp config.yaml ../target/x86_64-unknown-linux-gnu/release/config.yaml
+          cp config.yaml target/x86_64-unknown-linux-gnu/release/config.yaml
 
       - name: Tarball For Linux Cli
-        working-directory: target/x86_64-unknown-linux-gnu/release
+        working-directory: cli/target/x86_64-unknown-linux-gnu/release
         run: |
           tar -cvzf meta-secret-cli-x86_64-unknown-linux-gnu.tar.gz config.yaml meta-secret-cli
 
@@ -28,13 +30,15 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: cli-linux-package
-          path: target/x86_64-unknown-linux-gnu/release/meta-secret-cli-x86_64-unknown-linux-gnu.tar.gz
+          path: cli/target/x86_64-unknown-linux-gnu/release/meta-secret-cli-x86_64-unknown-linux-gnu.tar.gz
 
   cli-windows-distribution:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/workflows/actions/project-cache
+        with:
+          target-dir: cli/target
 
       - name: Build cli for Windows
         working-directory: cli
@@ -44,10 +48,10 @@ jobs:
           sudo apt install -y gcc-mingw-w64
           rustup target add x86_64-pc-windows-gnu
           cargo build --target x86_64-pc-windows-gnu --release
-          cp config.yaml ../target/x86_64-pc-windows-gnu/release/config.yaml
+          cp config.yaml target/x86_64-pc-windows-gnu/release/config.yaml
 
       - name: Tarball For Windows Cli
-        working-directory: target/x86_64-pc-windows-gnu/release
+        working-directory: cli/target/x86_64-pc-windows-gnu/release
         run: |
           tar -cvzf meta-secret-cli-x86_64-pc-windows-gnu.tar.gz config.yaml meta-secret-cli.exe
 
@@ -55,22 +59,24 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: cli-windows-package
-          path: target/x86_64-pc-windows-gnu/release/meta-secret-cli-x86_64-pc-windows-gnu.tar.gz
+          path: cli/target/x86_64-pc-windows-gnu/release/meta-secret-cli-x86_64-pc-windows-gnu.tar.gz
 
   cli-macos-distribution:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/workflows/actions/project-cache
+        with:
+          target-dir: cli/target
 
       - name: Build cli for macOS
         working-directory: cli
         run: |
           cargo build --release
-          cp config.yaml ../target/release/config.yaml
+          cp config.yaml target/release/config.yaml
 
       - name: Tarball For macOS cli
-        working-directory: target/release
+        working-directory: cli/target/release
         run: |
           tar -cvzf meta-secret-cli-x86_64-apple-darwin.tar.gz config.yaml meta-secret-cli
 
@@ -78,7 +84,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: cli-macos-package
-          path: target/release/meta-secret-cli-x86_64-apple-darwin.tar.gz
+          path: cli/target/release/meta-secret-cli-x86_64-apple-darwin.tar.gz
 
   publish_release:
     runs-on: ubuntu-latest
