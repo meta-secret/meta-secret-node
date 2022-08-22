@@ -1,4 +1,4 @@
-name: "cli: deployment"
+name: "Cli: deployment"
 
 on:
   push:
