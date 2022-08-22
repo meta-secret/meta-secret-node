@@ -52,6 +52,7 @@ mod test {
 
         let user_signature = UserSignature {
             vault_name: vault_name.clone(),
+            device_name: "test_device".to_string(),
             public_key: base64::encode(keypair.public.as_bytes()),
             rsa_public_key: rsa_public_key.clone(),
             signature: signature.clone(),
@@ -70,6 +71,7 @@ mod test {
 
         let invalid_user_request = UserSignature {
             vault_name: String::from("another_user"),
+            device_name: "test_device".to_string(),
             public_key: base64::encode(keypair.public.as_bytes()),
             rsa_public_key: rsa_public_key.clone(),
             signature,

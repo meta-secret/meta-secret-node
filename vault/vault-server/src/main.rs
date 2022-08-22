@@ -94,6 +94,47 @@ async fn register(register_request: Json<UserSignature>) -> Json<RegistrationRes
     };
 }
 
+#[post("/decline", format = "json", data = "<join_request>")]
+async fn decline(join_request: Json<JoinRequest>) -> Json<String> {
+    let join_request = join_request.into_inner();
+    info!("Decline join request");
+
+    let vaults_col = get_vaults_col().await;
+
+    let vaults_filter = bson::doc! {
+        "vaultName": join_request.member.vault_name.clone()
+    };
+    let maybe_vault: Option<VaultDoc> = vaults_col
+        .find_one(vaults_filter, None)
+        .await.unwrap();
+
+    return match maybe_vault {
+        //user not found
+        None => {
+            panic!("Vault not found!");
+        }
+        Some(mut vault_doc) => {
+            if vault_doc.signatures.contains(&join_request.candidate) {
+                remove_candidate_from_pending_queue(&join_request, &mut vault_doc);
+                update_vault(join_request, vaults_col, vault_doc).await;
+                return Json("Candidate is already a member of the vault".to_string())
+            }
+
+            if vault_doc.signatures.contains(&join_request.member) {
+                if vault_doc.pending_joins.contains(&join_request.candidate) {
+                    if crypto::verify(&join_request.candidate) {
+                        //we can add a new user signature into a vault
+                        remove_candidate_from_pending_queue(&join_request, &mut vault_doc);
+                        update_vault(join_request, vaults_col, vault_doc).await;
+                    }
+                }
+            }
+
+            Json(String::from("Success"))
+        }
+    }
+}
+
 /// Accept join request
 /// example:
 /// curl -X POST http://localhost:8000/accept -H 'Content-Type: application/json' -d '{"member": {"vaultName":"test_vault","publicKey":"ZE+rI1+X7IsWkCbnTamDtfvvavrIp7UfAtpUVJXfBZ8=","signature":"OOshi5j4XmhxJfCtd3DiQkPIe87NxEc5TvSkqlma+0qxAEWKBpvy4HCR+yKll5p8R1ttKKL9UG9IO2rIIxm6DQ=="}, "candidate": {"vaultName":"test_vault","publicKey":"Mi6MUjlvim7r2Qz5Ug63ZnkXhaDoBWh3os/ItPzP3Aw=","signature":"haE9QJfSZyLYuKOP9dao0gI2i/bCnjFh6Zph72xgpftuTdzAOotnB5D8r8+IsPFWhqEIpKzEBGsrA59H433xBw=="}}'

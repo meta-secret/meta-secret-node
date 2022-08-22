@@ -6,6 +6,7 @@ use crate::db::VaultDoc;
 pub struct UserSignature {
     /// distributed vault, unique across entire system
     pub vault_name: String,
+    pub device_name: String,
 
     pub public_key: String,
     pub rsa_public_key: String,
