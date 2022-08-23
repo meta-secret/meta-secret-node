@@ -45,3 +45,12 @@ pub struct JoinRequest {
     pub member: UserSignature,
     pub candidate: UserSignature
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct EncryptedMessage {
+    /// Massage receiver who can decrypt message.
+    /// Message text encrypted with receivers' RSA public key
+    pub receiver: UserSignature,
+    pub encrypted_text: String
+}

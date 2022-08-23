@@ -1,16 +1,19 @@
 use serde::{Deserialize, Serialize};
+use crate::api::EncryptedMessage;
 use crate::UserSignature;
 
 pub struct DbSchema {
     pub db_name: String,
-    pub vault_col: String
+    pub vault_col: String,
+    pub secrets_distribution_col: String
 }
 
 impl Default for DbSchema {
     fn default() -> Self {
         DbSchema {
             db_name: "meta-secret".to_string(),
-            vault_col: "vaults".to_string()
+            vault_col: "vaults".to_string(),
+            secrets_distribution_col: "secrets_distribution".to_string()
         }
     }
 }
@@ -21,6 +24,12 @@ pub struct VaultDoc {
     pub vault_name: String,
     pub signatures: Vec<UserSignature>,
     pub pending_joins: Vec<UserSignature>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SecretDistributionDoc {
+    pub secret_message: EncryptedMessage,
 }
 
 /// https://github.com/testcontainers/testcontainers-rs/blob/dev/testcontainers/tests/images.rs
