@@ -1,13 +1,15 @@
+extern crate core;
 #[macro_use]
 extern crate rocket;
-extern crate core;
 
 use std::borrow::Borrow;
+use std::collections::HashMap;
 
 use ed25519_dalek::{Keypair, PublicKey, Signature, Verifier};
-use mongodb::{bson, Client, Collection};
+use mongodb::{bson, Client, Collection, Cursor};
 use mongodb::options::FindOneAndUpdateOptions;
 use rand::rngs::OsRng;
+use rocket::futures::StreamExt;
 use rocket::serde::json::Json;
 use serde::{Deserialize, Serialize};
 use tracing::info;
@@ -16,9 +18,9 @@ use tracing_subscriber::FmtSubscriber;
 
 use db::VaultDoc;
 
-use crate::api::{JoinRequest, RegistrationResponse, RegistrationStatus, UserSignature};
+use crate::api::{EncryptedMessage, JoinRequest, RegistrationResponse, RegistrationStatus, UserSignature};
 use crate::bson::Document;
-use crate::db::{DbSchema};
+use crate::db::{DbSchema, SecretDistributionDoc};
 
 mod db;
 mod crypto;
@@ -64,7 +66,7 @@ async fn register(register_request: Json<UserSignature>) -> Json<RegistrationRes
 
             Json(RegistrationResponse {
                 status: RegistrationStatus::Registered,
-                result: "Vault has been created".to_string()
+                result: "Vault has been created".to_string(),
             })
         }
         Some(mut vault_doc) => {
@@ -72,8 +74,8 @@ async fn register(register_request: Json<UserSignature>) -> Json<RegistrationRes
             if vault_doc.signatures.contains(&vault_request) {
                 return Json(RegistrationResponse {
                     status: RegistrationStatus::Registered,
-                    result: "Vault already exists and you are one of the members".to_string()
-                })
+                    result: "Vault already exists and you are one of the members".to_string(),
+                });
             }
 
             vault_doc.pending_joins.push(vault_request.clone());
@@ -88,7 +90,7 @@ async fn register(register_request: Json<UserSignature>) -> Json<RegistrationRes
 
             Json(RegistrationResponse {
                 status: RegistrationStatus::AlreadyExists,
-                result: "Added to pending requests".to_string()
+                result: "Added to pending requests".to_string(),
             })
         }
     };
@@ -117,7 +119,7 @@ async fn decline(join_request: Json<JoinRequest>) -> Json<String> {
             if vault_doc.signatures.contains(&join_request.candidate) {
                 remove_candidate_from_pending_queue(&join_request, &mut vault_doc);
                 update_vault(join_request, vaults_col, vault_doc).await;
-                return Json("Candidate is already a member of the vault".to_string())
+                return Json("Candidate is already a member of the vault".to_string());
             }
 
             if vault_doc.signatures.contains(&join_request.member) {
@@ -132,7 +134,7 @@ async fn decline(join_request: Json<JoinRequest>) -> Json<String> {
 
             Json(String::from("Success"))
         }
-    }
+    };
 }
 
 /// Accept join request
@@ -161,7 +163,7 @@ async fn accept(join_request: Json<JoinRequest>) -> Json<String> {
             if vault_doc.signatures.contains(&join_request.candidate) {
                 remove_candidate_from_pending_queue(&join_request, &mut vault_doc);
                 update_vault(join_request, vaults_col, vault_doc).await;
-                return Json("Candidate is already a member of the vault".to_string())
+                return Json("Candidate is already a member of the vault".to_string());
             }
 
             if vault_doc.signatures.contains(&join_request.member) {
@@ -179,7 +181,7 @@ async fn accept(join_request: Json<JoinRequest>) -> Json<String> {
 
             Json(String::from("Successful"))
         }
-    }
+    };
 }
 
 #[post("/getVault", format = "json", data = "<user_signature>")]
@@ -197,11 +199,59 @@ async fn get_vault(user_signature: Json<UserSignature>) -> Json<VaultDoc> {
     return Json(maybe_vault.unwrap());
 }
 
+#[post("/distribute", format = "json", data = "<encrypted_password_share>")]
+async fn distribute(encrypted_password_share: Json<EncryptedMessage>) -> Json<String> {
+    let db_schema = DbSchema::default();
+
+    let url = format!("mongodb://meta-secret-db:{}/", 27017);
+    let client: Client = Client::with_uri_str(&url).await.unwrap();
+    let db = client.database(db_schema.db_name.as_str());
+    let secrets_distribution_col = db.collection::<SecretDistributionDoc>(db_schema.secrets_distribution_col.as_str());
+
+    //create a new user:
+    let record = SecretDistributionDoc {
+        secret_message: encrypted_password_share.into_inner()
+    };
+
+    secrets_distribution_col.insert_one(record, None)
+        .await
+        .unwrap();
+
+    Json("OK".to_string())
+}
+
+#[post("/findShares", format = "json", data = "<user_signature>")]
+async fn find_shares(user_signature: Json<UserSignature>) -> Json<Vec<SecretDistributionDoc>> {
+    let db_schema = DbSchema::default();
+
+    let url = format!("mongodb://meta-secret-db:{}/", 27017);
+    let client: Client = Client::with_uri_str(&url).await.unwrap();
+    let db = client.database(db_schema.db_name.as_str());
+    let secrets_distribution_col = db.collection::<SecretDistributionDoc>(db_schema.secrets_distribution_col.as_str());
+
+    //find shares
+    let secret_shares_filter = bson::doc! {
+        "secret_message.receiver.rsa_public_key": user_signature.into_inner().rsa_public_key.clone()
+    };
+
+    let mut shares_docs = secrets_distribution_col
+        .find(secret_shares_filter, None)
+        .await
+        .unwrap();
+
+    let mut shares = vec![];
+    while let Some(share) = shares_docs.next().await {
+        shares.push(share.unwrap());
+    }
+
+    Json(shares)
+}
+
 async fn update_vault(join_request: JoinRequest, vaults_col: Collection<VaultDoc>, mut vault_doc: VaultDoc) {
     let candidate_vault = join_request.candidate.vault_name.clone();
     let vault_filter = bson::doc! {
-                            "vaultName": candidate_vault
-                         };
+        "vaultName": candidate_vault
+    };
 
     vaults_col.replace_one(vault_filter, vault_doc, None)
         .await
