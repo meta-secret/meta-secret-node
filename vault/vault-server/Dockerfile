@@ -1,6 +1,6 @@
 FROM rust:1.62
 
-COPY target/release/meta-secret-vault-server /vault-server/
+COPY meta-secret-vault-server /vault-server/
 COPY Rocket.toml /vault-server
 
 WORKDIR /vault-server

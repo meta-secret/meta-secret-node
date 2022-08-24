@@ -2,24 +2,18 @@ extern crate core;
 #[macro_use]
 extern crate rocket;
 
-use std::borrow::Borrow;
-use std::collections::HashMap;
-
-use ed25519_dalek::{Keypair, PublicKey, Signature, Verifier};
-use mongodb::{bson, Client, Collection, Cursor};
-use mongodb::options::FindOneAndUpdateOptions;
-use rand::rngs::OsRng;
+use mongodb::{bson, Client, Collection};
 use rocket::futures::StreamExt;
 use rocket::serde::json::Json;
-use serde::{Deserialize, Serialize};
-use tracing::info;
 use tracing_subscriber;
 use tracing_subscriber::FmtSubscriber;
 
 use db::VaultDoc;
 
-use crate::api::{EncryptedMessage, JoinRequest, RegistrationResponse, RegistrationStatus, UserSignature};
-use crate::bson::Document;
+use crate::api::{
+    EncryptedMessage, JoinRequest, RegistrationResponse, RegistrationStatus, UserSignature,
+    VaultInfo, VaultInfoStatus,
+};
 use crate::db::{DbSchema, SecretDistributionDoc};
 
 mod db;
@@ -110,24 +104,28 @@ async fn decline(join_request: Json<JoinRequest>) -> Json<String> {
         .find_one(vaults_filter, None)
         .await.unwrap();
 
+    let vault_name = join_request.candidate.clone().vault_name;
+    let candidate = join_request.candidate;
+
     return match maybe_vault {
         //user not found
         None => {
             panic!("Vault not found!");
         }
         Some(mut vault_doc) => {
-            if vault_doc.signatures.contains(&join_request.candidate) {
-                remove_candidate_from_pending_queue(&join_request, &mut vault_doc);
-                update_vault(join_request, vaults_col, vault_doc).await;
+            if vault_doc.signatures.contains(&candidate) {
+                remove_candidate_from_pending_queue(&candidate, &mut vault_doc);
+                update_vault(vault_name.clone(), vaults_col, vault_doc).await;
                 return Json("Candidate is already a member of the vault".to_string());
             }
 
             if vault_doc.signatures.contains(&join_request.member) {
-                if vault_doc.pending_joins.contains(&join_request.candidate) {
-                    if crypto::verify(&join_request.candidate) {
+                if vault_doc.pending_joins.contains(&candidate) {
+                    if crypto::verify(&candidate) {
                         //we can add a new user signature into a vault
-                        remove_candidate_from_pending_queue(&join_request, &mut vault_doc);
-                        update_vault(join_request, vaults_col, vault_doc).await;
+                        remove_candidate_from_pending_queue(&candidate, &mut vault_doc);
+                        vault_doc.declined_joins.push(candidate.clone());
+                        update_vault(vault_name.clone(), vaults_col, vault_doc).await;
                     }
                 }
             }
@@ -160,21 +158,22 @@ async fn accept(join_request: Json<JoinRequest>) -> Json<String> {
             panic!("Vault not found!");
         }
         Some(mut vault_doc) => {
-            if vault_doc.signatures.contains(&join_request.candidate) {
-                remove_candidate_from_pending_queue(&join_request, &mut vault_doc);
-                update_vault(join_request, vaults_col, vault_doc).await;
+            let candidate = join_request.candidate;
+            if vault_doc.signatures.contains(&candidate) {
+                remove_candidate_from_pending_queue(&candidate, &mut vault_doc);
+                update_vault(candidate.vault_name.clone(), vaults_col, vault_doc).await;
                 return Json("Candidate is already a member of the vault".to_string());
             }
 
             if vault_doc.signatures.contains(&join_request.member) {
-                if vault_doc.pending_joins.contains(&join_request.candidate) {
-                    if crypto::verify(&join_request.candidate) {
+                if vault_doc.pending_joins.contains(&candidate) {
+                    if crypto::verify(&candidate) {
                         //we can add a new user signature into a vault
-                        remove_candidate_from_pending_queue(&join_request, &mut vault_doc);
+                        remove_candidate_from_pending_queue(&candidate, &mut vault_doc);
 
-                        vault_doc.signatures.push(join_request.candidate.clone());
+                        vault_doc.signatures.push(candidate.clone());
 
-                        update_vault(join_request, vaults_col, vault_doc).await;
+                        update_vault(candidate.vault_name.clone(), vaults_col, vault_doc).await;
                     }
                 }
             }
@@ -185,7 +184,9 @@ async fn accept(join_request: Json<JoinRequest>) -> Json<String> {
 }
 
 #[post("/getVault", format = "json", data = "<user_signature>")]
-async fn get_vault(user_signature: Json<UserSignature>) -> Json<VaultDoc> {
+async fn get_vault(user_signature: Json<UserSignature>) -> Json<VaultInfo> {
+    let user_signature = user_signature.into_inner();
+
     let vaults_col = get_vaults_col().await;
     let vaults_filter = bson::doc! {
         "vaultName": user_signature.vault_name.clone()
@@ -196,7 +197,26 @@ async fn get_vault(user_signature: Json<UserSignature>) -> Json<VaultDoc> {
         .await
         .unwrap();
 
-    return Json(maybe_vault.unwrap());
+    return match maybe_vault {
+        None => {
+            Json(VaultInfo::unknown())
+        }
+        Some(vault) => {
+            if vault.signatures.contains(&user_signature) {
+                return Json(VaultInfo { status: VaultInfoStatus::Member, vault: Some(vault) });
+            }
+
+            if vault.pending_joins.contains(&user_signature) {
+                return Json(VaultInfo::pending());
+            }
+
+            if vault.declined_joins.contains(&user_signature) {
+                return Json(VaultInfo::declined());
+            }
+
+            Json(VaultInfo::unknown())
+        }
+    };
 }
 
 #[post("/distribute", format = "json", data = "<encrypted_password_share>")]
@@ -247,10 +267,9 @@ async fn find_shares(user_signature: Json<UserSignature>) -> Json<Vec<SecretDist
     Json(shares)
 }
 
-async fn update_vault(join_request: JoinRequest, vaults_col: Collection<VaultDoc>, mut vault_doc: VaultDoc) {
-    let candidate_vault = join_request.candidate.vault_name.clone();
+async fn update_vault(vault_name: String, vaults_col: Collection<VaultDoc>, mut vault_doc: VaultDoc) {
     let vault_filter = bson::doc! {
-        "vaultName": candidate_vault
+        "vaultName": vault_name
     };
 
     vaults_col.replace_one(vault_filter, vault_doc, None)
@@ -258,11 +277,11 @@ async fn update_vault(join_request: JoinRequest, vaults_col: Collection<VaultDoc
         .unwrap();
 }
 
-fn remove_candidate_from_pending_queue(join_request: &JoinRequest, vault_doc: &mut VaultDoc) {
+fn remove_candidate_from_pending_queue(candidate: &UserSignature, vault_doc: &mut VaultDoc) {
     let maybe_index = vault_doc
         .pending_joins
         .iter()
-        .position(|sig| *sig == join_request.candidate);
+        .position(|sig| *sig == *candidate);
 
     if let Some(index) = maybe_index {
         vault_doc.pending_joins
@@ -291,7 +310,9 @@ async fn main() -> Result<(), rocket::Error> {
     //.expect("TODO: can't configure logger");
 
     let _rocket = rocket::build()
-        .mount("/", routes![register, accept, get_vault])
+        .mount("/", routes![
+            register, accept, decline, get_vault, distribute, find_shares
+        ])
         .launch()
         .await?;
 

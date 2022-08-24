@@ -1,5 +1,4 @@
 use ed25519_dalek::{PublicKey, Signature, Verifier};
-use tracing::info;
 
 use crate::UserSignature;
 

@@ -24,6 +24,7 @@ pub struct VaultDoc {
     pub vault_name: String,
     pub signatures: Vec<UserSignature>,
     pub pending_joins: Vec<UserSignature>,
+    pub declined_joins: Vec<UserSignature>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
