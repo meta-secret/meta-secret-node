@@ -6,7 +6,7 @@ on:
     branches:
       - main
     paths:
-      - '.github/workflows/docker-vault-server.yml'
+      - '.github/workflows/vault-server.yml'
       - 'vault/vault-server/**'
 
 jobs:
