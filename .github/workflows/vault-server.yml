@@ -27,5 +27,5 @@ jobs:
       - name: build/push vault-server image
         working-directory: vault/vault-server
         run: |
-          ./build-scripts/docker-build.sh
+          build_scripts/docker-build.sh
           docker push ghcr.io/meta-secret/vault-server:latest
