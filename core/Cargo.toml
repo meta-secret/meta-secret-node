@@ -10,7 +10,7 @@ repository = "https://github.com/meta-secret/meta-secret-node/blob/main/core/REA
 readme = "README.md"
 
 [lib]
-crate-type = ["cdylib", "lib"]
+crate-type = ["cdylib", "lib", "staticlib"]
 name = "meta_secret_core"
 
 [dependencies]
