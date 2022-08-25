@@ -12,7 +12,6 @@ on:
 jobs:
   swift-lib:
     runs-on: macos-latest
-    needs: [core-deploy]
 
     env:
       CARGO_PROFILE_RELEASE_DEBUG: 1
