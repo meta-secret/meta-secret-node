@@ -1,3 +1,4 @@
+use mongodb::{Client, Collection, Database};
 use serde::{Deserialize, Serialize};
 use crate::api::EncryptedMessage;
 use crate::UserSignature;
@@ -31,6 +32,26 @@ pub struct VaultDoc {
 #[serde(rename_all = "camelCase")]
 pub struct SecretDistributionDoc {
     pub secret_message: EncryptedMessage,
+}
+
+pub struct Db {
+    pub db_schema: DbSchema,
+    pub url: String,
+    pub client: Client,
+    pub db: Database
+}
+
+impl Db {
+    pub fn distribution_col(&self) -> Collection<SecretDistributionDoc> {
+        let col_name = self.db_schema.secrets_distribution_col.as_str();
+        self.db
+            .collection::<SecretDistributionDoc>(col_name)
+    }
+
+    pub fn vaults_col(&self) -> Collection<VaultDoc> {
+        let col_name = self.db_schema.vault_col.as_str();
+        self.db.collection::<VaultDoc>(col_name)
+    }
 }
 
 /// https://github.com/testcontainers/testcontainers-rs/blob/dev/testcontainers/tests/images.rs

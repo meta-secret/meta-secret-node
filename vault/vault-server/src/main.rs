@@ -2,9 +2,10 @@ extern crate core;
 #[macro_use]
 extern crate rocket;
 
-use mongodb::{bson, Client, Collection};
+use mongodb::{bson, Client, Collection, Database};
 use rocket::futures::StreamExt;
 use rocket::serde::json::Json;
+use rocket::State;
 use tracing_subscriber;
 use tracing_subscriber::FmtSubscriber;
 
@@ -14,7 +15,7 @@ use crate::api::{
     EncryptedMessage, JoinRequest, RegistrationResponse, RegistrationStatus, UserSignature,
     VaultInfo, VaultInfoStatus,
 };
-use crate::db::{DbSchema, SecretDistributionDoc};
+use crate::db::{Db, DbSchema, SecretDistributionDoc};
 
 mod db;
 mod crypto;
@@ -27,12 +28,12 @@ mod api;
 /// second device: curl -X POST http://localhost:8000/register -H 'Content-Type: application/json' -d '{"vaultName":"test_vault","publicKey":"Mi6MUjlvim7r2Qz5Ug63ZnkXhaDoBWh3os/ItPzP3Aw=","signature":"haE9QJfSZyLYuKOP9dao0gI2i/bCnjFh6Zph72xgpftuTdzAOotnB5D8r8+IsPFWhqEIpKzEBGsrA59H433xBw=="}'
 ///
 #[post("/register", format = "json", data = "<register_request>")]
-async fn register(register_request: Json<UserSignature>) -> Json<RegistrationResponse> {
+async fn register(register_request: Json<UserSignature>, db: &State<Db>) -> Json<RegistrationResponse> {
     info!("Register a new vault or join");
 
-    let vaults_col = get_vaults_col().await;
+    let vaults_col = db.vaults_col();
 
-    let vault_request = register_request.into_inner();
+    let vault_request= register_request.into_inner();
 
     info!("verify: {:?}", vault_request);
     let is_valid = crypto::verify(&vault_request);
@@ -91,11 +92,11 @@ async fn register(register_request: Json<UserSignature>) -> Json<RegistrationRes
 }
 
 #[post("/decline", format = "json", data = "<join_request>")]
-async fn decline(join_request: Json<JoinRequest>) -> Json<String> {
+async fn decline(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<String> {
     let join_request = join_request.into_inner();
     info!("Decline join request");
 
-    let vaults_col = get_vaults_col().await;
+    let vaults_col = db.vaults_col();
 
     let vaults_filter = bson::doc! {
         "vaultName": join_request.member.vault_name.clone()
@@ -139,11 +140,11 @@ async fn decline(join_request: Json<JoinRequest>) -> Json<String> {
 /// example:
 /// curl -X POST http://localhost:8000/accept -H 'Content-Type: application/json' -d '{"member": {"vaultName":"test_vault","publicKey":"ZE+rI1+X7IsWkCbnTamDtfvvavrIp7UfAtpUVJXfBZ8=","signature":"OOshi5j4XmhxJfCtd3DiQkPIe87NxEc5TvSkqlma+0qxAEWKBpvy4HCR+yKll5p8R1ttKKL9UG9IO2rIIxm6DQ=="}, "candidate": {"vaultName":"test_vault","publicKey":"Mi6MUjlvim7r2Qz5Ug63ZnkXhaDoBWh3os/ItPzP3Aw=","signature":"haE9QJfSZyLYuKOP9dao0gI2i/bCnjFh6Zph72xgpftuTdzAOotnB5D8r8+IsPFWhqEIpKzEBGsrA59H433xBw=="}}'
 #[post("/accept", format = "json", data = "<join_request>")]
-async fn accept(join_request: Json<JoinRequest>) -> Json<String> {
+async fn accept(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<String> {
     let join_request = join_request.into_inner();
     info!("Accept join request");
 
-    let vaults_col = get_vaults_col().await;
+    let vaults_col = db.vaults_col();
 
     let vaults_filter = bson::doc! {
         "vaultName": join_request.member.vault_name.clone()
@@ -184,10 +185,10 @@ async fn accept(join_request: Json<JoinRequest>) -> Json<String> {
 }
 
 #[post("/getVault", format = "json", data = "<user_signature>")]
-async fn get_vault(user_signature: Json<UserSignature>) -> Json<VaultInfo> {
+async fn get_vault(db: &State<Db>, user_signature: Json<UserSignature>) -> Json<VaultInfo> {
     let user_signature = user_signature.into_inner();
 
-    let vaults_col = get_vaults_col().await;
+    let vaults_col = db.vaults_col();
     let vaults_filter = bson::doc! {
         "vaultName": user_signature.vault_name.clone()
     };
@@ -220,13 +221,8 @@ async fn get_vault(user_signature: Json<UserSignature>) -> Json<VaultInfo> {
 }
 
 #[post("/distribute", format = "json", data = "<encrypted_password_share>")]
-async fn distribute(encrypted_password_share: Json<EncryptedMessage>) -> Json<String> {
-    let db_schema = DbSchema::default();
-
-    let url = format!("mongodb://meta-secret-db:{}/", 27017);
-    let client: Client = Client::with_uri_str(&url).await.unwrap();
-    let db = client.database(db_schema.db_name.as_str());
-    let secrets_distribution_col = db.collection::<SecretDistributionDoc>(db_schema.secrets_distribution_col.as_str());
+async fn distribute(db: &State<Db>, encrypted_password_share: Json<EncryptedMessage>) -> Json<String> {
+    let secrets_distribution_col = db.distribution_col();
 
     //create a new user:
     let record = SecretDistributionDoc {
@@ -241,13 +237,8 @@ async fn distribute(encrypted_password_share: Json<EncryptedMessage>) -> Json<St
 }
 
 #[post("/findShares", format = "json", data = "<user_signature>")]
-async fn find_shares(user_signature: Json<UserSignature>) -> Json<Vec<SecretDistributionDoc>> {
-    let db_schema = DbSchema::default();
-
-    let url = format!("mongodb://meta-secret-db:{}/", 27017);
-    let client: Client = Client::with_uri_str(&url).await.unwrap();
-    let db = client.database(db_schema.db_name.as_str());
-    let secrets_distribution_col = db.collection::<SecretDistributionDoc>(db_schema.secrets_distribution_col.as_str());
+async fn find_shares(db: &State<Db>, user_signature: Json<UserSignature>) -> Json<Vec<SecretDistributionDoc>> {
+    let secrets_distribution_col = db.distribution_col();
 
     //find shares
     let secret_shares_filter = bson::doc! {
@@ -290,26 +281,22 @@ fn remove_candidate_from_pending_queue(candidate: &UserSignature, vault_doc: &mu
     }
 }
 
-async fn get_vaults_col() -> Collection<VaultDoc> {
+#[rocket::main]
+async fn main() -> Result<(), rocket::Error> {
     let db_schema = DbSchema::default();
 
     let url = format!("mongodb://meta-secret-db:{}/", 27017);
     let client: Client = Client::with_uri_str(&url).await.unwrap();
-    let db = client.database(db_schema.db_name.as_str());
-    let vaults_col = db.collection::<VaultDoc>(db_schema.vault_col.as_str());
-    vaults_col
-}
-
-#[rocket::main]
-async fn main() -> Result<(), rocket::Error> {
-    // install global collector configured based on RUST_LOG env var.
-    tracing_subscriber::fmt::init();
-    let subscriber = FmtSubscriber::new();
-    tracing::subscriber::set_global_default(subscriber)
-        .map_err(|_err| eprintln!("Unable to set global default subscriber"));
-    //.expect("TODO: can't configure logger");
+    let mongo_db = client.database(db_schema.db_name.as_str());
+    let db = Db {
+        db_schema,
+        url,
+        client,
+        db: mongo_db
+    };
 
     let _rocket = rocket::build()
+        .manage(db)
         .mount("/", routes![
             register, accept, decline, get_vault, distribute, find_shares
         ])
