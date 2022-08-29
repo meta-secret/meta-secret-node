@@ -1,4 +1,6 @@
 use serde::{Deserialize, Serialize};
+
+use crate::crypto::keys::{KeyManager, KeyPair};
 use crate::db::VaultDoc;
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
@@ -23,6 +25,19 @@ impl UserSignature {
             signatures: vec![self],
             pending_joins: vec![],
             declined_joins: vec![]
+        }
+    }
+
+    pub fn generate_default_for_tests() -> UserSignature {
+        let vault_name = "test_vault".to_string();
+
+        let key_manager = KeyManager::generate();
+        UserSignature {
+            vault_name: vault_name.clone(),
+            device_name: "test_device".to_string(),
+            public_key: key_manager.dsa.public_key_serialized(),
+            rsa_public_key: key_manager.rsa.public_key_serialized(),
+            signature: key_manager.dsa.sign(vault_name.clone().as_bytes())
         }
     }
 }

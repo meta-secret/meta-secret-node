@@ -1,5 +1,6 @@
 use mongodb::{Client, Collection, Database};
 use serde::{Deserialize, Serialize};
+
 use crate::api::EncryptedMessage;
 use crate::UserSignature;
 
@@ -57,7 +58,7 @@ impl Db {
 /// https://github.com/testcontainers/testcontainers-rs/blob/dev/testcontainers/tests/images.rs
 #[cfg(test)]
 mod test {
-    use mongodb::{bson, Client, options::ClientOptions};
+    use mongodb::{bson, Client};
     use testcontainers::{clients, images::mongo};
 
     #[ignore]
