@@ -60,16 +60,15 @@ impl Db {
 mod test {
     use mongodb::{bson, Client};
     use testcontainers::{clients, images::mongo};
+    use crate::{Db, DbSchema};
 
-    #[ignore]
-    //#[tokio::test]
+    #[tokio::test]
     async fn test_mongodb() {
         let _ = pretty_env_logger::try_init();
         let docker = clients::Cli::default();
         let node = docker.run(mongo::Mongo::default());
         let host_port = node.get_host_port_ipv4(27017);
-        let host_port = 27017;
-        let url = format!("mongodb://127.0.0.1:{}/", host_port);
+        let url = format!("mongodb://localhost:{}/", host_port);
 
         let client: Client = Client::with_uri_str(&url).await.unwrap();
         let db = client.database("some_db");
