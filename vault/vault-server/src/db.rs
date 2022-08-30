@@ -7,7 +7,8 @@ use crate::UserSignature;
 pub struct DbSchema {
     pub db_name: String,
     pub vault_col: String,
-    pub secrets_distribution_col: String
+    pub secrets_distribution_col: String,
+    pub passwords_col: String
 }
 
 impl Default for DbSchema {
@@ -15,7 +16,8 @@ impl Default for DbSchema {
         DbSchema {
             db_name: "meta-secret".to_string(),
             vault_col: "vaults".to_string(),
-            secrets_distribution_col: "secrets_distribution".to_string()
+            secrets_distribution_col: "secrets_distribution".to_string(),
+            passwords_col: "passwords".to_string()
         }
     }
 }
@@ -42,6 +44,14 @@ pub struct Db {
     pub db: Database
 }
 
+/// Meta information about password
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct MetaPasswordDoc {
+    pub id: String,
+    pub vault: VaultDoc
+}
+
 impl Db {
     pub fn distribution_col(&self) -> Collection<SecretDistributionDoc> {
         let col_name = self.db_schema.secrets_distribution_col.as_str();
@@ -53,6 +63,11 @@ impl Db {
         let col_name = self.db_schema.vault_col.as_str();
         self.db.collection::<VaultDoc>(col_name)
     }
+
+    pub fn passwords_col(&self) -> Collection<MetaPasswordDoc> {
+        let col_name = self.db_schema.passwords_col.as_str();
+        self.db.collection::<MetaPasswordDoc>(col_name)
+    }
 }
 
 /// https://github.com/testcontainers/testcontainers-rs/blob/dev/testcontainers/tests/images.rs
@@ -60,7 +75,6 @@ impl Db {
 mod test {
     use mongodb::{bson, Client};
     use testcontainers::{clients, images::mongo};
-    use crate::{Db, DbSchema};
 
     #[tokio::test]
     async fn test_mongodb() {

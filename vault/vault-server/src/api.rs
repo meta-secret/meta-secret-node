@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::crypto::keys::{KeyManager, KeyPair};
-use crate::db::VaultDoc;
+use crate::db::{MetaPasswordDoc, VaultDoc};
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -109,4 +109,17 @@ pub enum VaultInfoStatus {
     Declined,
     /// Device can't get any information about the vault, because its signature is not in members or pending list
     Unknown
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct MetaPasswordsResponse {
+    pub status: MetaPasswordsStatus,
+    pub passwords: Vec<MetaPasswordDoc>
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub enum MetaPasswordsStatus {
+    Ok, VaultNotFound
 }

@@ -4,23 +4,18 @@ use rocket::State;
 
 use crate::{Db, JoinRequest, UserSignature, VaultDoc};
 use crate::crypto::crypto;
+use crate::restful_api::commons;
 
 #[post("/decline", format = "json", data = "<join_request>")]
 pub async fn decline(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<String> {
     let join_request = join_request.into_inner();
     info!("Decline join request");
 
-    let vaults_col = db.vaults_col();
-
-    let vaults_filter = bson::doc! {
-        "vaultName": join_request.member.vault_name.clone()
-    };
-    let maybe_vault: Option<VaultDoc> = vaults_col
-        .find_one(vaults_filter, None)
-        .await.unwrap();
-
     let vault_name = join_request.candidate.clone().vault_name;
     let candidate = join_request.candidate;
+
+    let maybe_vault = commons::find_vault(db, &join_request.member)
+        .await;
 
     return match maybe_vault {
         //user not found
@@ -30,6 +25,8 @@ pub async fn decline(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<St
         Some(mut vault_doc) => {
             if vault_doc.signatures.contains(&candidate) {
                 remove_candidate_from_pending_queue(&candidate, &mut vault_doc);
+
+                let vaults_col = db.vaults_col();
                 update_vault(vault_name.clone(), vaults_col, vault_doc).await;
                 return Json("Candidate is already a member of the vault".to_string());
             }
@@ -38,6 +35,7 @@ pub async fn decline(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<St
                 if vault_doc.pending_joins.contains(&candidate) {
                     if crypto::verify(&candidate) {
                         //we can add a new user signature into a vault
+                        let vaults_col = db.vaults_col();
                         remove_candidate_from_pending_queue(&candidate, &mut vault_doc);
                         vault_doc.declined_joins.push(candidate.clone());
                         update_vault(vault_name.clone(), vaults_col, vault_doc).await;
@@ -58,14 +56,8 @@ pub async fn accept(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<Str
     let join_request = join_request.into_inner();
     info!("Accept join request");
 
-    let vaults_col = db.vaults_col();
-
-    let vaults_filter = bson::doc! {
-        "vaultName": join_request.member.vault_name.clone()
-    };
-    let maybe_vault: Option<VaultDoc> = vaults_col
-        .find_one(vaults_filter, None)
-        .await.unwrap();
+    let maybe_vault = commons::find_vault(db, &join_request.member)
+        .await;
 
     return match maybe_vault {
         //user not found
@@ -76,6 +68,7 @@ pub async fn accept(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<Str
             let candidate = join_request.candidate;
             if vault_doc.signatures.contains(&candidate) {
                 remove_candidate_from_pending_queue(&candidate, &mut vault_doc);
+                let vaults_col = db.vaults_col();
                 update_vault(candidate.vault_name.clone(), vaults_col, vault_doc).await;
                 return Json("Candidate is already a member of the vault".to_string());
             }
@@ -87,7 +80,7 @@ pub async fn accept(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<Str
                         remove_candidate_from_pending_queue(&candidate, &mut vault_doc);
 
                         vault_doc.signatures.push(candidate.clone());
-
+                        let vaults_col = db.vaults_col();
                         update_vault(candidate.vault_name.clone(), vaults_col, vault_doc).await;
                     }
                 }

@@ -40,17 +40,3 @@ impl DigitalSignature {
             .verify(self.message.as_bytes(), &self.sig);
     }
 }
-
-
-#[cfg(test)]
-mod test {
-    use crate::crypto::digital_signature::DigitalSignatureRaw;
-    use crate::UserSignature;
-
-    #[test]
-    fn test() {
-        let user_sig = UserSignature::generate_default_for_tests();
-        let sig = DigitalSignatureRaw::parse(&user_sig);
-        let sig = sig.transform();
-    }
-}

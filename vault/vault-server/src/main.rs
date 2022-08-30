@@ -41,7 +41,9 @@ async fn main() -> Result<(), rocket::Error> {
             restful_api::membership::decline,
             restful_api::vault::get_vault,
             restful_api::password::distribute,
-            restful_api::password::find_shares
+            restful_api::password::find_shares,
+            restful_api::password::passwords,
+            restful_api::password::add_meta_password
         ])
         .launch()
         .await?;
