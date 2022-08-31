@@ -4,6 +4,7 @@ extern crate rocket;
 
 use mongodb::Client;
 use rocket::futures::StreamExt;
+use rocket::serde::json::Json;
 
 use db::VaultDoc;
 
@@ -18,6 +19,11 @@ mod db;
 mod crypto;
 mod api;
 mod restful_api;
+
+#[get("/")]
+pub async fn hi() -> String {
+    "Hello Meta World!".to_string()
+}
 
 #[rocket::main]
 async fn main() -> Result<(), rocket::Error> {
@@ -36,6 +42,7 @@ async fn main() -> Result<(), rocket::Error> {
     let _rocket = rocket::build()
         .manage(db)
         .mount("/", routes![
+            hi,
             restful_api::register::register,
             restful_api::membership::accept,
             restful_api::membership::decline,
