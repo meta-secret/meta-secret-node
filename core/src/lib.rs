@@ -1,5 +1,6 @@
 pub mod shared_secret;
 
+use std::error::Error;
 use std::ffi::OsStr;
 use std::fs;
 use std::fs::File;
@@ -78,21 +79,21 @@ fn load_users_shares() -> Vec<UserShareDto> {
     users_shares_dto
 }
 
-pub fn split(secret: String, config: SharedSecretConfig) {
+pub fn split(secret: String, config: SharedSecretConfig) -> Result<(), Box<dyn Error>> {
     let plain_text = PlainText::from_str(secret);
     let shared_secret = SharedSecretEncryption::new(config, &plain_text);
 
-    fs::create_dir_all("secrets").unwrap();
+    fs::create_dir_all("secrets")?;
 
     for share_index in 0..config.number_of_shares {
         let share: UserShareDto = shared_secret.get_share(share_index);
-        let share_json = serde_json::to_string_pretty(&share).unwrap();
+        let share_json = serde_json::to_string_pretty(&share)?;
 
         // Save the JSON structure into the output file
         fs::write(
             format!("secrets/shared-secret-{share_index}.json"),
             share_json.clone(),
-        ).unwrap();
+        )?;
 
         //generate qr code
         generate_qr_code(
@@ -100,6 +101,8 @@ pub fn split(secret: String, config: SharedSecretConfig) {
             format!("secrets/shared-secret-{share_index}.png").as_str(),
         )
     }
+
+    Ok(())
 }
 
 pub fn generate_qr_code(data: &str, path: &str) {
