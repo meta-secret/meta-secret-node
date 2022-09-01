@@ -32,7 +32,4 @@ jobs:
       - name: Build cli for linux
         working-directory: cli
         run: |
-          cargo test
-          cargo build --target x86_64-unknown-linux-gnu --release
-          docker build -t ghcr.io/meta-secret/cli:latest .
-          docker push ghcr.io/meta-secret/cli:latest       
+          make docker_push       

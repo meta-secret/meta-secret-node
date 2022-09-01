@@ -1,6 +1,13 @@
-FROM alpine:3.15
+# https://docs.docker.com/develop/develop-images/multistage-build/
+FROM rust:1.63 as build
+COPY ./ /build
+WORKDIR /build
+RUN cargo test
+RUN cargo build --release
 
-COPY target/x86_64-unknown-linux-gnu/release/meta-secret-cli /app/meta-secret-cli
+FROM ubuntu:22.10
+
+COPY --from=build /build/target/release/meta-secret-cli /app/meta-secret-cli
 COPY config.yaml /app/config.yaml
 
 WORKDIR /app
