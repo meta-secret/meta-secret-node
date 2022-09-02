@@ -1,26 +1,28 @@
 use mongodb::bson;
-use rand::{Rng, thread_rng};
 use rand::distributions::Alphanumeric;
+use rand::{thread_rng, Rng};
 use rocket::serde::json::Json;
 use rocket::State;
 
-use crate::{
-    Db, EncryptedMessage, SecretDistributionDoc, StreamExt, UserSignature
-};
 use crate::api::{MetaPasswordsResponse, MetaPasswordsStatus};
 use crate::db::MetaPasswordDoc;
 use crate::restful_api::commons;
+use crate::{Db, EncryptedMessage, SecretDistributionDoc, StreamExt, UserSignature};
 
 #[post("/distribute", format = "json", data = "<encrypted_password_share>")]
-pub async fn distribute(db: &State<Db>, encrypted_password_share: Json<EncryptedMessage>) -> Json<String> {
+pub async fn distribute(
+    db: &State<Db>,
+    encrypted_password_share: Json<EncryptedMessage>,
+) -> Json<String> {
     let secrets_distribution_col = db.distribution_col();
 
     //create a new user:
     let record = SecretDistributionDoc {
-        secret_message: encrypted_password_share.into_inner()
+        secret_message: encrypted_password_share.into_inner(),
     };
 
-    secrets_distribution_col.insert_one(record, None)
+    secrets_distribution_col
+        .insert_one(record, None)
         .await
         .unwrap();
 
@@ -28,7 +30,10 @@ pub async fn distribute(db: &State<Db>, encrypted_password_share: Json<Encrypted
 }
 
 #[post("/findShares", format = "json", data = "<user_signature>")]
-pub async fn find_shares(db: &State<Db>, user_signature: Json<UserSignature>) -> Json<Vec<SecretDistributionDoc>> {
+pub async fn find_shares(
+    db: &State<Db>,
+    user_signature: Json<UserSignature>,
+) -> Json<Vec<SecretDistributionDoc>> {
     let secrets_distribution_col = db.distribution_col();
 
     //find shares
@@ -50,19 +55,20 @@ pub async fn find_shares(db: &State<Db>, user_signature: Json<UserSignature>) ->
 }
 
 #[post("/getMetaPasswords", format = "json", data = "<user_signature>")]
-pub async fn passwords(db: &State<Db>, user_signature: Json<UserSignature>) -> Json<MetaPasswordsResponse> {
+pub async fn passwords(
+    db: &State<Db>,
+    user_signature: Json<UserSignature>,
+) -> Json<MetaPasswordsResponse> {
     let user_signature = user_signature.into_inner();
     let maybe_vault = commons::find_vault(db, &user_signature).await;
 
     let passwords_col = db.passwords_col();
 
     match maybe_vault {
-        None => {
-            Json(MetaPasswordsResponse {
-                status: MetaPasswordsStatus::VaultNotFound,
-                passwords: vec![]
-            })
-        }
+        None => Json(MetaPasswordsResponse {
+            status: MetaPasswordsStatus::VaultNotFound,
+            passwords: vec![],
+        }),
         Some(vault) => {
             let password_by_vault_filter = bson::doc! {
                 "vault.vaultName": vault.vault_name.clone()
@@ -80,24 +86,25 @@ pub async fn passwords(db: &State<Db>, user_signature: Json<UserSignature>) -> J
 
             Json(MetaPasswordsResponse {
                 status: MetaPasswordsStatus::Ok,
-                passwords: meta_passwords
+                passwords: meta_passwords,
             })
         }
     }
 }
 
 #[post("/addMetaPassword", format = "json", data = "<user_signature>")]
-pub async fn add_meta_password(db: &State<Db>, user_signature: Json<UserSignature>) -> Json<MetaPasswordsResponse> {
+pub async fn add_meta_password(
+    db: &State<Db>,
+    user_signature: Json<UserSignature>,
+) -> Json<MetaPasswordsResponse> {
     let user_signature = user_signature.into_inner();
     let maybe_vault = commons::find_vault(db, &user_signature).await;
 
     match maybe_vault {
-        None => {
-            Json(MetaPasswordsResponse {
-                status: MetaPasswordsStatus::VaultNotFound,
-                passwords: vec![]
-            })
-        }
+        None => Json(MetaPasswordsResponse {
+            status: MetaPasswordsStatus::VaultNotFound,
+            passwords: vec![],
+        }),
         Some(vault) => {
             let rand_id: String = thread_rng()
                 .sample_iter(&Alphanumeric)
@@ -105,19 +112,14 @@ pub async fn add_meta_password(db: &State<Db>, user_signature: Json<UserSignatur
                 .map(char::from)
                 .collect();
 
-            let pass = MetaPasswordDoc {
-                id: rand_id,
-                vault
-            };
+            let pass = MetaPasswordDoc { id: rand_id, vault };
 
             let passwords_col = db.passwords_col();
-            passwords_col.insert_one(pass.clone(), None)
-                .await
-                .unwrap();
+            passwords_col.insert_one(pass.clone(), None).await.unwrap();
 
             Json(MetaPasswordsResponse {
                 status: MetaPasswordsStatus::Ok,
-                passwords: vec![pass]
+                passwords: vec![pass],
             })
         }
     }
@@ -127,7 +129,5 @@ pub async fn add_meta_password(db: &State<Db>, user_signature: Json<UserSignatur
 mod test {
 
     #[test]
-    fn yay() {
-
-    }
+    fn yay() {}
 }

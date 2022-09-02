@@ -1,15 +1,15 @@
 pub mod shared_secret;
 
-use std::ffi::OsStr;
-use std::{fs, io};
-use std::fs::File;
-use std::io::BufReader;
-use std::path::Path;
 use crate::shared_secret::data_block::common::SharedSecretConfig;
 use crate::shared_secret::data_block::shared_secret_data_block::SharedSecretBlock;
 use crate::shared_secret::shared_secret::{
     PlainText, SharedSecret, SharedSecretEncryption, UserShareDto,
 };
+use std::ffi::OsStr;
+use std::fs::File;
+use std::io::BufReader;
+use std::path::Path;
+use std::{fs, io};
 
 use image;
 use rqrr;
@@ -37,9 +37,7 @@ pub fn recover_from_shares(users_shares: Vec<UserShareDto>) -> Result<PlainText,
         secret_blocks.push(secret_block);
     }
 
-    let secret = SharedSecret {
-        secret_blocks
-    };
+    let secret = SharedSecret { secret_blocks };
 
     return secret.recover();
 }
@@ -50,25 +48,21 @@ pub fn recover() -> Result<PlainText, String> {
 }
 
 fn load_users_shares() -> Vec<UserShareDto> {
-//read json files
+    //read json files
     let shares = fs::read_dir("secrets").unwrap();
 
     let mut users_shares_dto: Vec<UserShareDto> = vec![];
     for secret_share_file in shares {
         let file_path = secret_share_file.unwrap().path();
 
-        let extension = file_path
-            .extension()
-            .and_then(OsStr::to_str)
-            .unwrap();
+        let extension = file_path.extension().and_then(OsStr::to_str).unwrap();
 
         if !extension.eq("json") {
             continue;
         }
 
         // Open the file in read-only mode with buffer.
-        let file = File::open(file_path)
-            .expect("Unable to open file");
+        let file = File::open(file_path).expect("Unable to open file");
         let reader = BufReader::new(file);
 
         // Read the JSON contents of the file as an instance of `User`.
@@ -81,9 +75,15 @@ fn load_users_shares() -> Vec<UserShareDto> {
 #[derive(Debug, thiserror::Error)]
 pub enum SplitError {
     #[error("Secrets directory can't be created")]
-    SecretsDirectoryError { #[from] source: io::Error },
+    SecretsDirectoryError {
+        #[from]
+        source: io::Error,
+    },
     #[error("User secret share: invalid format (can't be serialized into json)")]
-    UserShareJsonSerializationError { #[from] source: serde_json::Error }
+    UserShareJsonSerializationError {
+        #[from]
+        source: serde_json::Error,
+    },
 }
 
 pub fn split(secret: String, config: SharedSecretConfig) -> Result<(), SplitError> {
@@ -115,8 +115,7 @@ pub fn split(secret: String, config: SharedSecretConfig) -> Result<(), SplitErro
 pub fn generate_qr_code(data: &str, path: &str) {
     use qrcode_generator::QrCodeEcc;
 
-    qrcode_generator::to_png_to_file(data, QrCodeEcc::High, data.len(), path)
-        .unwrap();
+    qrcode_generator::to_png_to_file(data, QrCodeEcc::High, data.len(), path).unwrap();
 }
 
 pub fn convert_qr_images_to_json_files() {
@@ -126,10 +125,7 @@ pub fn convert_qr_images_to_json_files() {
     for secret_share_file in shares {
         let file_path = secret_share_file.unwrap().path();
 
-        let extension = file_path
-            .extension()
-            .and_then(OsStr::to_str)
-            .unwrap();
+        let extension = file_path.extension().and_then(OsStr::to_str).unwrap();
 
         if !extension.eq("png") {
             continue;
@@ -139,7 +135,8 @@ pub fn convert_qr_images_to_json_files() {
         fs::write(
             format!("secrets/shared-secret-{share_index}.json"),
             json_str,
-        ).unwrap();
+        )
+        .unwrap();
 
         share_index += 1;
     }

@@ -1,5 +1,5 @@
-use ed25519_dalek::{Keypair, Signer};
 use ed25519_dalek::ed25519::signature::Signature;
+use ed25519_dalek::{Keypair, Signer};
 use openssl::pkey::{PKey, Private};
 use openssl::rsa::Rsa;
 use rand::rngs::OsRng;
@@ -33,8 +33,7 @@ impl KeyPair for RsaKeyPair {
     }
 
     fn generate_default_for_tests() -> Self {
-        let keypair = Rsa::generate(0 as u32)
-            .unwrap();
+        let keypair = Rsa::generate(0 as u32).unwrap();
         let keypair = PKey::from_rsa(keypair).unwrap();
 
         RsaKeyPair { keypair }
@@ -91,8 +90,8 @@ impl KeyManager {
 
 #[cfg(test)]
 mod test {
-    use ed25519_dalek::{Signer};
     use crate::crypto::keys::{DsaKeyPair, KeyPair};
+    use ed25519_dalek::Signer;
 
     #[test]
     fn test_dsa() {

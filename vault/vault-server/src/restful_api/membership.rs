@@ -2,9 +2,9 @@ use mongodb::{bson, Collection};
 use rocket::serde::json::Json;
 use rocket::State;
 
-use crate::{Db, JoinRequest, UserSignature, VaultDoc};
 use crate::crypto::crypto;
 use crate::restful_api::commons;
+use crate::{Db, JoinRequest, UserSignature, VaultDoc};
 
 #[post("/decline", format = "json", data = "<join_request>")]
 pub async fn decline(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<String> {
@@ -14,8 +14,7 @@ pub async fn decline(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<St
     let vault_name = join_request.candidate.clone().vault_name;
     let candidate = join_request.candidate;
 
-    let maybe_vault = commons::find_vault(db, &join_request.member)
-        .await;
+    let maybe_vault = commons::find_vault(db, &join_request.member).await;
 
     return match maybe_vault {
         //user not found
@@ -56,8 +55,7 @@ pub async fn accept(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<Str
     let join_request = join_request.into_inner();
     info!("Accept join request");
 
-    let maybe_vault = commons::find_vault(db, &join_request.member)
-        .await;
+    let maybe_vault = commons::find_vault(db, &join_request.member).await;
 
     return match maybe_vault {
         //user not found
@@ -98,7 +96,8 @@ fn remove_candidate_from_pending_queue(candidate: &UserSignature, vault_doc: &mu
         .position(|sig| *sig == *candidate);
 
     if let Some(index) = maybe_index {
-        vault_doc.pending_joins
+        vault_doc
+            .pending_joins
             //remove signature from pending
             .remove(index);
     }
@@ -109,7 +108,8 @@ async fn update_vault(vault_name: String, vaults_col: Collection<VaultDoc>, vaul
         "vaultName": vault_name
     };
 
-    vaults_col.replace_one(vault_filter, vault_doc, None)
+    vaults_col
+        .replace_one(vault_filter, vault_doc, None)
         .await
         .unwrap();
 }

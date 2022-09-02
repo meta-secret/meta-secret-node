@@ -2,24 +2,22 @@ use serde::{Deserialize, Serialize};
 use serde_big_array::BigArray;
 
 use crate::shared_secret::data_block::common;
-use crate::shared_secret::data_block::common::{
-    BlockMetaData, DataBlockParserError
-};
+use crate::shared_secret::data_block::common::{BlockMetaData, DataBlockParserError};
 
 pub const SECRET_DATA_BLOCK_SIZE: usize = 113;
 
 //block of data after converting PlainDataBlock to a shared secret
-#[derive(Clone, Debug)]
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct EncryptedDataBlock {
     #[serde(with = "BigArray")]
     pub data: [u8; SECRET_DATA_BLOCK_SIZE],
 }
 
 impl EncryptedDataBlock {
-
-    pub fn from_bytes(meta_data: &BlockMetaData, data: &[u8]) -> Result<Self, DataBlockParserError> {
-
+    pub fn from_bytes(
+        meta_data: &BlockMetaData,
+        data: &[u8],
+    ) -> Result<Self, DataBlockParserError> {
         // An array can't be empty
         if data == [0; SECRET_DATA_BLOCK_SIZE] {
             return Err(DataBlockParserError::Invalid);

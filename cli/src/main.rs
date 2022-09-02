@@ -6,12 +6,12 @@ use std::string::FromUtf8Error;
 
 use anyhow::{Context, Result};
 use clap::{ArgEnum, Parser, Subcommand};
-use meta_secret_core::{convert_qr_images_to_json_files, recover, split};
 use meta_secret_core::shared_secret::data_block::common::SharedSecretConfig;
+use meta_secret_core::{convert_qr_images_to_json_files, recover, split};
 use serde::{Deserialize, Serialize};
 
-use thiserror::Error;
 use crate::RestoreError::RecoveryError;
+use thiserror::Error;
 
 #[derive(Debug, Parser)]
 #[clap(about = "Meta Secret Command Line Application", long_about = None)]
@@ -25,11 +25,11 @@ struct CmdLine {
 enum Command {
     Split {
         #[clap(short, long)]
-        secret: String
+        secret: String,
     },
     Restore {
         #[clap(short, long, arg_enum)]
-        from: RestoreType
+        from: RestoreType,
     },
 }
 
@@ -52,7 +52,6 @@ fn main() -> Result<()> {
     let config_file = File::open("config.yaml")
         .with_context(|| "Error reading config.yaml. Please check that file exists.")?;
 
-
     let app_config: MetaSecretConfig = serde_yaml::from_reader(config_file)
         .with_context(|| "Error parsing config file. Invalid yaml format")?;
 
@@ -60,23 +59,19 @@ fn main() -> Result<()> {
 
     match args.command {
         Command::Split { secret } => {
-            split(secret, shared_secret_config)
-                .with_context(|| "Error splitting password")?
+            split(secret, shared_secret_config).with_context(|| "Error splitting password")?
         }
-        Command::Restore { from } => {
-            match from {
-                RestoreType::Qr => {
-                    convert_qr_images_to_json_files();
-                    let password = restore_from_json()
-                        .with_context(|| "Can't restore password")?;
-                    println!("Restored password: {:?}", password);
-                }
-                RestoreType::Json => {
-                    let password = restore_from_json()?;
-                    println!("Restored password: {:?}", password);
-                }
+        Command::Restore { from } => match from {
+            RestoreType::Qr => {
+                convert_qr_images_to_json_files();
+                let password = restore_from_json().with_context(|| "Can't restore password")?;
+                println!("Restored password: {:?}", password);
             }
-        }
+            RestoreType::Json => {
+                let password = restore_from_json()?;
+                println!("Restored password: {:?}", password);
+            }
+        },
     }
 
     println!("Finished");
@@ -89,12 +84,14 @@ pub enum RestoreError {
     #[error("Unrecoverable data. Underlying error:\n {0}")]
     RecoveryError(String),
     #[error("Error parse binary data. Non utf8 encoding.")]
-    ParsingError { #[from] source: FromUtf8Error },
+    ParsingError {
+        #[from]
+        source: FromUtf8Error,
+    },
 }
 
 fn restore_from_json() -> Result<String, RestoreError> {
-    let text = recover()
-        .map_err(|err_msg| RecoveryError(err_msg))?;
+    let text = recover().map_err(|err_msg| RecoveryError(err_msg))?;
     let password = String::from_utf8(text.text)?;
     Ok(password)
 }

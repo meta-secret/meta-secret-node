@@ -8,7 +8,7 @@ pub struct DbSchema {
     pub db_name: String,
     pub vault_col: String,
     pub secrets_distribution_col: String,
-    pub passwords_col: String
+    pub passwords_col: String,
 }
 
 impl Default for DbSchema {
@@ -17,7 +17,7 @@ impl Default for DbSchema {
             db_name: "meta-secret".to_string(),
             vault_col: "vaults".to_string(),
             secrets_distribution_col: "secrets_distribution".to_string(),
-            passwords_col: "passwords".to_string()
+            passwords_col: "passwords".to_string(),
         }
     }
 }
@@ -41,7 +41,7 @@ pub struct Db {
     pub db_schema: DbSchema,
     pub url: String,
     pub client: Client,
-    pub db: Database
+    pub db: Database,
 }
 
 /// Meta information about password
@@ -49,14 +49,13 @@ pub struct Db {
 #[serde(rename_all = "camelCase")]
 pub struct MetaPasswordDoc {
     pub id: String,
-    pub vault: VaultDoc
+    pub vault: VaultDoc,
 }
 
 impl Db {
     pub fn distribution_col(&self) -> Collection<SecretDistributionDoc> {
         let col_name = self.db_schema.secrets_distribution_col.as_str();
-        self.db
-            .collection::<SecretDistributionDoc>(col_name)
+        self.db.collection::<SecretDistributionDoc>(col_name)
     }
 
     pub fn vaults_col(&self) -> Collection<VaultDoc> {

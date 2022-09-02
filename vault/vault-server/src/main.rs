@@ -15,9 +15,9 @@ use crate::api::{
 use crate::crypto::digital_signature::DigitalSignatureRaw;
 use crate::db::{Db, DbSchema, SecretDistributionDoc};
 
-mod db;
-mod crypto;
 mod api;
+mod crypto;
+mod db;
 mod restful_api;
 
 #[get("/")]
@@ -36,22 +36,25 @@ async fn main() -> Result<(), rocket::Error> {
         db_schema,
         url,
         client,
-        db: mongo_db
+        db: mongo_db,
     };
 
     let _rocket = rocket::build()
         .manage(db)
-        .mount("/", routes![
-            hi,
-            restful_api::register::register,
-            restful_api::membership::accept,
-            restful_api::membership::decline,
-            restful_api::vault::get_vault,
-            restful_api::password::distribute,
-            restful_api::password::find_shares,
-            restful_api::password::passwords,
-            restful_api::password::add_meta_password
-        ])
+        .mount(
+            "/",
+            routes![
+                hi,
+                restful_api::register::register,
+                restful_api::membership::accept,
+                restful_api::membership::decline,
+                restful_api::vault::get_vault,
+                restful_api::password::distribute,
+                restful_api::password::find_shares,
+                restful_api::password::passwords,
+                restful_api::password::add_meta_password
+            ],
+        )
         .launch()
         .await?;
 

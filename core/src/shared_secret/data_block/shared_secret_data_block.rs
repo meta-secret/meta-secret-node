@@ -1,8 +1,6 @@
 use shamirsecretsharing as sss;
 
-use crate::shared_secret::data_block::common::{
-    BlockMetaData, SharedSecretConfig,
-};
+use crate::shared_secret::data_block::common::{BlockMetaData, SharedSecretConfig};
 use crate::shared_secret::data_block::encrypted_data_block::EncryptedDataBlock;
 use crate::shared_secret::data_block::plain_data_block::PlainDataBlock;
 
@@ -20,7 +18,8 @@ impl SharedSecretBlock {
             &data_block.data,
             config.number_of_shares as u8,
             config.threshold as u8,
-        ).unwrap();
+        )
+        .unwrap();
 
         let mut shares: Vec<EncryptedDataBlock> = vec![];
         for raw_share in raw_shares {
@@ -30,7 +29,11 @@ impl SharedSecretBlock {
             shares.push(share);
         }
 
-        return SharedSecretBlock { config, meta_data: data_block.meta_data, shares };
+        return SharedSecretBlock {
+            config,
+            meta_data: data_block.meta_data,
+            shares,
+        };
     }
 }
 
@@ -42,8 +45,11 @@ mod test {
 
     #[test]
     fn test_shared_secret_block() {
-        let cfg = SharedSecretConfig { number_of_shares: 3, threshold: 2 };
-        let data_block = PlainDataBlock::from_bytes(&[1,2,3]).unwrap();
+        let cfg = SharedSecretConfig {
+            number_of_shares: 3,
+            threshold: 2,
+        };
+        let data_block = PlainDataBlock::from_bytes(&[1, 2, 3]).unwrap();
         let shared_secret = SharedSecretBlock::create(cfg, data_block);
 
         println!("share1: {:?}", shared_secret.shares[0].data);

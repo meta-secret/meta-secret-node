@@ -22,21 +22,24 @@ impl DigitalSignatureRaw {
         let sig = user_sig.signature.as_bytes();
         let sig = base64::decode(sig).unwrap();
 
-        DigitalSignatureRaw { message: user_sig.vault_name.clone(), pub_key, sig }
+        DigitalSignatureRaw {
+            message: user_sig.vault_name.clone(),
+            pub_key,
+            sig,
+        }
     }
 
     pub fn transform(&self) -> DigitalSignature {
         DigitalSignature {
             message: self.message.clone(),
             pub_key: PublicKey::from_bytes(self.pub_key.as_slice()).unwrap(),
-            sig:  Signature::from_bytes(self.sig.as_slice()).unwrap()
+            sig: Signature::from_bytes(self.sig.as_slice()).unwrap(),
         }
     }
 }
 
 impl DigitalSignature {
     pub fn verify(&self) -> Result<(), SignatureError> {
-        return self.pub_key
-            .verify(self.message.as_bytes(), &self.sig);
+        return self.pub_key.verify(self.message.as_bytes(), &self.sig);
     }
 }

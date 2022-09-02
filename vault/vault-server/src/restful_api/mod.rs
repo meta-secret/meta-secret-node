@@ -1,5 +1,5 @@
-pub mod register;
-pub mod membership;
-pub mod vault;
-pub mod password;
 pub mod commons;
+pub mod membership;
+pub mod password;
+pub mod register;
+pub mod vault;

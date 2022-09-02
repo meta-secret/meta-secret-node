@@ -1,7 +1,5 @@
 use crate::shared_secret::data_block::common;
-use crate::shared_secret::data_block::common::{
-    BlockMetaData, DataBlockParserError
-};
+use crate::shared_secret::data_block::common::{BlockMetaData, DataBlockParserError};
 
 /**
  * 64 byte chunk of data that will be split by shamir secret sharing method
@@ -16,9 +14,7 @@ pub struct PlainDataBlock {
 
 impl PlainDataBlock {
     pub fn from_bytes(data: &[u8]) -> Result<Self, DataBlockParserError> {
-        let meta_data = BlockMetaData {
-            size: data.len()
-        };
+        let meta_data = BlockMetaData { size: data.len() };
 
         if data == [0; PLAIN_DATA_BLOCK_SIZE] {
             return Err(DataBlockParserError::Invalid);
@@ -29,9 +25,7 @@ impl PlainDataBlock {
                 Err(DataBlockParserError::WrongSize)
             }
 
-            size if size == PLAIN_DATA_BLOCK_SIZE => {
-                Ok(PlainDataBlock::new(meta_data, data))
-            }
+            size if size == PLAIN_DATA_BLOCK_SIZE => Ok(PlainDataBlock::new(meta_data, data)),
 
             size if size < PLAIN_DATA_BLOCK_SIZE => {
                 let mut extended = [0; PLAIN_DATA_BLOCK_SIZE];

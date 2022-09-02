@@ -24,7 +24,7 @@ impl UserSignature {
             vault_name: self.vault_name.clone(),
             signatures: vec![self],
             pending_joins: vec![],
-            declined_joins: vec![]
+            declined_joins: vec![],
         }
     }
 
@@ -37,7 +37,7 @@ impl UserSignature {
             device_name: "test_device".to_string(),
             public_key: key_manager.dsa.public_key_serialized(),
             rsa_public_key: key_manager.rsa.public_key_serialized(),
-            signature: key_manager.dsa.sign(vault_name.clone().as_bytes())
+            signature: key_manager.dsa.sign(vault_name.clone().as_bytes()),
         }
     }
 }
@@ -80,7 +80,6 @@ pub struct VaultInfo {
 }
 
 impl VaultInfo {
-
     pub fn pending() -> Self {
         VaultInfo::empty(VaultInfoStatus::Pending)
     }
@@ -94,7 +93,10 @@ impl VaultInfo {
     }
 
     pub fn empty(status: VaultInfoStatus) -> Self {
-        VaultInfo { status, vault: None }
+        VaultInfo {
+            status,
+            vault: None,
+        }
     }
 }
 
@@ -108,18 +110,19 @@ pub enum VaultInfoStatus {
     /// Vault members declined to add a device into the vault
     Declined,
     /// Device can't get any information about the vault, because its signature is not in members or pending list
-    Unknown
+    Unknown,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct MetaPasswordsResponse {
     pub status: MetaPasswordsStatus,
-    pub passwords: Vec<MetaPasswordDoc>
+    pub passwords: Vec<MetaPasswordDoc>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub enum MetaPasswordsStatus {
-    Ok, VaultNotFound
+    Ok,
+    VaultNotFound,
 }
