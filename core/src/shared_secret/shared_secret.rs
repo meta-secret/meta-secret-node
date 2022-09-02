@@ -95,7 +95,8 @@ impl SharedSecret {
                 .map_err(|err| err.to_string())?;
 
             if maybe_restored.is_none() {
-                return Err(String::from("Invalid shares, secret block can't be recovered"));
+                let err_mgs =  format!("Invalid share. Secret block with index: {} has been corrupted", i);
+                return Err(err_mgs);
             }
 
             let restored = maybe_restored.unwrap();

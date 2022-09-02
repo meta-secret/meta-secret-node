@@ -1,8 +1,7 @@
 pub mod shared_secret;
 
-use std::error::Error;
 use std::ffi::OsStr;
-use std::fs;
+use std::{fs, io};
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
@@ -79,7 +78,15 @@ fn load_users_shares() -> Vec<UserShareDto> {
     users_shares_dto
 }
 
-pub fn split(secret: String, config: SharedSecretConfig) -> Result<(), Box<dyn Error>> {
+#[derive(Debug, thiserror::Error)]
+pub enum SplitError {
+    #[error("Secrets directory can't be created")]
+    SecretsDirectoryError { #[from] source: io::Error },
+    #[error("User secret share: invalid format (can't be serialized into json)")]
+    UserShareJsonSerializationError { #[from] source: serde_json::Error }
+}
+
+pub fn split(secret: String, config: SharedSecretConfig) -> Result<(), SplitError> {
     let plain_text = PlainText::from_str(secret);
     let shared_secret = SharedSecretEncryption::new(config, &plain_text);
 

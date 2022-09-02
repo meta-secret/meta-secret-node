@@ -14,7 +14,9 @@ crate-type = ["cdylib", "lib", "staticlib"]
 name = "meta_secret_core"
 
 [dependencies]
-ed25519-dalek = { version = "1.0.1" }
+thiserror = "1.0"
+
+ed25519-dalek = "1.0"
 
 #https://github.com/dsprenkels/sss-rs
 shamirsecretsharing = "0.1.5"

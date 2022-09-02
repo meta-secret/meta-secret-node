@@ -1,12 +1,17 @@
 extern crate core;
 
+use std::error::Error;
 use std::fs::File;
+use std::string::FromUtf8Error;
 
-use clap::{Parser, Subcommand, ArgEnum};
-use serde::{Deserialize, Serialize};
-
+use anyhow::{Context, Result};
+use clap::{ArgEnum, Parser, Subcommand};
 use meta_secret_core::{convert_qr_images_to_json_files, recover, split};
 use meta_secret_core::shared_secret::data_block::common::SharedSecretConfig;
+use serde::{Deserialize, Serialize};
+
+use thiserror::Error;
+use crate::RestoreError::RecoveryError;
 
 #[derive(Debug, Parser)]
 #[clap(about = "Meta Secret Command Line Application", long_about = None)]
@@ -31,7 +36,8 @@ enum Command {
 #[derive(Debug, Clone, ArgEnum, Eq, PartialEq)]
 #[clap(rename_all = "kebab_case")]
 enum RestoreType {
-    Qr, Json
+    Qr,
+    Json,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -40,34 +46,55 @@ struct MetaSecretConfig {
 }
 
 ///https://kerkour.com/rust-cross-compilation
-fn main() {
+fn main() -> Result<()> {
     let args: CmdLine = CmdLine::parse();
 
-    let config_file: File = File::open("config.yaml").unwrap();
-    let app_config: MetaSecretConfig = serde_yaml::from_reader(config_file).unwrap();
+    let config_file = File::open("config.yaml")
+        .with_context(|| "Error reading config.yaml. Please check that file exists.")?;
+
+
+    let app_config: MetaSecretConfig = serde_yaml::from_reader(config_file)
+        .with_context(|| "Error parsing config file. Invalid yaml format")?;
+
     let shared_secret_config = app_config.shared_secret;
 
     match args.command {
         Command::Split { secret } => {
-            split(secret, shared_secret_config);
+            split(secret, shared_secret_config)
+                .with_context(|| "Error splitting password")?
         }
-        Command::Restore {from} => {
+        Command::Restore { from } => {
             match from {
                 RestoreType::Qr => {
                     convert_qr_images_to_json_files();
-                    restore_from_json();
+                    let password = restore_from_json()
+                        .with_context(|| "Can't restore password")?;
+                    println!("Restored password: {:?}", password);
                 }
                 RestoreType::Json => {
-                    restore_from_json();
+                    let password = restore_from_json()?;
+                    println!("Restored password: {:?}", password);
                 }
             }
         }
     }
 
-    println!("Finished")
+    println!("Finished");
+    Ok(())
 }
 
-fn restore_from_json() {
-    let text = recover().unwrap();
-    println!("Restored: {:?}", String::from_utf8(text.text).unwrap());
+#[derive(Debug, thiserror::Error)]
+pub enum RestoreError {
+    /// https://dailydevsblog.com/troubleshoot/resolved-issue-with-a-string-and-thiserror-as_dyn_error-exists-for-reference-string-but-its-trait-bounds-were-not-satisfied-in-rust-139876/
+    #[error("Unrecoverable data. Underlying error:\n {0}")]
+    RecoveryError(String),
+    #[error("Error parse binary data. Non utf8 encoding.")]
+    ParsingError { #[from] source: FromUtf8Error },
+}
+
+fn restore_from_json() -> Result<String, RestoreError> {
+    let text = recover()
+        .map_err(|err_msg| RecoveryError(err_msg))?;
+    let password = String::from_utf8(text.text)?;
+    Ok(password)
 }
