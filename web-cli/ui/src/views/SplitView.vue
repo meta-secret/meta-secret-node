@@ -73,8 +73,8 @@ export default {
     generateQrCodeStyling(share, textImage) {
       return new QRCodeStyling(
           {
-            width: 400,
-            height: 400,
+            width: 300,
+            height: 300,
             type: "svg",
             data: share,
             margin: 3,
