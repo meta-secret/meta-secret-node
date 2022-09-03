@@ -12,10 +12,16 @@ use std::path::Path;
 use std::{fs, io};
 
 use image;
+use image::ImageError;
 use rqrr;
+use rqrr::DeQRError;
 
 pub fn recover_from_shares(users_shares: Vec<UserShareDto>) -> Result<PlainText, String> {
     let mut secret_blocks: Vec<SharedSecretBlock> = vec![];
+
+    if users_shares[0].share_blocks.is_empty() {
+        return Err("Empty shares list. Nothing tp recover".to_string());
+    }
 
     let blocks_num: usize = users_shares[0].share_blocks.len();
 
@@ -118,12 +124,32 @@ pub fn generate_qr_code(data: &str, path: &str) {
     qrcode_generator::to_png_to_file(data, QrCodeEcc::High, data.len(), path).unwrap();
 }
 
-pub fn convert_qr_images_to_json_files() {
-    let shares = fs::read_dir("secrets").unwrap();
+#[derive(Debug, thiserror::Error)]
+pub enum QrToJsonParserError {
+    #[error(
+        "Secrets directory invalid structure. \
+    Please check that 'secrets' dir exists and contains json or qr files with password shares"
+    )]
+    SecretsDirectoryError {
+        #[from]
+        source: io::Error,
+    },
+    #[error("Image parsing error")]
+    ImageParsingError {
+        #[from]
+        source: QrCodeParserError,
+        //backtrace: Backtrace,
+    },
+}
+
+pub fn convert_qr_images_to_json_files() -> Result<Vec<String>, QrToJsonParserError> {
+    let shares = fs::read_dir("secrets")?;
+
+    let mut shares_json: Vec<String> = vec![];
 
     let mut share_index = 0;
     for secret_share_file in shares {
-        let file_path = secret_share_file.unwrap().path();
+        let file_path = secret_share_file?.path();
 
         let extension = file_path.extension().and_then(OsStr::to_str).unwrap();
 
@@ -131,25 +157,42 @@ pub fn convert_qr_images_to_json_files() {
             continue;
         }
 
-        let json_str = read_qr_code(file_path.as_path());
+        let json_str = read_qr_code(file_path.as_path())?;
         fs::write(
             format!("secrets/shared-secret-{share_index}.json"),
-            json_str,
-        )
-        .unwrap();
+            json_str.clone(),
+        )?;
+
+        shares_json.push(json_str.clone());
 
         share_index += 1;
     }
+
+    return Ok(shares_json);
 }
 
-pub fn read_qr_code(path: &Path) -> String {
-    let img = image::open(path).unwrap().to_luma8();
+#[derive(Debug, thiserror::Error)]
+pub enum QrCodeParserError {
+    #[error("Qr code parsing error")]
+    ImageParsingError {
+        #[from]
+        source: ImageError,
+    },
+    #[error("Error decoding image")]
+    ImageDecodingError {
+        #[from]
+        source: DeQRError,
+    },
+}
+
+pub fn read_qr_code(path: &Path) -> Result<String, QrCodeParserError> {
+    let img = image::open(path)?.to_luma8();
     // Prepare for detection
     let mut img = rqrr::PreparedImage::prepare(img);
     // Search for grids, without decoding
     let grids = img.detect_grids();
     assert_eq!(grids.len(), 1);
     // Decode the grid
-    let (_, content) = grids[0].decode().unwrap();
-    return content;
+    let (_, content) = grids[0].decode()?;
+    return Ok(content);
 }
