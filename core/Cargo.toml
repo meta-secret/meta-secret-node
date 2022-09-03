@@ -28,6 +28,6 @@ serde-big-array = "0.4.1"
 
 base64 = "0.13.0"
 
-qrcode-generator = "4.1.2"
+qrcode-generator = "4.1.6"
 rqrr = "0.5.1"
 image = "0.24.3"
