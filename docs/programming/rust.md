@@ -12,3 +12,4 @@
 
 #### Rust and mobile platforms:
  - use rust libraries in swift https://betterprogramming.pub/from-rust-to-swift-df9bde59b7cd
+ - signal messenger: libsignal https://github.com/signalapp/libsignal/tree/main/swift 
