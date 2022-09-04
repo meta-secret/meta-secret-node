@@ -5,11 +5,17 @@ use crate::db::{MetaPasswordDoc, VaultDoc};
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct DeviceInfo {
+    pub device_name: String,
+    pub device_id: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct UserSignature {
     /// distributed vault, unique across entire system
     pub vault_name: String,
-    pub device_name: String,
-
+    pub device: DeviceInfo,
     pub public_key: String,
     pub rsa_public_key: String,
 
@@ -34,7 +40,10 @@ impl UserSignature {
         let key_manager = KeyManager::generate();
         UserSignature {
             vault_name: vault_name.clone(),
-            device_name: "test_device".to_string(),
+            device: DeviceInfo {
+                device_name: "test_device".to_string(),
+                device_id: "123".to_string()
+            },
             public_key: key_manager.dsa.public_key_serialized(),
             rsa_public_key: key_manager.rsa.public_key_serialized(),
             signature: key_manager.dsa.sign(vault_name.clone().as_bytes()),
