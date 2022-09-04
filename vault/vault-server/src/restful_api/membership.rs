@@ -5,9 +5,20 @@ use rocket::State;
 use crate::crypto::crypto;
 use crate::restful_api::commons;
 use crate::{Db, JoinRequest, UserSignature, VaultDoc};
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub enum MembershipStatus {
+    VaultNotFound,
+    /// Device is a member of a vault already
+    AlreadyMember,
+    /// Operation finished successfully
+    Finished
+}
 
 #[post("/decline", format = "json", data = "<join_request>")]
-pub async fn decline(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<String> {
+pub async fn decline(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<MembershipStatus> {
     let join_request = join_request.into_inner();
     info!("Decline join request");
 
@@ -19,7 +30,7 @@ pub async fn decline(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<St
     return match maybe_vault {
         //user not found
         None => {
-            panic!("Vault not found!");
+            Json(MembershipStatus::VaultNotFound)
         }
         Some(mut vault_doc) => {
             if vault_doc.signatures.contains(&candidate) {
@@ -27,7 +38,7 @@ pub async fn decline(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<St
 
                 let vaults_col = db.vaults_col();
                 update_vault(vault_name.clone(), vaults_col, vault_doc).await;
-                return Json("Candidate is already a member of the vault".to_string());
+                return Json(MembershipStatus::AlreadyMember);
             }
 
             if vault_doc.signatures.contains(&join_request.member) {
@@ -42,16 +53,14 @@ pub async fn decline(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<St
                 }
             }
 
-            Json(String::from("Success"))
+            Json(MembershipStatus::Finished)
         }
     };
 }
 
 /// Accept join request
-/// example:
-/// curl -X POST http://localhost:8000/accept -H 'Content-Type: application/json' -d '{"member": {"vaultName":"test_vault","publicKey":"ZE+rI1+X7IsWkCbnTamDtfvvavrIp7UfAtpUVJXfBZ8=","signature":"OOshi5j4XmhxJfCtd3DiQkPIe87NxEc5TvSkqlma+0qxAEWKBpvy4HCR+yKll5p8R1ttKKL9UG9IO2rIIxm6DQ=="}, "candidate": {"vaultName":"test_vault","publicKey":"Mi6MUjlvim7r2Qz5Ug63ZnkXhaDoBWh3os/ItPzP3Aw=","signature":"haE9QJfSZyLYuKOP9dao0gI2i/bCnjFh6Zph72xgpftuTdzAOotnB5D8r8+IsPFWhqEIpKzEBGsrA59H433xBw=="}}'
 #[post("/accept", format = "json", data = "<join_request>")]
-pub async fn accept(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<String> {
+pub async fn accept(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<MembershipStatus> {
     let join_request = join_request.into_inner();
     info!("Accept join request");
 
@@ -60,7 +69,7 @@ pub async fn accept(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<Str
     return match maybe_vault {
         //user not found
         None => {
-            panic!("Vault not found!");
+            Json(MembershipStatus::VaultNotFound)
         }
         Some(mut vault_doc) => {
             let candidate = join_request.candidate;
@@ -68,7 +77,7 @@ pub async fn accept(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<Str
                 remove_candidate_from_pending_queue(&candidate, &mut vault_doc);
                 let vaults_col = db.vaults_col();
                 update_vault(candidate.vault_name.clone(), vaults_col, vault_doc).await;
-                return Json("Candidate is already a member of the vault".to_string());
+                return Json(MembershipStatus::AlreadyMember);
             }
 
             if vault_doc.signatures.contains(&join_request.member) {
@@ -84,7 +93,7 @@ pub async fn accept(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<Str
                 }
             }
 
-            Json(String::from("Successful"))
+            Json(MembershipStatus::Finished)
         }
     };
 }

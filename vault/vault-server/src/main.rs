@@ -4,7 +4,6 @@ extern crate rocket;
 
 use mongodb::Client;
 use rocket::futures::StreamExt;
-use rocket::serde::json::Json;
 
 use db::VaultDoc;
 
