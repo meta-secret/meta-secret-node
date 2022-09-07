@@ -14,3 +14,4 @@
  - use rust libraries in swift https://betterprogramming.pub/from-rust-to-swift-df9bde59b7cd
  - signal messenger: libsignal https://github.com/signalapp/libsignal/tree/main/swift
  - c lib in swift example and explanation https://github.com/ljhm/Swift-C
+ - swift systemPackage https://github.com/apple/swift-system
