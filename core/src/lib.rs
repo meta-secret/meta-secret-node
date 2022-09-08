@@ -1,26 +1,44 @@
-pub mod shared_secret;
-
-use crate::shared_secret::data_block::common::SharedSecretConfig;
-use crate::shared_secret::data_block::shared_secret_data_block::SharedSecretBlock;
-use crate::shared_secret::shared_secret::{
-    PlainText, SharedSecret, SharedSecretEncryption, UserShareDto,
-};
+use std::{fs, io};
 use std::ffi::OsStr;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
-use std::{fs, io};
 
 use image;
 use image::ImageError;
 use rqrr;
 use rqrr::DeQRError;
 
-pub fn recover_from_shares(users_shares: Vec<UserShareDto>) -> Result<PlainText, String> {
+use crate::RecoveryError::EmptyInput;
+use crate::shared_secret::data_block::common::SharedSecretConfig;
+use crate::shared_secret::data_block::shared_secret_data_block::SharedSecretBlock;
+use crate::shared_secret::shared_secret::{
+    PlainText, RecoveryError, SharedSecret, SharedSecretEncryption, UserShareDto,
+};
+
+pub mod shared_secret;
+
+#[derive(Debug, thiserror::Error)]
+pub enum RecoveryOperationError {
+    #[error(transparent)]
+    LoaderError(#[from] SharesLoaderError),
+    #[error(transparent)]
+    RecoveryFromSharesError(#[from] RecoveryError),
+}
+
+pub fn recover() -> Result<PlainText, RecoveryOperationError> {
+    let users_shares = load_users_shares()?;
+    let recovered = recover_from_shares(users_shares)?;
+    Ok(recovered)
+}
+
+pub fn recover_from_shares(users_shares: Vec<UserShareDto>) -> Result<PlainText, RecoveryError> {
     let mut secret_blocks: Vec<SharedSecretBlock> = vec![];
 
     if users_shares[0].share_blocks.is_empty() {
-        return Err("Empty shares list. Nothing tp recover".to_string());
+        return Err(EmptyInput(
+            "Empty shares list. Nothing to recover".to_string(),
+        ));
     }
 
     let blocks_num: usize = users_shares[0].share_blocks.len();
@@ -48,34 +66,38 @@ pub fn recover_from_shares(users_shares: Vec<UserShareDto>) -> Result<PlainText,
     return secret.recover();
 }
 
-pub fn recover() -> Result<PlainText, String> {
-    let users_shares = load_users_shares();
-    return recover_from_shares(users_shares);
+#[derive(Debug, thiserror::Error)]
+pub enum SharesLoaderError {
+    #[error(transparent)]
+    FileSystemError(#[from] io::Error),
+    #[error(transparent)]
+    DeserializationError(#[from] serde_json::error::Error),
 }
 
-fn load_users_shares() -> Vec<UserShareDto> {
+fn load_users_shares() -> Result<Vec<UserShareDto>, SharesLoaderError> {
     //read json files
-    let shares = fs::read_dir("secrets").unwrap();
+    let shares = fs::read_dir("secrets")?;
 
     let mut users_shares_dto: Vec<UserShareDto> = vec![];
     for secret_share_file in shares {
-        let file_path = secret_share_file.unwrap().path();
+        let file_path = secret_share_file?.path();
 
-        let extension = file_path.extension().and_then(OsStr::to_str).unwrap();
+        let maybe_ext = file_path.extension().and_then(OsStr::to_str);
 
-        if !extension.eq("json") {
-            continue;
+        if let Some(ext) = maybe_ext {
+            if ext.eq("json") {
+                // Open the file in read-only mode with buffer.
+                let file = File::open(file_path)?;
+                let reader = BufReader::new(file);
+
+                // Read the JSON contents of the file as an instance of `User`.
+                let secret_share: UserShareDto = serde_json::from_reader(reader)?;
+                users_shares_dto.push(secret_share);
+            }
         }
-
-        // Open the file in read-only mode with buffer.
-        let file = File::open(file_path).expect("Unable to open file");
-        let reader = BufReader::new(file);
-
-        // Read the JSON contents of the file as an instance of `User`.
-        let secret_share: UserShareDto = serde_json::from_reader(reader).unwrap();
-        users_shares_dto.push(secret_share);
     }
-    users_shares_dto
+
+    Ok(users_shares_dto)
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -127,8 +149,9 @@ pub fn generate_qr_code(data: &str, path: &str) {
 #[derive(Debug, thiserror::Error)]
 pub enum QrToJsonParserError {
     #[error(
-        "Secrets directory invalid structure. \
-    Please check that 'secrets' dir exists and contains json or qr files with password shares"
+    "Secrets directory has invalid structure. \
+        Please check that 'secrets' dir exists and \
+        contains json or qr files with password shares"
     )]
     SecretsDirectoryError {
         #[from]
@@ -138,7 +161,6 @@ pub enum QrToJsonParserError {
     ImageParsingError {
         #[from]
         source: QrCodeParserError,
-        //backtrace: Backtrace,
     },
 }
 

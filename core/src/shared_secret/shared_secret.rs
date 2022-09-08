@@ -1,12 +1,15 @@
 use std::borrow::Borrow;
 use std::str;
+use std::string::FromUtf8Error;
 
 use serde::{Deserialize, Serialize};
+use shamirsecretsharing::SSSError;
 
 use crate::shared_secret::data_block::common::{BlockMetaData, SharedSecretConfig};
 use crate::shared_secret::data_block::encrypted_data_block::EncryptedDataBlock;
 use crate::shared_secret::data_block::plain_data_block::{PlainDataBlock, PLAIN_DATA_BLOCK_SIZE};
 use crate::shared_secret::data_block::shared_secret_data_block::SharedSecretBlock;
+use crate::shared_secret::shared_secret::RecoveryError::InvalidShare;
 
 #[derive(Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct PlainText {
@@ -76,8 +79,27 @@ impl SharedSecretEncryption {
     }
 }
 
+#[derive(Debug, thiserror::Error)]
+pub enum RecoveryError {
+    #[error("Empty input")]
+    EmptyInput(String),
+    #[error("Invalid share")]
+    InvalidShare(String),
+
+    #[error("Failed recover operation")]
+    ShamirCombineSharesError {
+        #[from]
+        source: SSSError,
+    },
+    #[error("Non utf8 string")]
+    DeserializationError {
+        #[from]
+        source: FromUtf8Error,
+    },
+}
+
 impl SharedSecret {
-    pub fn recover(self) -> Result<PlainText, String> {
+    pub fn recover(self) -> Result<PlainText, RecoveryError> {
         let mut plain_text = String::new();
 
         let secret_blocks = self.secret_blocks;
@@ -91,23 +113,23 @@ impl SharedSecret {
                 .map(|share| share.data.to_vec())
                 .collect();
 
-            let maybe_restored =
-                shamirsecretsharing::combine_shares(&shares).map_err(|err| err.to_string())?;
+            let maybe_restored = shamirsecretsharing::combine_shares(&shares)?;
 
-            if maybe_restored.is_none() {
-                let err_mgs = format!(
-                    "Invalid share. Secret block with index: {} has been corrupted",
-                    i
-                );
-                return Err(err_mgs);
+            match maybe_restored {
+                None => {
+                    let err_mgs = format!(
+                        "Invalid share. Secret block with index: {} has been corrupted",
+                        i
+                    );
+                    return Err(InvalidShare(err_mgs));
+                }
+                Some(restored) => {
+                    let restored: &[u8] = restored.split_at(secret_block.meta_data.size).0;
+
+                    let restored_str = String::from_utf8(restored.to_vec())?;
+                    plain_text.push_str(restored_str.as_str())
+                }
             }
-
-            let restored = maybe_restored.unwrap();
-            let restored: &[u8] = restored.split_at(secret_block.meta_data.size).0;
-
-            let restored_str =
-                String::from_utf8(restored.to_vec()).map_err(|_err| "Non uft8 characters")?;
-            plain_text.push_str(restored_str.as_str())
         }
 
         Ok(PlainText {
