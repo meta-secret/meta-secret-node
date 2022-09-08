@@ -5,8 +5,8 @@ use std::string::FromUtf8Error;
 
 use anyhow::{Context, Result};
 use clap::{ArgEnum, Parser, Subcommand};
+use meta_secret_core::{convert_qr_images_to_json_files, recover, RecoveryOperationError, split};
 use meta_secret_core::shared_secret::data_block::common::SharedSecretConfig;
-use meta_secret_core::{convert_qr_images_to_json_files, recover, split};
 use serde::{Deserialize, Serialize};
 
 use crate::RestoreError::RecoveryError;
@@ -64,7 +64,9 @@ fn main() -> Result<()> {
                 convert_qr_images_to_json_files()
                     .with_context(|| "Error converting qr codes into json files")?;
 
-                let password = restore_from_json().with_context(|| "Can't restore password")?;
+                let password = restore_from_json()
+                    .with_context(|| "Can't restore password")?;
+
                 println!("Restored password: {:?}", password);
             }
             RestoreType::Json => {
@@ -81,8 +83,8 @@ fn main() -> Result<()> {
 #[derive(Debug, thiserror::Error)]
 pub enum RestoreError {
     /// https://dailydevsblog.com/troubleshoot/resolved-issue-with-a-string-and-thiserror-as_dyn_error-exists-for-reference-string-but-its-trait-bounds-were-not-satisfied-in-rust-139876/
-    #[error("Unrecoverable data. Underlying error:\n {0}")]
-    RecoveryError(String),
+    #[error(transparent)]
+    RecoveryError(#[from] RecoveryOperationError),
     #[error("Error parse binary data. Non utf8 encoding.")]
     ParsingError {
         #[from]
@@ -91,7 +93,7 @@ pub enum RestoreError {
 }
 
 fn restore_from_json() -> Result<String, RestoreError> {
-    let text = recover().map_err(|err_msg| RecoveryError(err_msg))?;
+    let text = recover()?;
     let password = String::from_utf8(text.text)?;
     Ok(password)
 }
