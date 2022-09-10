@@ -5,6 +5,6 @@ COPY Rocket.toml /vault-server
 
 WORKDIR /vault-server
 
-EXPOSE 8000
+EXPOSE 80
 
 CMD ./meta-secret-vault-server
