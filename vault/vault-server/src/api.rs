@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::crypto::keys::{KeyManager, KeyPair};
-use crate::db::{MetaPasswordDoc, MetaPasswordId, VaultDoc};
+use crate::db::{MetaPasswordDoc, VaultDoc};
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]

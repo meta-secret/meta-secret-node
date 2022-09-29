@@ -19,9 +19,11 @@ mod crypto;
 mod db;
 mod restful_api;
 
+const MAIN_MESSAGE: &'static str = "Hello Meta World!";
+
 #[get("/")]
 pub async fn hi() -> String {
-    "Hello Meta World!".to_string()
+    String::from(MAIN_MESSAGE)
 }
 
 #[rocket::main]
@@ -58,4 +60,22 @@ async fn main() -> Result<(), rocket::Error> {
         .await?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod test {
+    use rocket::http::Status;
+    use rocket::local::blocking::Client;
+    use crate::MAIN_MESSAGE;
+
+    #[test]
+    fn hi() {
+        let rocket = rocket::build()
+            .mount("/", routes![super::hi]);
+
+        let client = Client::tracked(rocket).expect("valid rocket instance");
+        let mut response = client.get(uri!(super::hi)).dispatch();
+        assert_eq!(response.status(), Status::Ok);
+        assert_eq!(response.into_string().unwrap(), String::from(MAIN_MESSAGE));
+    }
 }

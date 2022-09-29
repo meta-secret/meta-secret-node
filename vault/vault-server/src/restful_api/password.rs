@@ -4,7 +4,7 @@ use rand::distributions::Alphanumeric;
 use rocket::serde::json::Json;
 use rocket::State;
 
-use crate::{Db, EncryptedMessage, SecretDistributionDoc, StreamExt, UserSignature};
+use crate::{Db, SecretDistributionDoc, StreamExt, UserSignature};
 use crate::api::{MetaPasswordsRequest, MetaPasswordsResponse, MetaPasswordsStatus, SecretDistributionStatus};
 use crate::db::{MetaPasswordDoc, MetaPasswordId};
 use crate::restful_api::commons;
