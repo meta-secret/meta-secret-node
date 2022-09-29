@@ -1,32 +1,36 @@
 use mongodb::bson;
+use rand::{Rng, thread_rng};
 use rand::distributions::Alphanumeric;
-use rand::{thread_rng, Rng};
 use rocket::serde::json::Json;
 use rocket::State;
 
-use crate::api::{MetaPasswordsResponse, MetaPasswordsStatus};
-use crate::db::MetaPasswordDoc;
-use crate::restful_api::commons;
 use crate::{Db, EncryptedMessage, SecretDistributionDoc, StreamExt, UserSignature};
+use crate::api::{MetaPasswordsRequest, MetaPasswordsResponse, MetaPasswordsStatus, SecretDistributionStatus};
+use crate::db::{MetaPasswordDoc, MetaPasswordId};
+use crate::restful_api::commons;
 
 #[post("/distribute", format = "json", data = "<encrypted_password_share>")]
 pub async fn distribute(
     db: &State<Db>,
-    encrypted_password_share: Json<EncryptedMessage>,
-) -> Json<String> {
+    encrypted_password_share: Json<SecretDistributionDoc>,
+) -> Json<SecretDistributionStatus> {
     let secrets_distribution_col = db.distribution_col();
 
     //create a new user:
-    let record = SecretDistributionDoc {
-        secret_message: encrypted_password_share.into_inner(),
-    };
+    let record = encrypted_password_share.into_inner();
 
-    secrets_distribution_col
+    let result = secrets_distribution_col
         .insert_one(record, None)
-        .await
-        .unwrap();
+        .await;
 
-    Json("OK".to_string())
+    match result {
+        Ok(_) => {
+            Json(SecretDistributionStatus::Ok)
+        }
+        Err(err) => {
+            Json(SecretDistributionStatus::Error { err: "Can't save data".to_string() })
+        }
+    }
 }
 
 #[post("/findShares", format = "json", data = "<user_signature>")]
@@ -92,12 +96,12 @@ pub async fn passwords(
     }
 }
 
-#[post("/addMetaPassword", format = "json", data = "<user_signature>")]
+#[post("/addMetaPassword", format = "json", data = "<meta_password_request>")]
 pub async fn add_meta_password(
     db: &State<Db>,
-    user_signature: Json<UserSignature>,
+    meta_password_request: Json<MetaPasswordsRequest>,
 ) -> Json<MetaPasswordsResponse> {
-    let user_signature = user_signature.into_inner();
+    let user_signature = meta_password_request.into_inner().user_sig;
     let maybe_vault = commons::find_vault(db, &user_signature).await;
 
     match maybe_vault {
@@ -112,7 +116,7 @@ pub async fn add_meta_password(
                 .map(char::from)
                 .collect();
 
-            let pass = MetaPasswordDoc { id: rand_id, vault };
+            let pass = MetaPasswordDoc { id: MetaPasswordId {id: rand_id, name: "".to_string() }, vault };
 
             let passwords_col = db.passwords_col();
             passwords_col.insert_one(pass.clone(), None).await.unwrap();
@@ -127,7 +131,6 @@ pub async fn add_meta_password(
 
 #[cfg(test)]
 mod test {
-
     #[test]
     fn yay() {}
 }

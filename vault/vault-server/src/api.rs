@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::crypto::keys::{KeyManager, KeyPair};
-use crate::db::{MetaPasswordDoc, VaultDoc};
+use crate::db::{MetaPasswordDoc, MetaPasswordId, VaultDoc};
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -42,7 +42,7 @@ impl UserSignature {
             vault_name: vault_name.clone(),
             device: DeviceInfo {
                 device_name: "test_device".to_string(),
-                device_id: "123".to_string()
+                device_id: "123".to_string(),
             },
             public_key: key_manager.dsa.public_key_serialized(),
             rsa_public_key: key_manager.rsa.public_key_serialized(),
@@ -131,7 +131,24 @@ pub struct MetaPasswordsResponse {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct MetaPasswordsRequest {
+    pub user_sig: UserSignature,
+    // Password name
+    pub name: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub enum MetaPasswordsStatus {
     Ok,
     VaultNotFound,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub enum SecretDistributionStatus {
+    Ok,
+    Error {
+        err: String
+    },
 }

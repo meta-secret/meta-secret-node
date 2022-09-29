@@ -8,6 +8,7 @@ pub struct DbSchema {
     pub db_name: String,
     pub vault_col: String,
     pub secrets_distribution_col: String,
+    pub secret_recovery_col: String,
     pub passwords_col: String,
 }
 
@@ -17,6 +18,7 @@ impl Default for DbSchema {
             db_name: "meta-secret".to_string(),
             vault_col: "vaults".to_string(),
             secrets_distribution_col: "secrets_distribution".to_string(),
+            secret_recovery_col: "secret_recovery".to_string(),
             passwords_col: "passwords".to_string(),
         }
     }
@@ -34,7 +36,15 @@ pub struct VaultDoc {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SecretDistributionDoc {
+    pub distribution_type: SecretDistributionType,
+    pub id: MetaPasswordId,
     pub secret_message: EncryptedMessage,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub enum SecretDistributionType {
+    Split, Recover
 }
 
 pub struct Db {
@@ -44,11 +54,19 @@ pub struct Db {
     pub db: Database,
 }
 
-/// Meta information about password
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct MetaPasswordId {
+    // Random SHA256 string
+    pub id: String,
+    // human readable name given to password
+    pub name: String
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct MetaPasswordDoc {
-    pub id: String,
+    pub id: MetaPasswordId,
     pub vault: VaultDoc,
 }
 
@@ -66,6 +84,11 @@ impl Db {
     pub fn passwords_col(&self) -> Collection<MetaPasswordDoc> {
         let col_name = self.db_schema.passwords_col.as_str();
         self.db.collection::<MetaPasswordDoc>(col_name)
+    }
+
+    pub fn recovery_col(&self) -> Collection<SecretDistributionDoc> {
+        let col_name = self.db_schema.secret_recovery_col.as_str();
+        self.db.collection::<SecretDistributionDoc>(col_name)
     }
 }
 
