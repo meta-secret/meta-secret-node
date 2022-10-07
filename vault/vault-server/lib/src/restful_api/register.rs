@@ -1,9 +1,12 @@
 use mongodb::bson;
+use rocket::post;
 use rocket::serde::json::Json;
 use rocket::State;
 
+use crate::api::api::UserSignature;
+use crate::api::api::{RegistrationResponse, RegistrationStatus};
+use crate::db::Db;
 use crate::restful_api::commons;
-use crate::{Db, RegistrationResponse, RegistrationStatus, UserSignature};
 
 /// Register a new distributed vault
 #[post("/register", format = "json", data = "<register_request>")]
@@ -11,11 +14,10 @@ pub async fn register(
     register_request: Json<UserSignature>,
     db: &State<Db>,
 ) -> Json<RegistrationResponse> {
-    info!("Register a new vault or join");
     let user_sig = register_request.into_inner();
     let maybe_vault = commons::find_vault(db, &user_sig).await;
 
-    return match maybe_vault {
+    match maybe_vault {
         None => {
             //create a new user:
             let vaults_col = db.vaults_col();
@@ -55,5 +57,5 @@ pub async fn register(
                 result: "Added to pending requests".to_string(),
             })
         }
-    };
+    }
 }

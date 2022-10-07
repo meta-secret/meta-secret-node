@@ -1,10 +1,13 @@
+use crate::api::api::JoinRequest;
 use mongodb::{bson, Collection};
+use rocket::post;
 use rocket::serde::json::Json;
 use rocket::State;
 use serde::{Deserialize, Serialize};
 
-use crate::{Db, JoinRequest, UserSignature, VaultDoc};
+use crate::api::api::UserSignature;
 use crate::crypto::crypto;
+use crate::db::{Db, VaultDoc};
 use crate::restful_api::commons;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -27,7 +30,6 @@ pub struct MemberShipResponse {
 #[post("/decline", format = "json", data = "<join_request>")]
 pub async fn decline(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<MemberShipResponse> {
     let join_request = join_request.into_inner();
-    info!("Decline join request");
 
     let vault_name = join_request.candidate.clone().vault_name;
     let candidate = join_request.candidate;
@@ -36,12 +38,10 @@ pub async fn decline(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<Me
 
     return match maybe_vault {
         //user not found
-        None => {
-            Json(MemberShipResponse {
-                status: MembershipStatus::VaultNotFound,
-                msg: "Vault not found".to_string(),
-            })
-        }
+        None => Json(MemberShipResponse {
+            status: MembershipStatus::VaultNotFound,
+            msg: "Vault not found".to_string(),
+        }),
         Some(mut vault_doc) => {
             if vault_doc.signatures.contains(&candidate) {
                 remove_candidate_from_pending_queue(&candidate, &mut vault_doc);
@@ -78,18 +78,15 @@ pub async fn decline(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<Me
 #[post("/accept", format = "json", data = "<join_request>")]
 pub async fn accept(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<MemberShipResponse> {
     let join_request = join_request.into_inner();
-    info!("Accept join request");
 
     let maybe_vault = commons::find_vault(db, &join_request.member).await;
 
     return match maybe_vault {
         //user not found
-        None => {
-            Json(MemberShipResponse {
-                status: MembershipStatus::VaultNotFound,
-                msg: "Vault not found".to_string(),
-            })
-        }
+        None => Json(MemberShipResponse {
+            status: MembershipStatus::VaultNotFound,
+            msg: "Vault not found".to_string(),
+        }),
         Some(mut vault_doc) => {
             let candidate = join_request.candidate;
             if vault_doc.signatures.contains(&candidate) {

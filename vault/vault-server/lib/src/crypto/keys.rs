@@ -96,7 +96,7 @@ mod test {
     #[test]
     fn test_dsa() {
         let key_pair = DsaKeyPair::generate();
-        let pub_key = key_pair.public_key_serialized();
+        let _pub_key = key_pair.public_key_serialized();
 
         let msg = "yay".as_bytes();
         let signed = key_pair.keypair.sign(msg);

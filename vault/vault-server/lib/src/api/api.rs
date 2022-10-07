@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::crypto::keys::{KeyManager, KeyPair};
-use crate::db::{MetaPasswordDoc, VaultDoc};
+use crate::db::{MetaPasswordDoc, MetaPasswordId, VaultDoc};
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -58,7 +58,7 @@ pub struct RegistrationResponse {
     pub result: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub enum RegistrationStatus {
     Registered,
@@ -137,7 +137,7 @@ pub struct MetaPasswordsRequest {
     pub name: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub enum MetaPasswordsStatus {
     Ok,
@@ -146,9 +146,13 @@ pub enum MetaPasswordsStatus {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub enum SecretDistributionStatus {
+pub enum MessageStatus {
     Ok,
-    Error {
-        err: String
-    },
+    Error { err: String },
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PasswordRecoveryRequest {
+    pub id: MetaPasswordId,
 }

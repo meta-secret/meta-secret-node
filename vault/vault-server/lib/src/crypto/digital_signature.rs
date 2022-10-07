@@ -1,6 +1,5 @@
+use crate::api::api::UserSignature;
 use ed25519_dalek::{PublicKey, Signature, SignatureError, Verifier};
-
-use crate::UserSignature;
 
 pub struct DigitalSignature {
     message: String,

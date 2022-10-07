@@ -1,8 +1,10 @@
+use crate::api::api::{UserSignature, VaultInfo, VaultInfoStatus};
+use rocket::post;
 use rocket::serde::json::Json;
 use rocket::State;
 
+use crate::db::Db;
 use crate::restful_api::commons;
-use crate::{Db, UserSignature, VaultInfo, VaultInfoStatus};
 
 #[post("/getVault", format = "json", data = "<user_signature>")]
 pub async fn get_vault(db: &State<Db>, user_signature: Json<UserSignature>) -> Json<VaultInfo> {

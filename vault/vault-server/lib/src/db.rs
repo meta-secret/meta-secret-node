@@ -1,9 +1,9 @@
 use mongodb::{Client, Collection, Database};
 use serde::{Deserialize, Serialize};
 
-use crate::api::EncryptedMessage;
-use crate::UserSignature;
+use crate::api::api::{EncryptedMessage, PasswordRecoveryRequest, UserSignature};
 
+#[derive(Clone, Debug)]
 pub struct DbSchema {
     pub db_name: String,
     pub vault_col: String,
@@ -44,9 +44,11 @@ pub struct SecretDistributionDoc {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub enum SecretDistributionType {
-    Split, Recover
+    Split,
+    Recover,
 }
 
+#[derive(Clone, Debug)]
 pub struct Db {
     pub db_schema: DbSchema,
     pub url: String,
@@ -60,7 +62,7 @@ pub struct MetaPasswordId {
     // Random SHA256 string
     pub id: String,
     // human readable name given to password
-    pub name: String
+    pub name: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -86,9 +88,9 @@ impl Db {
         self.db.collection::<MetaPasswordDoc>(col_name)
     }
 
-    pub fn recovery_col(&self) -> Collection<SecretDistributionDoc> {
+    pub fn recovery_col(&self) -> Collection<PasswordRecoveryRequest> {
         let col_name = self.db_schema.secret_recovery_col.as_str();
-        self.db.collection::<SecretDistributionDoc>(col_name)
+        self.db.collection::<PasswordRecoveryRequest>(col_name)
     }
 }
 
