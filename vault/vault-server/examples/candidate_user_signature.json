@@ -1,7 +1,0 @@
-{
-  "vaultName": "test_vault",
-  "deviceName": "test_device_2",
-  "publicKey": "BUuIZa2K/42PG5vd2w9/64C/Cn1BHTtnBHTw0NOWV6U=",
-  "rsaPublicKey": "-----BEGIN PUBLIC KEY-----\nMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAzcxvdnQE2+ONQfsIFX2L\n7W/478+OBVtfIepR1WWs00EpFycvy5qiBky6ML8UpkZqKVRJ4qpPqBpH2OTGXXRa\n++AqDAGydHj2WX5vh+Xg/AGV0FQdTBVL0Ui8tgnKSG6HqxCTET2rGphvE2w7BrzD\nOU+rG97/zeoQpEjGLZPkgxJT25iTPwycLeHa2ZbEALIMzWnXDI52FJsLQBSjbVC1\ndQth5lW+vq+Gm4nQeDwaw6bRb0IYE3QnCzs+y/kA66HZCreauq9VITTdIs8DlsL3\nVwGerQHgC95ssVnwiI3gZL7r2j/uxs+aRdAOPrhLJ2rVpyMJ/YfBeuGYEXTwR5Kj\n73vRISor5LUp7txghbqoE8iYgOpBSVVrOELfNoKVJsUmlB4JzAocJxxhj1bTznVW\nMudN8Qw3q4Eh5h9ktqJm+4e5pF4NUStY7ghsyQ+O4aaI9nrqkFa+GTSSNcwtGT03\nk1+l9gV+vgIQvER1HmJOZjMcn0hRpgYqiaCSYAQsTLAsvSeKTjk4I/DfbBBzdmYR\nxtP/wUdWoZZKz9rATaYaok4E3OGQn6zjjHrZ5sCM3owzHTYY0mtn3cZ85R90RmrQ\nO2KaCl7eWQPD3CxtOMPtag8VU7tO+Ms+ihWe668a0TgXeqr6ViUPy86bU9CpVhd+\nUHXv/VMuPX0Pn4wFdr1wDuECAwEAAQ==\n-----END PUBLIC KEY-----\n",
-  "signature": "GgstLWY69W2UWAAO8difKxhPbRCwobBnThASxXQbyvstA7n/tw4maNWDAzzjfBhqsXmel7twijLVIl1tefVwBQ=="
-}
