@@ -1,16 +1,15 @@
 use async_std::task;
-
 use rocket::http::{ContentType, Status};
-
 use rocket::uri;
 use testcontainers::clients::Cli;
 use testcontainers::images::mongo::Mongo;
 use testcontainers::{clients, Container};
 
 use meta_secret_vault_server_lib::api::api::{
-    RegistrationResponse, RegistrationStatus, UserSignature,
+    JoinRequest, RegistrationResponse, RegistrationStatus, UserSignature,
 };
 use meta_secret_vault_server_lib::restful_api;
+use meta_secret_vault_server_lib::restful_api::membership::{MemberShipResponse, MembershipStatus};
 
 use crate::testing::test_infra::{MetaSecretDocker, MetaSecretDockerInfra};
 use crate::testing::testify::TestRunner;
@@ -58,8 +57,54 @@ impl MetaSecretTestApp {
     }
 }
 
+struct TestAction<'a> {
+    app: &'a MetaSecretTestApp,
+}
+
+impl<'a> TestAction<'a> {
+    fn new(app: &'a MetaSecretTestApp) -> Self {
+        Self { app }
+    }
+
+    pub fn register(self, user_sig: &UserSignature) -> RegistrationResponse {
+        let signup_response = self
+            .app
+            .infra
+            .rocket_client
+            .post(uri!(restful_api::register::register))
+            .header(ContentType::JSON)
+            .body(serde_json::to_string_pretty(user_sig).unwrap())
+            .dispatch();
+
+        let signup_response = task::block_on(signup_response);
+        assert_eq!(signup_response.status(), Status::Ok);
+
+        let resp = signup_response.into_json::<RegistrationResponse>();
+        let resp = task::block_on(resp);
+        resp.unwrap()
+    }
+
+    pub fn accept(self, join_req: &JoinRequest) -> MemberShipResponse {
+        let join_response = self
+            .app
+            .infra
+            .rocket_client
+            .post(uri!(restful_api::membership::accept))
+            .header(ContentType::JSON)
+            .body(serde_json::to_string_pretty(&join_req).unwrap())
+            .dispatch();
+
+        let join_response = task::block_on(join_response);
+        assert_eq!(join_response.status(), Status::Ok);
+
+        let resp = join_response.into_json::<MemberShipResponse>();
+        let resp = task::block_on(resp);
+        resp.unwrap()
+    }
+}
+
 #[rocket::async_test]
-async fn sing_up_one_device() {
+async fn register_one_device() {
     TestRunner::default().run(|ctx| {
         let docker_cli: Cli = clients::Cli::default();
         let container: Container<Mongo> = docker_cli.run(Mongo::default());
@@ -72,20 +117,45 @@ async fn sing_up_one_device() {
 
         test_app.actions(|app| {
             let user_sig = &app.signatures.sig_1;
-            let signup_response = app
-                .infra
-                .rocket_client
-                .post(uri!(restful_api::register::register))
-                .header(ContentType::JSON)
-                .body(serde_json::to_string_pretty(&user_sig).unwrap())
-                .dispatch();
+            let resp = TestAction::new(app).register(user_sig);
+            assert_eq!(resp.status, RegistrationStatus::Registered);
+        });
+    });
+}
 
-            let signup_response = task::block_on(signup_response);
-            assert_eq!(signup_response.status(), Status::Ok);
+#[rocket::async_test]
+async fn create_cluster() {
+    TestRunner::default().run(|ctx| {
+        let docker_cli: Cli = clients::Cli::default();
+        let container: Container<Mongo> = docker_cli.run(Mongo::default());
 
-            let resp = signup_response.into_json::<RegistrationResponse>();
-            let resp = task::block_on(resp);
-            assert_eq!(resp.unwrap().status, RegistrationStatus::Registered);
+        let infra = MetaSecretDocker::run(&ctx, &docker_cli, &container);
+        let infra = task::block_on(infra);
+        println!("{:?}", infra.mongo_db_url);
+
+        let test_app = MetaSecretTestApp::new(infra);
+
+        test_app.actions(|app| {
+            let resp = TestAction::new(app).register(&app.signatures.sig_1);
+            assert_eq!(resp.status, RegistrationStatus::Registered);
+
+            let resp = TestAction::new(app).register(&app.signatures.sig_2);
+            assert_eq!(resp.status, RegistrationStatus::AlreadyExists);
+
+            let resp = TestAction::new(app).register(&app.signatures.sig_3);
+            assert_eq!(resp.status, RegistrationStatus::AlreadyExists);
+
+            let accept_resp = TestAction::new(app).accept(&JoinRequest {
+                member: app.signatures.sig_1.clone(),
+                candidate: app.signatures.sig_2.clone(),
+            });
+            assert_eq!(accept_resp.status, MembershipStatus::Finished);
+
+            let accept_resp = TestAction::new(app).accept(&JoinRequest {
+                member: app.signatures.sig_2.clone(),
+                candidate: app.signatures.sig_3.clone(),
+            });
+            assert_eq!(accept_resp.status, MembershipStatus::Finished);
         });
     });
 }

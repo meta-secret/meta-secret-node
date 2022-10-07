@@ -40,11 +40,10 @@ pub mod test_infra {
     use rocket::routes;
     use testcontainers::clients::Cli;
     use testcontainers::images::mongo::Mongo;
-    use testcontainers::{clients, Container};
+    use testcontainers::Container;
 
     use meta_secret_vault_server_lib::db::Db;
-    use meta_secret_vault_server_lib::restful_api::password::add_meta_password;
-    use meta_secret_vault_server_lib::restful_api::register::register;
+    use meta_secret_vault_server_lib::restful_api;
 
     use crate::testing::testify::TestFixture;
 
@@ -78,9 +77,13 @@ pub mod test_infra {
                 db: mongo_db,
             };
 
-            let rocket = rocket::build()
-                .manage(db.clone())
-                .mount("/", routes![add_meta_password, register]);
+            let routes = routes![
+                restful_api::password::add_meta_password,
+                restful_api::register::register,
+                restful_api::membership::accept
+            ];
+
+            let rocket = rocket::build().manage(db.clone()).mount("/", routes);
 
             let rocket_client = RocketClient::tracked(rocket)
                 .await

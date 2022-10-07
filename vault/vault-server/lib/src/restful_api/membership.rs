@@ -10,7 +10,7 @@ use crate::crypto::crypto;
 use crate::db::{Db, VaultDoc};
 use crate::restful_api::commons;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub enum MembershipStatus {
     VaultNotFound,
@@ -23,8 +23,8 @@ pub enum MembershipStatus {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct MemberShipResponse {
-    status: MembershipStatus,
-    msg: String,
+    pub status: MembershipStatus,
+    pub msg: String,
 }
 
 #[post("/decline", format = "json", data = "<join_request>")]
