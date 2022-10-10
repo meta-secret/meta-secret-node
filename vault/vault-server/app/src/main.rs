@@ -3,17 +3,9 @@ extern crate core;
 extern crate rocket;
 
 use mongodb::Client;
-use rocket::futures::StreamExt;
 
 use meta_secret_vault_server_lib::db::{Db, DbSchema};
-use meta_secret_vault_server_lib::restful_api;
-
-const MAIN_MESSAGE: &'static str = "Hello Meta World!";
-
-#[get("/")]
-pub async fn hi() -> String {
-    String::from(MAIN_MESSAGE)
-}
+use meta_secret_vault_server_lib::restful_api::meta_secret_routes;
 
 #[rocket::main]
 async fn main() -> Result<(), rocket::Error> {
@@ -31,20 +23,7 @@ async fn main() -> Result<(), rocket::Error> {
 
     let _rocket = rocket::build()
         .manage(db)
-        .mount(
-            "/",
-            routes![
-                hi,
-                restful_api::register::register,
-                restful_api::membership::accept,
-                restful_api::membership::decline,
-                restful_api::vault::get_vault,
-                restful_api::password::distribute,
-                restful_api::password::find_shares,
-                restful_api::password::passwords,
-                restful_api::password::add_meta_password
-            ],
-        )
+        .mount("/", meta_secret_routes())
         .launch()
         .await?;
 
@@ -53,16 +32,22 @@ async fn main() -> Result<(), rocket::Error> {
 
 #[cfg(test)]
 mod test {
-    use crate::MAIN_MESSAGE;
     use rocket::http::Status;
     use rocket::local::blocking::Client;
 
+    use meta_secret_vault_server_lib::restful_api::commons::MAIN_MESSAGE;
+
     #[test]
-    fn hi() {
-        let rocket = rocket::build().mount("/", routes![super::hi]);
+    fn test_hi() {
+        let rocket = rocket::build().mount(
+            "/",
+            routes![meta_secret_vault_server_lib::restful_api::commons::hi],
+        );
 
         let client = Client::tracked(rocket).expect("valid rocket instance");
-        let response = client.get(uri!(super::hi)).dispatch();
+        let response = client
+            .get(uri!(meta_secret_vault_server_lib::restful_api::commons::hi))
+            .dispatch();
         assert_eq!(response.status(), Status::Ok);
         assert_eq!(response.into_string().unwrap(), String::from(MAIN_MESSAGE));
     }

@@ -131,10 +131,11 @@ pub struct MetaPasswordsResponse {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct MetaPasswordsRequest {
+pub struct MetaPasswordRequest {
+    //Creator of the meta password record
     pub user_sig: UserSignature,
-    // Password name
-    pub name: String,
+    //meta information about password
+    pub meta_password: MetaPasswordDoc,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]

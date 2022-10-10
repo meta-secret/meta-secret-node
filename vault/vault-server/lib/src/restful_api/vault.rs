@@ -12,7 +12,7 @@ pub async fn get_vault(db: &State<Db>, user_signature: Json<UserSignature>) -> J
 
     let maybe_vault = commons::find_vault(db, &user_signature).await;
 
-    return match maybe_vault {
+    match maybe_vault {
         None => Json(VaultInfo::unknown()),
         Some(vault) => {
             if vault.signatures.contains(&user_signature) {
@@ -32,5 +32,5 @@ pub async fn get_vault(db: &State<Db>, user_signature: Json<UserSignature>) -> J
 
             Json(VaultInfo::unknown())
         }
-    };
+    }
 }

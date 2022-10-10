@@ -36,7 +36,7 @@ pub async fn decline(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<Me
 
     let maybe_vault = commons::find_vault(db, &join_request.member).await;
 
-    return match maybe_vault {
+    match maybe_vault {
         //user not found
         None => Json(MemberShipResponse {
             status: MembershipStatus::VaultNotFound,
@@ -71,7 +71,7 @@ pub async fn decline(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<Me
                 msg: "Device has been blocked".to_string(),
             })
         }
-    };
+    }
 }
 
 /// Accept join request

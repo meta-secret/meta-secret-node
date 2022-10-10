@@ -37,13 +37,12 @@ pub mod test_infra {
     use async_trait::async_trait;
     use mongodb::Client;
     use rocket::local::asynchronous::Client as RocketClient;
-    use rocket::routes;
     use testcontainers::clients::Cli;
     use testcontainers::images::mongo::Mongo;
     use testcontainers::Container;
 
     use meta_secret_vault_server_lib::db::Db;
-    use meta_secret_vault_server_lib::restful_api;
+    use meta_secret_vault_server_lib::restful_api::meta_secret_routes;
 
     use crate::testing::testify::TestFixture;
 
@@ -77,13 +76,9 @@ pub mod test_infra {
                 db: mongo_db,
             };
 
-            let routes = routes![
-                restful_api::password::add_meta_password,
-                restful_api::register::register,
-                restful_api::membership::accept
-            ];
-
-            let rocket = rocket::build().manage(db.clone()).mount("/", routes);
+            let rocket = rocket::build()
+                .manage(db.clone())
+                .mount("/", meta_secret_routes());
 
             let rocket_client = RocketClient::tracked(rocket)
                 .await
@@ -105,8 +100,10 @@ pub mod framework {
     use rocket::uri;
 
     use meta_secret_vault_server_lib::api::api::{
-        JoinRequest, RegistrationResponse, RegistrationStatus, UserSignature,
+        JoinRequest, MessageStatus, RegistrationResponse, RegistrationStatus, UserSignature,
+        VaultInfo,
     };
+    use meta_secret_vault_server_lib::db::SecretDistributionDoc;
     use meta_secret_vault_server_lib::restful_api;
     use meta_secret_vault_server_lib::restful_api::membership::{
         MemberShipResponse, MembershipStatus,
@@ -221,6 +218,43 @@ pub mod framework {
                 candidate: self.app.signatures.sig_3.clone(),
             });
             assert_eq!(accept_resp.status, MembershipStatus::Finished);
+        }
+
+        pub fn split_password(&self, request: &SecretDistributionDoc) -> MessageStatus {
+            let distribute_response = self
+                .app
+                .infra
+                .rocket_client
+                .post(uri!(restful_api::password::distribute))
+                .header(ContentType::JSON)
+                .body(serde_json::to_string_pretty(request).unwrap())
+                .dispatch();
+
+            let distribute_response = task::block_on(distribute_response);
+            assert_eq!(distribute_response.status(), Status::Ok);
+
+            let resp = distribute_response.into_json::<MessageStatus>();
+            let resp = task::block_on(resp);
+            resp.unwrap()
+        }
+
+        pub fn get_vault(&self, sig: &UserSignature) -> VaultInfo {
+            let resp = self
+                .app
+                .infra
+                .rocket_client
+                .post(uri!(restful_api::vault::get_vault))
+                .header(ContentType::JSON)
+                .body(serde_json::to_string_pretty(sig).unwrap())
+                .dispatch();
+
+            let resp = task::block_on(resp);
+            assert_eq!(resp.status(), Status::Ok);
+
+            let resp = resp.into_json::<VaultInfo>();
+            let resp = task::block_on(resp);
+
+            resp.unwrap()
         }
     }
 }

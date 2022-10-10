@@ -1,7 +1,10 @@
 use mongodb::{Client, Collection, Database};
+use openssl::sha::Sha256;
 use serde::{Deserialize, Serialize};
 
-use crate::api::api::{EncryptedMessage, PasswordRecoveryRequest, UserSignature};
+use crate::api::api::{
+    EncryptedMessage, MetaPasswordRequest, PasswordRecoveryRequest, UserSignature,
+};
 
 #[derive(Clone, Debug)]
 pub struct DbSchema {
@@ -37,7 +40,7 @@ pub struct VaultDoc {
 #[serde(rename_all = "camelCase")]
 pub struct SecretDistributionDoc {
     pub distribution_type: SecretDistributionType,
-    pub id: MetaPasswordId,
+    pub meta_password: MetaPasswordRequest,
     pub secret_message: EncryptedMessage,
 }
 
@@ -59,10 +62,29 @@ pub struct Db {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct MetaPasswordId {
-    // Random SHA256 string
+    // SHA256 hash of salt
     pub id: String,
-    // human readable name given to password
+    // Random String up to 30 characters, must be unique
+    pub salt: String,
+    // human readable name given to the password
     pub name: String,
+}
+
+impl MetaPasswordId {
+    pub fn new(name: String, salt: String) -> Self {
+        let mut hasher = Sha256::new();
+        hasher.update(name.as_bytes());
+        hasher.update("-".as_bytes());
+        hasher.update(salt.as_bytes());
+
+        let hash_bytes = hex::encode(hasher.finish());
+
+        Self {
+            id: hash_bytes,
+            salt,
+            name,
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -83,9 +105,9 @@ impl Db {
         self.db.collection::<VaultDoc>(col_name)
     }
 
-    pub fn passwords_col(&self) -> Collection<MetaPasswordDoc> {
+    pub fn passwords_col(&self) -> Collection<MetaPasswordRequest> {
         let col_name = self.db_schema.passwords_col.as_str();
-        self.db.collection::<MetaPasswordDoc>(col_name)
+        self.db.collection::<MetaPasswordRequest>(col_name)
     }
 
     pub fn recovery_col(&self) -> Collection<PasswordRecoveryRequest> {
@@ -99,6 +121,17 @@ impl Db {
 mod test {
     use mongodb::{bson, Client};
     use testcontainers::{clients, images::mongo};
+
+    use crate::db::MetaPasswordId;
+
+    #[test]
+    fn meta_password_id() {
+        let pass_id = MetaPasswordId::new("test".to_string(), "salt".to_string());
+        assert_eq!(
+            pass_id.id,
+            "087280357dfdc5a3177e17b7424c7dfb1eab2d08ba3bedeb243dc51d5c18dc88".to_string()
+        )
+    }
 
     #[tokio::test]
     async fn test_mongodb() {
