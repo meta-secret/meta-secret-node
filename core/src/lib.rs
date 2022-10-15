@@ -16,7 +16,7 @@ use crate::shared_secret::shared_secret::{
 };
 use crate::RecoveryError::EmptyInput;
 
-mod crypto;
+pub mod crypto;
 pub mod shared_secret;
 
 #[derive(Debug, thiserror::Error)]
