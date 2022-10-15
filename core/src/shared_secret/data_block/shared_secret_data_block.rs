@@ -29,11 +29,11 @@ impl SharedSecretBlock {
             shares.push(share);
         }
 
-        return SharedSecretBlock {
+        SharedSecretBlock {
             config,
             meta_data: data_block.meta_data,
             shares,
-        };
+        }
     }
 }
 

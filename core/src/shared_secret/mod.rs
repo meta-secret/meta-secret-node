@@ -1,4 +1,3 @@
-use std::io;
 use crate::{PlainText, SharedSecretConfig, SharedSecretEncryption, UserShareDto};
 
 pub mod data_block;

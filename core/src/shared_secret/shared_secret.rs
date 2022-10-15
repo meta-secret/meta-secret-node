@@ -2,6 +2,7 @@ use std::borrow::Borrow;
 use std::str;
 use std::string::FromUtf8Error;
 
+use crate::crypto::encoding::Base64EncodedText;
 use serde::{Deserialize, Serialize};
 use shamirsecretsharing::SSSError;
 
@@ -56,7 +57,7 @@ pub struct SecretShareWithOrderingDto {
     pub block: usize,
     pub config: SharedSecretConfig,
     pub meta_data: BlockMetaData,
-    pub data: String,
+    pub data: Base64EncodedText,
 }
 
 impl SecretShareWithOrderingDto {
@@ -140,18 +141,15 @@ impl SharedSecret {
     pub fn get_share(&self, share_index: usize) -> UserShareDto {
         let mut share_blocks = vec![];
 
-        let mut index = 0;
-        for curr_secret_block in self.secret_blocks.iter() {
+        for (index, curr_secret_block) in self.secret_blocks.iter().enumerate() {
             let curr_block_of_a_share = &curr_secret_block.shares[share_index];
             let share_data = SecretShareWithOrderingDto {
                 block: index,
                 config: curr_secret_block.config,
                 meta_data: curr_secret_block.meta_data,
-                data: base64::encode(curr_block_of_a_share.data.as_slice()),
+                data: Base64EncodedText::from(curr_block_of_a_share.data.as_slice()),
             };
             share_blocks.push(share_data);
-
-            index += 1;
         }
 
         UserShareDto {
@@ -179,7 +177,7 @@ mod test {
         let mut plain_text_str = String::new();
         for i in 0..100 {
             plain_text_str.push_str(i.to_string().as_str());
-            plain_text_str.push_str("-")
+            plain_text_str.push('-')
         }
         let plain_text = PlainText {
             text: plain_text_str.into_bytes(),

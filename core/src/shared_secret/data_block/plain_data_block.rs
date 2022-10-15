@@ -21,7 +21,7 @@ impl PlainDataBlock {
         }
 
         match meta_data.size {
-            size if size <= 0 || size > PLAIN_DATA_BLOCK_SIZE => {
+            size if size == 0 || size > PLAIN_DATA_BLOCK_SIZE => {
                 Err(DataBlockParserError::WrongSize)
             }
 
@@ -29,7 +29,7 @@ impl PlainDataBlock {
 
             size if size < PLAIN_DATA_BLOCK_SIZE => {
                 let mut extended = [0; PLAIN_DATA_BLOCK_SIZE];
-                extended[..data.len()].copy_from_slice(&data);
+                extended[..data.len()].copy_from_slice(data);
                 Ok(PlainDataBlock::new(meta_data, &extended))
             }
 

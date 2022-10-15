@@ -1,21 +1,22 @@
-use std::{fs, io};
 use std::ffi::OsStr;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
+use std::{fs, io};
 
 use image;
 use image::ImageError;
 use rqrr;
 use rqrr::DeQRError;
 
-use crate::RecoveryError::EmptyInput;
 use crate::shared_secret::data_block::common::SharedSecretConfig;
 use crate::shared_secret::data_block::shared_secret_data_block::SharedSecretBlock;
 use crate::shared_secret::shared_secret::{
     PlainText, RecoveryError, SharedSecret, SharedSecretEncryption, UserShareDto,
 };
+use crate::RecoveryError::EmptyInput;
 
+mod crypto;
 pub mod shared_secret;
 
 #[derive(Debug, thiserror::Error)]
@@ -63,7 +64,7 @@ pub fn recover_from_shares(users_shares: Vec<UserShareDto>) -> Result<PlainText,
 
     let secret = SharedSecret { secret_blocks };
 
-    return secret.recover();
+    secret.recover()
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -149,7 +150,7 @@ pub fn generate_qr_code(data: &str, path: &str) {
 #[derive(Debug, thiserror::Error)]
 pub enum QrToJsonParserError {
     #[error(
-    "Secrets directory has invalid structure. \
+        "Secrets directory has invalid structure. \
         Please check that 'secrets' dir exists and \
         contains json or qr files with password shares"
     )]
@@ -190,7 +191,7 @@ pub fn convert_qr_images_to_json_files() -> Result<Vec<String>, QrToJsonParserEr
         share_index += 1;
     }
 
-    return Ok(shares_json);
+    Ok(shares_json)
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -216,5 +217,5 @@ pub fn read_qr_code(path: &Path) -> Result<String, QrCodeParserError> {
     assert_eq!(grids.len(), 1);
     // Decode the grid
     let (_, content) = grids[0].decode()?;
-    return Ok(content);
+    Ok(content)
 }

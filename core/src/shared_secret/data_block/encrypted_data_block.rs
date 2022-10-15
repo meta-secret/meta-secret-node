@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_big_array::BigArray;
 
+use crate::crypto::encoding::Base64EncodedText;
 use crate::shared_secret::data_block::common;
 use crate::shared_secret::data_block::common::{BlockMetaData, DataBlockParserError};
 
@@ -23,7 +24,7 @@ impl EncryptedDataBlock {
             return Err(DataBlockParserError::Invalid);
         }
 
-        if meta_data.size <= 0 || meta_data.size > SECRET_DATA_BLOCK_SIZE {
+        if meta_data.size == 0 || meta_data.size > SECRET_DATA_BLOCK_SIZE {
             return Err(DataBlockParserError::WrongSize);
         }
 
@@ -31,12 +32,12 @@ impl EncryptedDataBlock {
             data: common::parse_data::<SECRET_DATA_BLOCK_SIZE>(data),
         };
 
-        return Ok(share);
+        Ok(share)
     }
 
-    pub fn from_base64(meta_data: &BlockMetaData, base64_data: String) -> EncryptedDataBlock {
-        let data = base64::decode(base64_data).unwrap();
-        let data = data.as_slice();
+    pub fn from_base64(meta_data: &BlockMetaData, data: Base64EncodedText) -> EncryptedDataBlock {
+        let data_vec: Vec<u8> = data.into();
+        let data: &[u8] = data_vec.as_slice();
 
         EncryptedDataBlock::from_bytes(meta_data, data).unwrap()
     }
@@ -44,12 +45,19 @@ impl EncryptedDataBlock {
 
 #[cfg(test)]
 mod test {
+    use crate::crypto::encoding::Base64EncodedText;
+    use crate::shared_secret::data_block::common::BlockMetaData;
+    use crate::shared_secret::data_block::encrypted_data_block::{
+        EncryptedDataBlock, SECRET_DATA_BLOCK_SIZE,
+    };
+
     #[test]
-    fn test_secret_data_block() {
-        /*let secret = DataBlockShare::new(
-            BlockMetaData { size: 3 },
-            &[42; SECRET_DATA_BLOCK_SIZE],
-        );
-        println!("{:?}", secret);*/
+    fn test_encrypted_data_block() {
+        let meta_data = BlockMetaData { size: 11 };
+        let raw_data = vec![1; SECRET_DATA_BLOCK_SIZE];
+        let text = Base64EncodedText::from(raw_data.clone());
+
+        let secret = EncryptedDataBlock::from_base64(&meta_data, text);
+        assert_eq!(raw_data.as_slice(), secret.data.as_slice());
     }
 }

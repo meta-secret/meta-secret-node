@@ -15,7 +15,7 @@ pub struct SharedSecretConfig {
     pub threshold: usize,
 }
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct BlockMetaData {
     pub size: usize,
 }
