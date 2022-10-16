@@ -4,6 +4,7 @@ use image::EncodableLayout;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Eq, PartialEq, Hash, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Base64EncodedText {
     pub base64_text: String,
 }

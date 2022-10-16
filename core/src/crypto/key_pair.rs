@@ -1,3 +1,4 @@
+use crypto_box::aead::AeadCore;
 use crypto_box::{
     aead::{Aead, OsRng as CryptoBoxOsRng, Payload},
     ChaChaBox, Nonce, PublicKey as CryptoBoxPublicKey, SecretKey as CryptoBoxSecretKey,
@@ -9,7 +10,7 @@ use rand::rngs::OsRng;
 use serde::{Deserialize, Serialize};
 
 use crate::crypto::encoding::Base64EncodedText;
-use crate::crypto::keys::{AeadCipherText, AeadPlainText};
+use crate::crypto::keys::{AeadAuthData, AeadCipherText, AeadPlainText};
 
 pub trait KeyPair {
     fn generate() -> Self;
@@ -66,6 +67,24 @@ impl TransportDsaKeyPair {
         ChaChaBox::new(their_pk, &self.secret_key)
     }
 
+    pub fn encrypt_string(
+        &self,
+        plain_text: String,
+        receiver_pk: Base64EncodedText,
+    ) -> AeadCipherText {
+        let aead_text = AeadPlainText {
+            msg: plain_text,
+            auth_data: AeadAuthData {
+                associated_data: "checksum".to_string(),
+                sender_public_key: self.public_key(),
+                receiver_public_key: receiver_pk,
+                nonce: self.generate_nonce(),
+            },
+        };
+
+        self.encrypt(&aead_text)
+    }
+
     pub fn encrypt(&self, plain_text: &AeadPlainText) -> AeadCipherText {
         let auth_data = &plain_text.auth_data;
         let receiver_pk = CryptoBoxPublicKey::from(&auth_data.receiver_public_key);
@@ -107,12 +126,17 @@ impl TransportDsaKeyPair {
             auth_data: cipher_text.auth_data.clone(),
         }
     }
+
+    pub fn generate_nonce(&self) -> Base64EncodedText {
+        let nonce: Nonce = ChaChaBox::generate_nonce(&mut CryptoBoxOsRng);
+        Base64EncodedText::from(nonce.as_slice())
+    }
 }
 
 #[cfg(test)]
 pub mod test {
     use crypto_box::{
-        aead::{AeadCore, OsRng},
+        aead::{AeadCore, OsRng as CryptoBoxOsRng},
         ChaChaBox, Nonce,
     };
 
@@ -125,15 +149,13 @@ pub mod test {
         let alice_km = KeyManager::generate();
         let bob_km = KeyManager::generate();
 
-        let nonce: Nonce = ChaChaBox::generate_nonce(&mut OsRng);
-
         let plain_text = AeadPlainText {
             msg: "t0p$3cr3t".to_string(),
             auth_data: AeadAuthData {
                 associated_data: "checksum".to_string(),
                 sender_public_key: alice_km.transport_key_pair.public_key(),
                 receiver_public_key: bob_km.transport_key_pair.public_key(),
-                nonce: Base64EncodedText::from(nonce.as_slice()),
+                nonce: alice_km.transport_key_pair.generate_nonce(),
             },
         };
         let cipher_text: AeadCipherText = alice_km.transport_key_pair.encrypt(&plain_text);
