@@ -60,7 +60,7 @@ pub mod test_infra {
 
     #[async_trait(?Send)]
     impl MetaSecretDockerInfra for MetaSecretDocker {
-        async fn run(ctx: &TestFixture, docker_cli: &Cli, container: &Container<Mongo>) -> Self {
+        async fn run(ctx: &TestFixture, _docker_cli: &Cli, container: &Container<Mongo>) -> Self {
             let _ = pretty_env_logger::try_init();
 
             let host_port = container.get_host_port_ipv4(27017);
@@ -96,6 +96,7 @@ pub mod test_infra {
 
 pub mod framework {
     use async_std::task;
+    use meta_secret_core::crypto::keys::KeyManager;
     use rocket::http::{ContentType, Status};
     use rocket::uri;
 
@@ -112,6 +113,10 @@ pub mod framework {
     use crate::MetaSecretDocker;
 
     pub struct Signatures {
+        pub key_manager_1: KeyManager,
+        pub key_manager_2: KeyManager,
+        pub key_manager_3: KeyManager,
+
         pub sig_1: UserSignature,
         pub sig_2: UserSignature,
         pub sig_3: UserSignature,
@@ -119,15 +124,37 @@ pub mod framework {
 
     impl Default for Signatures {
         fn default() -> Self {
-            let sig_1 = UserSignature::generate_default_for_tests();
-            let sig_2 = UserSignature::generate_default_for_tests();
-            let sig_3 = UserSignature::generate_default_for_tests();
+            let key_manager_1 = KeyManager::generate();
+            let key_manager_2 = KeyManager::generate();
+            let key_manager_3 = KeyManager::generate();
+
+            let sig_1 = UserSignature::generate_default_for_tests(&key_manager_1);
+            let sig_2 = UserSignature::generate_default_for_tests(&key_manager_2);
+            let sig_3 = UserSignature::generate_default_for_tests(&key_manager_3);
 
             Signatures {
+                key_manager_1,
+                key_manager_2,
+                key_manager_3,
+
                 sig_1,
                 sig_2,
                 sig_3,
             }
+        }
+    }
+
+    impl Signatures {
+        pub fn all_signatures(&self) -> Vec<&UserSignature> {
+            vec![&self.sig_1, &self.sig_2, &self.sig_3]
+        }
+
+        pub fn all_key_managers(&self) -> Vec<&KeyManager> {
+            vec![
+                &self.key_manager_1,
+                &self.key_manager_2,
+                &self.key_manager_3,
+            ]
         }
     }
 
@@ -220,7 +247,7 @@ pub mod framework {
             assert_eq!(accept_resp.status, MembershipStatus::Finished);
         }
 
-        pub fn split_password(&self, request: &SecretDistributionDoc) -> MessageStatus {
+        pub fn distribute_password(&self, request: &SecretDistributionDoc) -> MessageStatus {
             let distribute_response = self
                 .app
                 .infra
@@ -235,7 +262,11 @@ pub mod framework {
 
             let resp = distribute_response.into_json::<MessageStatus>();
             let resp = task::block_on(resp);
-            resp.unwrap()
+            let resp = resp.unwrap();
+
+            assert_eq!(resp, MessageStatus::Ok);
+
+            resp
         }
 
         pub fn get_vault(&self, sig: &UserSignature) -> VaultInfo {
@@ -252,6 +283,25 @@ pub mod framework {
             assert_eq!(resp.status(), Status::Ok);
 
             let resp = resp.into_json::<VaultInfo>();
+            let resp = task::block_on(resp);
+
+            resp.unwrap()
+        }
+
+        pub fn find_shares(&self, sig: &UserSignature) -> Vec<SecretDistributionDoc> {
+            let resp = self
+                .app
+                .infra
+                .rocket_client
+                .post(uri!(restful_api::password::find_shares))
+                .header(ContentType::JSON)
+                .body(serde_json::to_string_pretty(sig).unwrap())
+                .dispatch();
+
+            let resp = task::block_on(resp);
+            assert_eq!(resp.status(), Status::Ok);
+
+            let resp = resp.into_json::<Vec<SecretDistributionDoc>>();
             let resp = task::block_on(resp);
 
             resp.unwrap()

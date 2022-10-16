@@ -80,7 +80,7 @@ pub async fn distribute(
                 .await
                 .unwrap();
 
-            if let None = meta_pass_db_record {
+            if meta_pass_db_record.is_none() {
                 //create meta password record
                 passwords_col.insert_one(meta_pass, None).await.unwrap();
             }
@@ -110,7 +110,7 @@ pub async fn find_shares(
 
     //find shares
     let secret_shares_filter = bson::doc! {
-        "secret_message.receiver.rsa_public_key": user_signature.into_inner().rsa_public_key.clone()
+        "metaPassword.userSig.publicKey": user_signature.into_inner().public_key.base64_text
     };
 
     let mut shares_docs = secrets_distribution_col
@@ -122,6 +122,8 @@ pub async fn find_shares(
     while let Some(share) = shares_docs.next().await {
         shares.push(share.unwrap());
     }
+
+    //todo: delete shares from the database
 
     Json(shares)
 }

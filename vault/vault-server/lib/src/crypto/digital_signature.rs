@@ -16,10 +16,9 @@ pub struct DigitalSignatureRaw {
 impl DigitalSignatureRaw {
     pub fn parse(user_sig: &UserSignature) -> DigitalSignatureRaw {
         let pub_key = &user_sig.public_key;
-        let pub_key = base64::decode(pub_key).unwrap();
 
-        let sig = user_sig.signature.as_bytes();
-        let sig = base64::decode(sig).unwrap();
+        let pub_key: Vec<u8> = pub_key.clone().into();
+        let sig: Vec<u8> = user_sig.signature.clone().into();
 
         DigitalSignatureRaw {
             message: user_sig.vault_name.clone(),

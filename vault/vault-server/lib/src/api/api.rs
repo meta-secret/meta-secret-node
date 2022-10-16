@@ -1,7 +1,8 @@
-use serde::{Deserialize, Serialize};
-
-use crate::crypto::keys::{KeyManager, KeyPair};
 use crate::db::{MetaPasswordDoc, MetaPasswordId, VaultDoc};
+use meta_secret_core::crypto::encoding::Base64EncodedText;
+use meta_secret_core::crypto::key_pair::KeyPair;
+use meta_secret_core::crypto::keys::{AeadCipherText, KeyManager};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -16,12 +17,12 @@ pub struct UserSignature {
     /// distributed vault, unique across entire system
     pub vault_name: String,
     pub device: DeviceInfo,
-    pub public_key: String,
-    pub rsa_public_key: String,
+    pub public_key: Base64EncodedText,
+    pub transport_public_key: Base64EncodedText,
 
     /// Users' signature. Can be verified by:
     ///     ```signature == ed_dsa::verify(message: user_name, key: public_key)```
-    pub signature: String,
+    pub signature: Base64EncodedText,
 }
 
 impl UserSignature {
@@ -34,19 +35,18 @@ impl UserSignature {
         }
     }
 
-    pub fn generate_default_for_tests() -> UserSignature {
+    pub fn generate_default_for_tests(key_manager: &KeyManager) -> UserSignature {
         let vault_name = "test_vault".to_string();
 
-        let key_manager = KeyManager::generate();
         UserSignature {
             vault_name: vault_name.clone(),
             device: DeviceInfo {
                 device_name: "test_device".to_string(),
                 device_id: "123".to_string(),
             },
-            public_key: key_manager.dsa.public_key_serialized(),
-            rsa_public_key: key_manager.rsa.public_key_serialized(),
-            signature: key_manager.dsa.sign(vault_name.clone().as_bytes()),
+            public_key: key_manager.dsa.public_key(),
+            transport_public_key: key_manager.transport_key_pair.public_key(),
+            signature: key_manager.dsa.sign(vault_name),
         }
     }
 }
@@ -78,7 +78,7 @@ pub struct EncryptedMessage {
     /// Massage receiver who can decrypt message.
     /// Message text encrypted with receivers' RSA public key
     pub receiver: UserSignature,
-    pub encrypted_text: String,
+    pub encrypted_text: AeadCipherText,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -138,14 +138,14 @@ pub struct MetaPasswordRequest {
     pub meta_password: MetaPasswordDoc,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub enum MetaPasswordsStatus {
     Ok,
     VaultNotFound,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub enum MessageStatus {
     Ok,
