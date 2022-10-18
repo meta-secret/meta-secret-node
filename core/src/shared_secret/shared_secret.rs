@@ -19,9 +19,7 @@ pub struct PlainText {
 
 impl PlainText {
     pub fn from_str(str: String) -> Self {
-        PlainText {
-            text: str.into_bytes(),
-        }
+        PlainText { text: str.into_bytes() }
     }
 
     pub fn to_data_blocks(&self) -> Vec<PlainDataBlock> {
@@ -29,6 +27,10 @@ impl PlainText {
             .chunks(PLAIN_DATA_BLOCK_SIZE)
             .map(|block| PlainDataBlock::from_bytes(block).unwrap())
             .collect()
+    }
+
+    pub fn as_string(&self) -> String {
+        String::from_utf8(self.text.clone()).unwrap()
     }
 }
 
@@ -39,7 +41,7 @@ pub struct SharedSecret {
 }
 
 // A share of the secret that user holds
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UserShareDto {
     pub share_id: usize,
     pub share_blocks: Vec<SecretShareWithOrderingDto>,
@@ -52,7 +54,7 @@ impl UserShareDto {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SecretShareWithOrderingDto {
     pub block: usize,
     pub config: SharedSecretConfig,
@@ -108,20 +110,13 @@ impl SharedSecret {
 
         for i in 0..size {
             let secret_block: &SharedSecretBlock = secret_blocks[i].borrow();
-            let shares: Vec<Vec<u8>> = secret_block
-                .shares
-                .iter()
-                .map(|share| share.data.to_vec())
-                .collect();
+            let shares: Vec<Vec<u8>> = secret_block.shares.iter().map(|share| share.data.to_vec()).collect();
 
             let maybe_restored = shamirsecretsharing::combine_shares(&shares)?;
 
             match maybe_restored {
                 None => {
-                    let err_mgs = format!(
-                        "Invalid share. Secret block with index: {} has been corrupted",
-                        i
-                    );
+                    let err_mgs = format!("Invalid share. Secret block with index: {} has been corrupted", i);
                     return Err(InvalidShare(err_mgs));
                 }
                 Some(restored) => {
@@ -193,25 +188,20 @@ mod test {
 
         let secret_message = secret.recover().unwrap();
         assert_eq!(&plain_text.text, &secret_message.text);
-        println!(
-            "message: {:?}",
-            str::from_utf8(&secret_message.text).unwrap()
-        )
+        println!("message: {:?}", str::from_utf8(&secret_message.text).unwrap())
     }
 
     #[test]
     fn shamir_test() {
         let data: Vec<u8> = vec![
-            63, 104, 101, 121, 95, 104, 101, 121, 95, 104, 101, 121, 95, 104, 101, 121, 95, 104,
-            101, 121, 95, 104, 101, 121, 95, 104, 101, 121, 95, 104, 101, 121, 95, 104, 101, 121,
-            95, 104, 101, 121, 95, 104, 101, 121, 95, 104, 101, 121, 95, 121, 97, 121, 95, 104,
-            101, 121, 95, 104, 101, 121, 95, 104, 101, 121,
+            63, 104, 101, 121, 95, 104, 101, 121, 95, 104, 101, 121, 95, 104, 101, 121, 95, 104, 101, 121, 95, 104,
+            101, 121, 95, 104, 101, 121, 95, 104, 101, 121, 95, 104, 101, 121, 95, 104, 101, 121, 95, 104, 101, 121,
+            95, 104, 101, 121, 95, 121, 97, 121, 95, 104, 101, 121, 95, 104, 101, 121, 95, 104, 101, 121,
         ];
 
         let count = 5;
         let threshold = 3;
-        let mut shares: Vec<Vec<u8>> =
-            shamirsecretsharing::create_shares(&data, count, threshold).unwrap();
+        let mut shares: Vec<Vec<u8>> = shamirsecretsharing::create_shares(&data, count, threshold).unwrap();
 
         for share in &shares {
             println!("share size: {:?}", share.len());
