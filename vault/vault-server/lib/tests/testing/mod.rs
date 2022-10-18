@@ -15,7 +15,7 @@ pub mod testify {
     }
 
     pub struct TestRunner {
-        fixture: TestFixture,
+        pub fixture: TestFixture,
     }
 
     impl Default for TestRunner {
@@ -101,8 +101,8 @@ pub mod framework {
     use rocket::uri;
 
     use meta_secret_vault_server_lib::api::api::{
-        JoinRequest, MessageStatus, RegistrationResponse, RegistrationStatus, UserSignature,
-        VaultInfo,
+        JoinRequest, MessageStatus, PasswordRecoveryRequest, RegistrationResponse,
+        RegistrationStatus, UserSignature, VaultInfo,
     };
     use meta_secret_vault_server_lib::db::SecretDistributionDoc;
     use meta_secret_vault_server_lib::restful_api;
@@ -303,6 +303,49 @@ pub mod framework {
 
             let resp = resp.into_json::<Vec<SecretDistributionDoc>>();
             let resp = task::block_on(resp);
+
+            resp.unwrap()
+        }
+
+        pub fn claim_for_password_recovery(
+            &self,
+            recovery_request: &PasswordRecoveryRequest,
+        ) -> MessageStatus {
+            let resp = self
+                .app
+                .infra
+                .rocket_client
+                .post(uri!(restful_api::password::claim_for_password_recovery))
+                .header(ContentType::JSON)
+                .body(serde_json::to_string_pretty(recovery_request).unwrap())
+                .dispatch();
+
+            let resp = task::block_on(resp);
+            assert_eq!(resp.status(), Status::Ok);
+
+            let resp = resp.into_json::<MessageStatus>();
+            let resp = task::block_on(resp);
+
+            resp.unwrap()
+        }
+
+        pub async fn find_password_recovery_claims(
+            &self,
+            user_signature: &UserSignature,
+        ) -> Vec<PasswordRecoveryRequest> {
+            let resp = self
+                .app
+                .infra
+                .rocket_client
+                .post(uri!(restful_api::password::find_password_recovery_claims))
+                .header(ContentType::JSON)
+                .body(serde_json::to_string_pretty(user_signature).unwrap())
+                .dispatch()
+                .await;
+
+            assert_eq!(resp.status(), Status::Ok);
+
+            let resp = resp.into_json::<Vec<PasswordRecoveryRequest>>().await;
 
             resp.unwrap()
         }

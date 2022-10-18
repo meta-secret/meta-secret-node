@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 #meta-secret-core = { path = "../../../core"} # Development mode
-meta-secret-core = "1.2.2"
+meta-secret-core = "1.2.3"
 
 tracing = "0.1.36"
 tracing-subscriber = "0.3.15"

@@ -12,7 +12,11 @@ use crate::db::MetaPasswordDoc;
 use crate::db::{Db, SecretDistributionDoc};
 use crate::restful_api::commons;
 
-#[post("/recover", format = "json", data = "<recovery_request>")]
+#[post(
+    "/claimForPasswordRecovery",
+    format = "json",
+    data = "<recovery_request>"
+)]
 pub async fn claim_for_password_recovery(
     db: &State<Db>,
     recovery_request: Json<PasswordRecoveryRequest>,
@@ -30,27 +34,38 @@ pub async fn claim_for_password_recovery(
     }
 }
 
-/*
-#[post("/findClaimsForRecovery", format = "json", data = "<user_signature>")]
-pub async fn find_claims_for_recovery(
+#[post(
+    "/findPasswordRecoveryClaims",
+    format = "json",
+    data = "<user_signature>"
+)]
+pub async fn find_password_recovery_claims(
     db: &State<Db>,
     user_signature: Json<UserSignature>,
-) -> Json<Vec<SecretDistributionDoc>> {
+) -> Json<Vec<PasswordRecoveryRequest>> {
     let recovery_col = db.recovery_col();
+    let user_signature = user_signature.into_inner();
 
-    let mut shares_docs = recovery_col
-        .find(None, None)
-        .await
-        .unwrap();
+    //find shares
+    let filter = bson::doc! {
+        "provider.publicKey.base64Text": user_signature.public_key.base64_text.clone()
+    };
 
-    let mut shares = vec![];
-    while let Some(share) = shares_docs.next().await {
-        shares.push(share.unwrap());
+    let mut claims_col = recovery_col.find(filter, None).await.unwrap();
+
+    let mut claims = vec![];
+    while let Some(claim) = claims_col.next().await {
+        let claim = claim.unwrap();
+        claims.push(claim);
     }
 
-    Json(shares)
+    let filter = bson::doc! {
+        "provider.publicKey.base64Text": user_signature.public_key.base64_text
+    };
+    recovery_col.delete_many(filter, None).await.unwrap();
+
+    Json(claims)
 }
-*/
 
 #[post("/distribute", format = "json", data = "<distribution_request>")]
 pub async fn distribute(
@@ -110,7 +125,7 @@ pub async fn find_shares(
 
     //find shares
     let secret_shares_filter = bson::doc! {
-        "metaPassword.userSig.publicKey": user_signature.into_inner().public_key.base64_text
+        "secretMessage.receiver.publicKey.base64Text": user_signature.into_inner().public_key.base64_text
     };
 
     let mut shares_docs = secrets_distribution_col

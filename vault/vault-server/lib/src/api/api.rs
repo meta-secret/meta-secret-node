@@ -156,4 +156,8 @@ pub enum MessageStatus {
 #[serde(rename_all = "camelCase")]
 pub struct PasswordRecoveryRequest {
     pub id: MetaPasswordId,
+    // The device that needs data ("consumer" - the device that asks provider to provide data)
+    pub consumer: UserSignature,
+    //The device that has data and must provide data to consumer device
+    pub provider: UserSignature,
 }

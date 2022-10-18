@@ -59,7 +59,7 @@ pub struct Db {
     pub db: Database,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct MetaPasswordId {
     // SHA256 hash of salt

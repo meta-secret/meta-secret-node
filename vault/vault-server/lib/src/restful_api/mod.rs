@@ -17,5 +17,6 @@ pub fn meta_secret_routes() -> Vec<Route> {
         password::distribute,
         password::find_shares,
         password::passwords,
+        password::find_password_recovery_claims,
     ]
 }
