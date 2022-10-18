@@ -5,18 +5,12 @@ use rocket::serde::json::Json;
 use rocket::State;
 
 use crate::api::api::UserSignature;
-use crate::api::api::{
-    MessageStatus, MetaPasswordsResponse, MetaPasswordsStatus, PasswordRecoveryRequest,
-};
+use crate::api::api::{MessageStatus, MetaPasswordsResponse, MetaPasswordsStatus, PasswordRecoveryRequest};
 use crate::db::MetaPasswordDoc;
 use crate::db::{Db, SecretDistributionDoc};
 use crate::restful_api::commons;
 
-#[post(
-    "/claimForPasswordRecovery",
-    format = "json",
-    data = "<recovery_request>"
-)]
+#[post("/claimForPasswordRecovery", format = "json", data = "<recovery_request>")]
 pub async fn claim_for_password_recovery(
     db: &State<Db>,
     recovery_request: Json<PasswordRecoveryRequest>,
@@ -34,11 +28,7 @@ pub async fn claim_for_password_recovery(
     }
 }
 
-#[post(
-    "/findPasswordRecoveryClaims",
-    format = "json",
-    data = "<user_signature>"
-)]
+#[post("/findPasswordRecoveryClaims", format = "json", data = "<user_signature>")]
 pub async fn find_password_recovery_claims(
     db: &State<Db>,
     user_signature: Json<UserSignature>,
@@ -68,10 +58,7 @@ pub async fn find_password_recovery_claims(
 }
 
 #[post("/distribute", format = "json", data = "<distribution_request>")]
-pub async fn distribute(
-    db: &State<Db>,
-    distribution_request: Json<SecretDistributionDoc>,
-) -> Json<MessageStatus> {
+pub async fn distribute(db: &State<Db>, distribution_request: Json<SecretDistributionDoc>) -> Json<MessageStatus> {
     let distribution_request = distribution_request.into_inner();
     let meta_pass = distribution_request.meta_password.clone();
 
@@ -90,10 +77,7 @@ pub async fn distribute(
                 "metaPassword.id.id": meta_pass.meta_password.id.id.clone(),
             };
 
-            let meta_pass_db_record = passwords_col
-                .find_one(meta_pass_filter, None)
-                .await
-                .unwrap();
+            let meta_pass_db_record = passwords_col.find_one(meta_pass_filter, None).await.unwrap();
 
             if meta_pass_db_record.is_none() {
                 //create meta password record
@@ -117,10 +101,7 @@ pub async fn distribute(
 }
 
 #[post("/findShares", format = "json", data = "<user_signature>")]
-pub async fn find_shares(
-    db: &State<Db>,
-    user_signature: Json<UserSignature>,
-) -> Json<Vec<SecretDistributionDoc>> {
+pub async fn find_shares(db: &State<Db>, user_signature: Json<UserSignature>) -> Json<Vec<SecretDistributionDoc>> {
     let secrets_distribution_col = db.distribution_col();
 
     //find shares
@@ -128,10 +109,7 @@ pub async fn find_shares(
         "secretMessage.receiver.publicKey.base64Text": user_signature.into_inner().public_key.base64_text
     };
 
-    let mut shares_docs = secrets_distribution_col
-        .find(secret_shares_filter, None)
-        .await
-        .unwrap();
+    let mut shares_docs = secrets_distribution_col.find(secret_shares_filter, None).await.unwrap();
 
     let mut shares = vec![];
     while let Some(share) = shares_docs.next().await {
@@ -144,10 +122,7 @@ pub async fn find_shares(
 }
 
 #[post("/getMetaPasswords", format = "json", data = "<user_signature>")]
-pub async fn passwords(
-    db: &State<Db>,
-    user_signature: Json<UserSignature>,
-) -> Json<MetaPasswordsResponse> {
+pub async fn passwords(db: &State<Db>, user_signature: Json<UserSignature>) -> Json<MetaPasswordsResponse> {
     let user_signature = user_signature.into_inner();
     let maybe_vault = commons::find_vault(db, &user_signature).await;
 
@@ -163,10 +138,7 @@ pub async fn passwords(
                 "vault.vaultName": vault.vault_name.clone()
             };
 
-            let mut meta_passwords_docs = passwords_col
-                .find(password_by_vault_filter, None)
-                .await
-                .unwrap();
+            let mut meta_passwords_docs = passwords_col.find(password_by_vault_filter, None).await.unwrap();
 
             let mut meta_passwords: Vec<MetaPasswordDoc> = vec![];
             while let Some(meta_password) = meta_passwords_docs.next().await {

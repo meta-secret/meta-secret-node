@@ -121,10 +121,7 @@ pub async fn accept(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<Mem
 }
 
 fn remove_candidate_from_pending_queue(candidate: &UserSignature, vault_doc: &mut VaultDoc) {
-    let maybe_index = vault_doc
-        .pending_joins
-        .iter()
-        .position(|sig| *sig == *candidate);
+    let maybe_index = vault_doc.pending_joins.iter().position(|sig| *sig == *candidate);
 
     if let Some(index) = maybe_index {
         vault_doc
@@ -139,8 +136,5 @@ async fn update_vault(vault_name: String, vaults_col: Collection<VaultDoc>, vaul
         "vaultName": vault_name
     };
 
-    vaults_col
-        .replace_one(vault_filter, vault_doc, None)
-        .await
-        .unwrap();
+    vaults_col.replace_one(vault_filter, vault_doc, None).await.unwrap();
 }

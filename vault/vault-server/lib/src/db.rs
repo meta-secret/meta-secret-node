@@ -2,9 +2,7 @@ use mongodb::{Client, Collection, Database};
 use openssl::sha::Sha256;
 use serde::{Deserialize, Serialize};
 
-use crate::api::api::{
-    EncryptedMessage, MetaPasswordRequest, PasswordRecoveryRequest, UserSignature,
-};
+use crate::api::api::{EncryptedMessage, MetaPasswordRequest, PasswordRecoveryRequest, UserSignature};
 
 #[derive(Clone, Debug)]
 pub struct DbSchema {
@@ -155,11 +153,7 @@ mod test {
             .to_hex()
             .is_empty());
 
-        let find_one_result: bson::Document = coll
-            .find_one(bson::doc! { "x": 42 }, None)
-            .await
-            .unwrap()
-            .unwrap();
+        let find_one_result: bson::Document = coll.find_one(bson::doc! { "x": 42 }, None).await.unwrap().unwrap();
         assert_eq!(42, find_one_result.get_i32("x").unwrap())
     }
 }

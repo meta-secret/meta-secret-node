@@ -39,10 +39,7 @@ mod test {
 
     #[test]
     fn test_hi() {
-        let rocket = rocket::build().mount(
-            "/",
-            routes![meta_secret_vault_server_lib::restful_api::commons::hi],
-        );
+        let rocket = rocket::build().mount("/", routes![meta_secret_vault_server_lib::restful_api::commons::hi]);
 
         let client = Client::tracked(rocket).expect("valid rocket instance");
         let response = client

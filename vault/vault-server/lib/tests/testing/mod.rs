@@ -76,13 +76,9 @@ pub mod test_infra {
                 db: mongo_db,
             };
 
-            let rocket = rocket::build()
-                .manage(db.clone())
-                .mount("/", meta_secret_routes());
+            let rocket = rocket::build().manage(db.clone()).mount("/", meta_secret_routes());
 
-            let rocket_client = RocketClient::tracked(rocket)
-                .await
-                .expect("valid rocket instance");
+            let rocket_client = RocketClient::tracked(rocket).await.expect("valid rocket instance");
 
             Self {
                 mongo_db_port: container.get_host_port_ipv4(27017),
@@ -101,14 +97,12 @@ pub mod framework {
     use rocket::uri;
 
     use meta_secret_vault_server_lib::api::api::{
-        JoinRequest, MessageStatus, PasswordRecoveryRequest, RegistrationResponse,
-        RegistrationStatus, UserSignature, VaultInfo,
+        JoinRequest, MessageStatus, PasswordRecoveryRequest, RegistrationResponse, RegistrationStatus, UserSignature,
+        VaultInfo,
     };
     use meta_secret_vault_server_lib::db::SecretDistributionDoc;
     use meta_secret_vault_server_lib::restful_api;
-    use meta_secret_vault_server_lib::restful_api::membership::{
-        MemberShipResponse, MembershipStatus,
-    };
+    use meta_secret_vault_server_lib::restful_api::membership::{MemberShipResponse, MembershipStatus};
 
     use crate::MetaSecretDocker;
 
@@ -150,11 +144,7 @@ pub mod framework {
         }
 
         pub fn all_key_managers(&self) -> Vec<&KeyManager> {
-            vec![
-                &self.key_manager_1,
-                &self.key_manager_2,
-                &self.key_manager_3,
-            ]
+            vec![&self.key_manager_1, &self.key_manager_2, &self.key_manager_3]
         }
     }
 
@@ -307,10 +297,7 @@ pub mod framework {
             resp.unwrap()
         }
 
-        pub fn claim_for_password_recovery(
-            &self,
-            recovery_request: &PasswordRecoveryRequest,
-        ) -> MessageStatus {
+        pub fn claim_for_password_recovery(&self, recovery_request: &PasswordRecoveryRequest) -> MessageStatus {
             let resp = self
                 .app
                 .infra

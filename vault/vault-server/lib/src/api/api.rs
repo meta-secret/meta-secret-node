@@ -102,10 +102,7 @@ impl VaultInfo {
     }
 
     pub fn empty(status: VaultInfoStatus) -> Self {
-        VaultInfo {
-            status,
-            vault: None,
-        }
+        VaultInfo { status, vault: None }
     }
 }
 

@@ -10,10 +10,7 @@ use crate::restful_api::commons;
 
 /// Register a new distributed vault
 #[post("/register", format = "json", data = "<register_request>")]
-pub async fn register(
-    register_request: Json<UserSignature>,
-    db: &State<Db>,
-) -> Json<RegistrationResponse> {
+pub async fn register(register_request: Json<UserSignature>, db: &State<Db>) -> Json<RegistrationResponse> {
     let user_sig = register_request.into_inner();
     let maybe_vault = commons::find_vault(db, &user_sig).await;
 
