@@ -105,7 +105,7 @@ impl TransportDsaKeyPair {
         }
     }
 
-    pub fn decrypt(self, cipher_text: &AeadCipherText) -> AeadPlainText {
+    pub fn decrypt(&self, cipher_text: &AeadCipherText) -> AeadPlainText {
         let auth_data = &cipher_text.auth_data;
         let sender_pk = CryptoBoxPublicKey::from(&auth_data.sender_public_key);
         let crypto_box = self.build_cha_cha_box(&sender_pk);
