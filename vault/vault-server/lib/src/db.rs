@@ -44,7 +44,7 @@ pub struct SecretDistributionDoc {
     pub secret_message: EncryptedMessage,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub enum SecretDistributionType {
     Split,

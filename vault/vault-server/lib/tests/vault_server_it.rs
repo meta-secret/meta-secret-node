@@ -1,11 +1,9 @@
-use std::borrow::Borrow;
-
 use async_std::task;
 use meta_secret_core::crypto::key_pair::KeyPair;
-use meta_secret_core::crypto::keys::{AeadAuthData, AeadCipherText, AeadPlainText};
-use meta_secret_core::shared_secret;
+use meta_secret_core::crypto::keys::{AeadCipherText, AeadPlainText};
 use meta_secret_core::shared_secret::data_block::common::SharedSecretConfig;
 use meta_secret_core::shared_secret::shared_secret::UserShareDto;
+use meta_secret_core::{recover_from_shares, shared_secret};
 use testcontainers::clients::Cli;
 use testcontainers::images::mongo::Mongo;
 use testcontainers::{clients, Container};
@@ -134,7 +132,8 @@ async fn split_and_recover_password() {
 
     let vault = test_action.get_vault(user_sig);
 
-    let shares: Vec<UserShareDto> = shared_secret::split("t0p$3cr3t".to_string(), cfg);
+    let top_secret_password = "t0p$3cr3t".to_string();
+    let shares: Vec<UserShareDto> = shared_secret::split(top_secret_password.clone(), cfg);
     assert_eq!(shares.len(), 3);
 
     let meta_password = MetaPasswordRequest {
@@ -193,8 +192,7 @@ async fn split_and_recover_password() {
     };
 
     println!("Claim for password recovery for device_2");
-    let recovery_request_device_2 =
-        test_action.claim_for_password_recovery(&pass_recovery_request_device_2);
+    let recovery_request_device_2 = test_action.claim_for_password_recovery(&pass_recovery_request_device_2);
     assert_eq!(recovery_request_device_2, MessageStatus::Ok);
 
     let pass_recovery_request_device_3 = PasswordRecoveryRequest {
@@ -203,8 +201,7 @@ async fn split_and_recover_password() {
         provider: test_app.signatures.sig_3.clone(),
     };
     println!("Claim for password recovery for device_3");
-    let recovery_request_device_3 =
-        test_action.claim_for_password_recovery(&pass_recovery_request_device_3);
+    let recovery_request_device_3 = test_action.claim_for_password_recovery(&pass_recovery_request_device_3);
     assert_eq!(recovery_request_device_3, MessageStatus::Ok);
 
     //devices read claims
@@ -228,10 +225,8 @@ async fn split_and_recover_password() {
     let d_2_transport = &test_app.signatures.key_manager_2.transport_key_pair;
     let decrypted_d2 = d_2_transport.decrypt(&d_2_share.secret_message.encrypted_text);
 
-    let d_2_share_encrypted_for_d_1: AeadCipherText = d_2_transport.encrypt_string(
-        decrypted_d2.msg.clone(),
-        decrypted_d2.auth_data.sender_public_key,
-    );
+    let d_2_share_encrypted_for_d_1: AeadCipherText =
+        d_2_transport.encrypt_string(decrypted_d2.msg.clone(), decrypted_d2.auth_data.sender_public_key);
 
     let d2_recovery_request = SecretDistributionDoc {
         distribution_type: SecretDistributionType::Recover,
@@ -245,4 +240,24 @@ async fn split_and_recover_password() {
     test_action.distribute_password(&d2_recovery_request);
 
     //Device_1 gets the share, decrypts, restores password
+    let pass_shares_for_device_1 = test_action.find_shares(user_sig);
+    let pass_share_for_device_1: &SecretDistributionDoc = &pass_shares_for_device_1[0];
+    assert_eq!(
+        pass_share_for_device_1.distribution_type,
+        SecretDistributionType::Recover
+    );
+
+    let share_from_device_2_json: AeadPlainText = test_app
+        .signatures
+        .key_manager_1
+        .transport_key_pair
+        .decrypt(&pass_share_for_device_1.secret_message.encrypted_text);
+
+    let share_from_device_2_json: UserShareDto = serde_json::from_str(&share_from_device_2_json.msg).unwrap();
+    println!("Decrypted share from device 2 {:?}", share_from_device_2_json);
+
+    let device_1_password_share: UserShareDto = shares[0].clone();
+
+    let password = recover_from_shares(vec![share_from_device_2_json, device_1_password_share]);
+    assert_eq!(top_secret_password, password.unwrap().as_string());
 }
