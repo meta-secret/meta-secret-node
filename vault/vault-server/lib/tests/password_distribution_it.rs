@@ -1,4 +1,4 @@
-use meta_secret_core::crypto::key_pair::KeyPair;
+use meta_secret_core::crypto::key_pair::{DecryptionDirection, KeyPair};
 use meta_secret_core::crypto::keys::{AeadCipherText, AeadPlainText};
 use meta_secret_core::shared_secret::data_block::common::SharedSecretConfig;
 use meta_secret_core::shared_secret::shared_secret::UserShareDto;
@@ -137,20 +137,14 @@ async fn password_distribution() {
     // - other devices read "claim_for_password_recovery request and send their shares of the password to the server
     // - device_1 reads shares and restores password
 
-    //decrypt a share on the device and encrypt with a receiver device and send it to "distribute" method
+    // Device 2 just sends back its share to the device_1, because device_1 already has password (by design of DHE)
     let d_2_share: &SecretDistributionDoc = &device_2_shares[0];
-    let d_2_transport = &test_app.signatures.key_manager_2.transport_key_pair;
-    let decrypted_d2 = d_2_transport.decrypt(&d_2_share.secret_message.encrypted_text);
-
-    let d_2_share_encrypted_for_d_1: AeadCipherText =
-        d_2_transport.encrypt_string(decrypted_d2.msg.clone(), decrypted_d2.auth_data.sender_public_key);
-
     let d2_recovery_request = SecretDistributionDoc {
         distribution_type: SecretDistributionType::Recover,
         meta_password: meta_password.clone(),
         secret_message: EncryptedMessage {
-            receiver: test_app.signatures.sig_1.clone(),
-            encrypted_text: d_2_share_encrypted_for_d_1,
+            receiver: user_sig.clone(),
+            encrypted_text: d_2_share.secret_message.encrypted_text.clone(),
         },
     };
 
@@ -164,11 +158,10 @@ async fn password_distribution() {
         SecretDistributionType::Recover
     );
 
-    let share_from_device_2_json: AeadPlainText = test_app
-        .signatures
-        .key_manager_1
-        .transport_key_pair
-        .decrypt(&pass_share_for_device_1.secret_message.encrypted_text);
+    let share_from_device_2_json: AeadPlainText = test_app.signatures.key_manager_1.transport_key_pair.decrypt(
+        &pass_share_for_device_1.secret_message.encrypted_text,
+        DecryptionDirection::Backward,
+    );
 
     let share_from_device_2_json: UserShareDto = serde_json::from_str(&share_from_device_2_json.msg).unwrap();
     println!("Decrypted share from device 2 {:?}", share_from_device_2_json);
