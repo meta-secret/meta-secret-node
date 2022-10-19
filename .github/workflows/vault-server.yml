@@ -27,6 +27,6 @@ jobs:
       - name: build/push vault-server image
         working-directory: vault/vault-server
         run: |
-          cargo test -- --test-threads=3
+          cargo test -- --test-threads=2
           build_scripts/docker-build.sh
           docker push ghcr.io/meta-secret/vault-server:latest
