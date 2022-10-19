@@ -51,10 +51,7 @@ impl KeyPair for TransportDsaKeyPair {
         let secret_key = CryptoBoxSecretKey::generate(&mut CryptoBoxOsRng);
         let public_key = secret_key.public_key();
 
-        Self {
-            secret_key,
-            public_key,
-        }
+        Self { secret_key, public_key }
     }
 
     fn public_key(&self) -> Base64EncodedText {
@@ -67,11 +64,7 @@ impl TransportDsaKeyPair {
         ChaChaBox::new(their_pk, &self.secret_key)
     }
 
-    pub fn encrypt_string(
-        &self,
-        plain_text: String,
-        receiver_pk: Base64EncodedText,
-    ) -> AeadCipherText {
+    pub fn encrypt_string(&self, plain_text: String, receiver_pk: Base64EncodedText) -> AeadCipherText {
         let aead_text = AeadPlainText {
             msg: plain_text,
             auth_data: AeadAuthData {
@@ -93,7 +86,7 @@ impl TransportDsaKeyPair {
             .encrypt(
                 &Nonce::from(&auth_data.nonce),
                 Payload {
-                    msg: plain_text.msg.clone().as_bytes(), // your message to encrypt
+                    msg: plain_text.msg.clone().as_bytes(),    // your message to encrypt
                     aad: auth_data.associated_data.as_bytes(), // not encrypted, but authenticated in tag
                 },
             )
@@ -105,10 +98,14 @@ impl TransportDsaKeyPair {
         }
     }
 
-    pub fn decrypt(&self, cipher_text: &AeadCipherText) -> AeadPlainText {
+    pub fn decrypt(&self, cipher_text: &AeadCipherText, decryption_direction: DecryptionDirection) -> AeadPlainText {
         let auth_data = &cipher_text.auth_data;
-        let sender_pk = CryptoBoxPublicKey::from(&auth_data.sender_public_key);
-        let crypto_box = self.build_cha_cha_box(&sender_pk);
+
+        let their_pk = match decryption_direction {
+            DecryptionDirection::Straight => CryptoBoxPublicKey::from(&auth_data.sender_public_key),
+            DecryptionDirection::Backward => CryptoBoxPublicKey::from(&auth_data.receiver_public_key),
+        };
+        let crypto_box = self.build_cha_cha_box(&their_pk);
 
         let msg_vec: Vec<u8> = cipher_text.msg.clone().into();
         let decrypted_plaintext: Vec<u8> = crypto_box
@@ -133,15 +130,18 @@ impl TransportDsaKeyPair {
     }
 }
 
+pub enum DecryptionDirection {
+    //Receiver decrypts message.
+    // The message encrypted by sender and we use receiver's secret key and sender's public key to get a password
+    Straight,
+    //Sender gets back its encrypted message and wants to decrypt it.
+    // In this case we use sender's secret key and receiver's public key to derive the encryption password
+    Backward,
+}
+
 #[cfg(test)]
 pub mod test {
-    use crypto_box::{
-        aead::{AeadCore, OsRng as CryptoBoxOsRng},
-        ChaChaBox, Nonce,
-    };
-
-    use crate::crypto::encoding::Base64EncodedText;
-    use crate::crypto::key_pair::KeyPair;
+    use crate::crypto::key_pair::{DecryptionDirection, KeyPair};
     use crate::crypto::keys::{AeadAuthData, AeadCipherText, AeadPlainText, KeyManager};
 
     #[test]
@@ -160,7 +160,9 @@ pub mod test {
         };
         let cipher_text: AeadCipherText = alice_km.transport_key_pair.encrypt(&plain_text);
 
-        let decrypted_text = bob_km.transport_key_pair.decrypt(&cipher_text);
+        let decrypted_text = bob_km
+            .transport_key_pair
+            .decrypt(&cipher_text, DecryptionDirection::Straight);
 
         assert_eq!(plain_text, decrypted_text);
     }
