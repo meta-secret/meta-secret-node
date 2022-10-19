@@ -7,7 +7,6 @@ use ed25519_dalek::ed25519::signature::Signature;
 use ed25519_dalek::{Keypair, Signer};
 use image::EncodableLayout;
 use rand::rngs::OsRng;
-use serde::{Deserialize, Serialize};
 
 use crate::crypto::encoding::Base64EncodedText;
 use crate::crypto::keys::{AeadAuthData, AeadCipherText, AeadPlainText};
@@ -145,7 +144,7 @@ pub mod test {
     use crate::crypto::keys::{AeadAuthData, AeadCipherText, AeadPlainText, KeyManager};
 
     #[test]
-    fn crypto_box() {
+    fn straight_and_backward_decryption() {
         let alice_km = KeyManager::generate();
         let bob_km = KeyManager::generate();
 
@@ -165,5 +164,21 @@ pub mod test {
             .decrypt(&cipher_text, DecryptionDirection::Straight);
 
         assert_eq!(plain_text, decrypted_text);
+
+        let cipher_text = AeadCipherText {
+            msg: cipher_text.msg,
+            auth_data: AeadAuthData {
+                associated_data: cipher_text.auth_data.associated_data,
+                sender_public_key: cipher_text.auth_data.receiver_public_key,
+                receiver_public_key: cipher_text.auth_data.sender_public_key,
+                nonce: cipher_text.auth_data.nonce,
+            },
+        };
+
+        let decrypted_text = bob_km
+            .transport_key_pair
+            .decrypt(&cipher_text, DecryptionDirection::Backward);
+
+        assert_eq!(plain_text.msg, decrypted_text.msg);
     }
 }
