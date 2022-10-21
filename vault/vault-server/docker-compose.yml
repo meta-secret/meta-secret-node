@@ -19,7 +19,7 @@ services:
     depends_on:
       - meta-secret-db
     ports:
-      - "8000:8000"
+      - "8000:80"
     networks:
       - meta_secret
 
