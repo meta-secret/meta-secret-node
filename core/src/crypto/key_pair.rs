@@ -144,6 +144,26 @@ pub mod test {
     use crate::crypto::keys::{AeadAuthData, AeadCipherText, AeadPlainText, KeyManager};
 
     #[test]
+    fn single_person_encryption() {
+        let password = "topSecret".to_string();
+
+        let alice_km = KeyManager::generate();
+        let cypher_text = alice_km
+            .transport_key_pair
+            .encrypt_string(password.clone(), alice_km.transport_key_pair.public_key());
+
+        let plain_text = alice_km
+            .transport_key_pair
+            .decrypt(&cypher_text, DecryptionDirection::Straight);
+        assert_eq!(password, plain_text.msg);
+
+        let plain_text = alice_km
+            .transport_key_pair
+            .decrypt(&cypher_text, DecryptionDirection::Backward);
+        assert_eq!(password, plain_text.msg);
+    }
+
+    #[test]
     fn straight_and_backward_decryption() {
         let alice_km = KeyManager::generate();
         let bob_km = KeyManager::generate();
