@@ -1,8 +1,8 @@
 version: '3.7'
 services:
-  meta-secret-db:
+  meta-secret-db-mongodb:
     image: mongo:latest
-    container_name: meta-secret-db
+    container_name: meta-secret-db-mongodb
     #environment:
     #  MONGO_INITDB_ROOT_USERNAME: root
     #  MONGO_INITDB_ROOT_PASSWORD: rootpassword
@@ -17,7 +17,7 @@ services:
     image: ghcr.io/meta-secret/vault-server:latest
     container_name: meta-secret-vault-server
     depends_on:
-      - meta-secret-db
+      - meta-secret-db-mongodb
     ports:
       - "8000:80"
     networks:

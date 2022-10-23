@@ -11,7 +11,7 @@ use meta_secret_vault_server_lib::restful_api::meta_secret_routes;
 async fn main() -> Result<(), rocket::Error> {
     let db_schema = DbSchema::default();
 
-    let url = format!("mongodb://meta-secret-db:{}/", 27017);
+    let url = format!("mongodb://meta-secret-db-mongodb:{}/", 27017);
     let client: Client = Client::with_uri_str(&url).await.unwrap();
     let mongo_db = client.database(db_schema.db_name.as_str());
     let db = Db {
