@@ -16,6 +16,22 @@ use crate::testing::testify::TestRunner;
 mod testing;
 
 #[rocket::async_test]
+async fn stats() {
+    let test_runner = TestRunner::default();
+    let docker_cli: Cli = clients::Cli::default();
+    let container: Container<Mongo> = docker_cli.run(Mongo::default());
+
+    let infra = MetaSecretDocker::run(&test_runner.fixture, &docker_cli, &container).await;
+
+    let test_app = MetaSecretTestApp::new(infra);
+
+    test_app.actions(|app| {
+        let resp = TestAction::new(app).stats();
+        assert_eq!(resp.registrations, 0);
+    });
+}
+
+#[rocket::async_test]
 async fn register_one_device() {
     let test_runner = TestRunner::default();
     let docker_cli: Cli = clients::Cli::default();

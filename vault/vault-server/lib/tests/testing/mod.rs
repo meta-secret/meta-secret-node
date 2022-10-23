@@ -102,6 +102,7 @@ pub mod framework {
     };
     use meta_secret_vault_server_lib::db::SecretDistributionDoc;
     use meta_secret_vault_server_lib::restful_api;
+    use meta_secret_vault_server_lib::restful_api::commons::MongoDbStats;
     use meta_secret_vault_server_lib::restful_api::membership::{MemberShipResponse, MembershipStatus};
 
     use crate::MetaSecretDocker;
@@ -176,6 +177,23 @@ pub mod framework {
     impl<'a> TestAction<'a> {
         pub fn new(app: &'a MetaSecretTestApp) -> Self {
             Self { app }
+        }
+
+        pub fn stats(self) -> MongoDbStats {
+            let request = self
+                .app
+                .infra
+                .rocket_client
+                .get(uri!(restful_api::commons::stats))
+                .header(ContentType::JSON)
+                .dispatch();
+
+            let response = task::block_on(request);
+            assert_eq!(response.status(), Status::Ok);
+
+            let resp = response.into_json::<MongoDbStats>();
+            let resp = task::block_on(resp);
+            resp.unwrap()
         }
 
         pub fn register(self, user_sig: &UserSignature) -> RegistrationResponse {
