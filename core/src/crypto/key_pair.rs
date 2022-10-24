@@ -14,6 +14,7 @@ use crate::crypto::keys::{AeadAuthData, AeadCipherText, AeadPlainText};
 pub trait KeyPair {
     fn generate() -> Self;
     fn public_key(&self) -> Base64EncodedText;
+    fn secret_key(&self) -> Base64EncodedText;
 }
 
 pub struct DsaKeyPair {
@@ -38,6 +39,10 @@ impl KeyPair for DsaKeyPair {
     fn public_key(&self) -> Base64EncodedText {
         Base64EncodedText::from(&self.key_pair.public.to_bytes())
     }
+
+    fn secret_key(&self) -> Base64EncodedText {
+        Base64EncodedText::from(&self.key_pair.secret.to_bytes())
+    }
 }
 
 pub struct TransportDsaKeyPair {
@@ -55,6 +60,10 @@ impl KeyPair for TransportDsaKeyPair {
 
     fn public_key(&self) -> Base64EncodedText {
         Base64EncodedText::from(self.public_key.as_bytes())
+    }
+
+    fn secret_key(&self) -> Base64EncodedText {
+        Base64EncodedText::from(self.secret_key.as_bytes())
     }
 }
 
