@@ -5,11 +5,9 @@ use std::string::FromUtf8Error;
 
 use anyhow::{Context, Result};
 use clap::{ArgEnum, Parser, Subcommand};
-use meta_secret_core::{convert_qr_images_to_json_files, recover, RecoveryOperationError, split};
 use meta_secret_core::shared_secret::data_block::common::SharedSecretConfig;
+use meta_secret_core::{convert_qr_images_to_json_files, recover, split, RecoveryOperationError};
 use serde::{Deserialize, Serialize};
-
-use crate::RestoreError::RecoveryError;
 
 #[derive(Debug, Parser)]
 #[clap(about = "Meta Secret Command Line Application", long_about = None)]
@@ -64,8 +62,7 @@ fn main() -> Result<()> {
                 convert_qr_images_to_json_files()
                     .with_context(|| "Error converting qr codes into json files")?;
 
-                let password = restore_from_json()
-                    .with_context(|| "Can't restore password")?;
+                let password = restore_from_json().with_context(|| "Can't restore password")?;
 
                 println!("Restored password: {:?}", password);
             }
