@@ -5,19 +5,19 @@ use rocket::State;
 
 use crate::api::api::UserSignature;
 use crate::api::api::{RegistrationResponse, RegistrationStatus};
-use crate::db::Db;
 use crate::restful_api::commons;
+use crate::restful_api::commons::MetaState;
 
 /// Register a new distributed vault
 #[post("/register", format = "json", data = "<register_request>")]
-pub async fn register(register_request: Json<UserSignature>, db: &State<Db>) -> Json<RegistrationResponse> {
+pub async fn register(state: &State<MetaState>, register_request: Json<UserSignature>) -> Json<RegistrationResponse> {
     let user_sig = register_request.into_inner();
-    let maybe_vault = commons::find_vault(db, &user_sig).await;
+    let maybe_vault = commons::find_vault(&state.db, &user_sig).await;
 
     match maybe_vault {
         None => {
             //create a new user:
-            let vaults_col = db.vaults_col();
+            let vaults_col = state.db.vaults_col();
             vaults_col
                 .insert_one(user_sig.to_initial_vault_doc(), None)
                 .await
@@ -43,7 +43,7 @@ pub async fn register(register_request: Json<UserSignature>, db: &State<Db>) -> 
             let vault_filter = bson::doc! {
                 "vaultName": vault_name
             };
-            let vaults_col = db.vaults_col();
+            let vaults_col = state.db.vaults_col();
             vaults_col
                 .replace_one(vault_filter, vault_doc.clone(), None)
                 .await

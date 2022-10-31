@@ -1,5 +1,7 @@
 use rocket::{routes, Route};
 
+pub mod basic;
+pub mod cloud;
 pub mod commons;
 pub mod membership;
 pub mod password;
@@ -8,8 +10,8 @@ pub mod vault;
 
 pub fn meta_secret_routes() -> Vec<Route> {
     routes![
-        commons::hi,
-        commons::stats,
+        basic::hi,
+        basic::stats,
         register::register,
         vault::get_vault,
         membership::accept,
@@ -19,5 +21,6 @@ pub fn meta_secret_routes() -> Vec<Route> {
         password::find_shares,
         password::passwords,
         password::find_password_recovery_claims,
+        cloud::join_meta_cloud,
     ]
 }

@@ -1,14 +1,15 @@
-use crate::api::api::JoinRequest;
 use mongodb::{bson, Collection};
 use rocket::post;
 use rocket::serde::json::Json;
 use rocket::State;
 use serde::{Deserialize, Serialize};
 
+use crate::api::api::JoinRequest;
 use crate::api::api::UserSignature;
 use crate::crypto::crypto;
-use crate::db::{Db, VaultDoc};
+use crate::db::VaultDoc;
 use crate::restful_api::commons;
+use crate::restful_api::commons::MetaState;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -28,13 +29,13 @@ pub struct MemberShipResponse {
 }
 
 #[post("/decline", format = "json", data = "<join_request>")]
-pub async fn decline(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<MemberShipResponse> {
+pub async fn decline(state: &State<MetaState>, join_request: Json<JoinRequest>) -> Json<MemberShipResponse> {
     let join_request = join_request.into_inner();
 
     let vault_name = join_request.candidate.clone().vault_name;
     let candidate = join_request.candidate;
 
-    let maybe_vault = commons::find_vault(db, &join_request.member).await;
+    let maybe_vault = commons::find_vault(&state.db, &join_request.member).await;
 
     match maybe_vault {
         //user not found
@@ -46,7 +47,7 @@ pub async fn decline(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<Me
             if vault_doc.signatures.contains(&candidate) {
                 remove_candidate_from_pending_queue(&candidate, &mut vault_doc);
 
-                let vaults_col = db.vaults_col();
+                let vaults_col = state.db.vaults_col();
                 update_vault(vault_name.clone(), vaults_col, vault_doc).await;
                 return Json(MemberShipResponse {
                     status: MembershipStatus::AlreadyMember,
@@ -58,7 +59,7 @@ pub async fn decline(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<Me
                 if vault_doc.pending_joins.contains(&candidate) {
                     if crypto::verify(&candidate) {
                         //we can add a new user signature into a vault
-                        let vaults_col = db.vaults_col();
+                        let vaults_col = state.db.vaults_col();
                         remove_candidate_from_pending_queue(&candidate, &mut vault_doc);
                         vault_doc.declined_joins.push(candidate.clone());
                         update_vault(vault_name.clone(), vaults_col, vault_doc).await;
@@ -76,10 +77,10 @@ pub async fn decline(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<Me
 
 /// Accept join request
 #[post("/accept", format = "json", data = "<join_request>")]
-pub async fn accept(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<MemberShipResponse> {
+pub async fn accept(state: &State<MetaState>, join_request: Json<JoinRequest>) -> Json<MemberShipResponse> {
     let join_request = join_request.into_inner();
 
-    let maybe_vault = commons::find_vault(db, &join_request.member).await;
+    let maybe_vault = commons::find_vault(&state.db, &join_request.member).await;
 
     return match maybe_vault {
         //user not found
@@ -91,7 +92,7 @@ pub async fn accept(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<Mem
             let candidate = join_request.candidate;
             if vault_doc.signatures.contains(&candidate) {
                 remove_candidate_from_pending_queue(&candidate, &mut vault_doc);
-                let vaults_col = db.vaults_col();
+                let vaults_col = state.db.vaults_col();
                 update_vault(candidate.vault_name.clone(), vaults_col, vault_doc).await;
                 return Json(MemberShipResponse {
                     status: MembershipStatus::AlreadyMember,
@@ -106,7 +107,7 @@ pub async fn accept(db: &State<Db>, join_request: Json<JoinRequest>) -> Json<Mem
                         remove_candidate_from_pending_queue(&candidate, &mut vault_doc);
 
                         vault_doc.signatures.push(candidate.clone());
-                        let vaults_col = db.vaults_col();
+                        let vaults_col = state.db.vaults_col();
                         update_vault(candidate.vault_name.clone(), vaults_col, vault_doc).await;
                     }
                 }

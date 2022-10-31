@@ -1,3 +1,4 @@
+use meta_secret_core::crypto::encoding::serialized_key_manager::SerializedKeyManager;
 use mongodb::{Client, Collection, Database};
 use openssl::sha::Sha256;
 use serde::{Deserialize, Serialize};
@@ -9,8 +10,10 @@ pub struct DbSchema {
     pub db_name: String,
     pub vault_col: String,
     pub secrets_distribution_col: String,
+    pub cloud_storage_col: String,
     pub secret_recovery_col: String,
     pub passwords_col: String,
+    pub key_manager_col: String,
 }
 
 impl Default for DbSchema {
@@ -19,8 +22,10 @@ impl Default for DbSchema {
             db_name: "meta-secret".to_string(),
             vault_col: "vaults".to_string(),
             secrets_distribution_col: "secrets_distribution".to_string(),
+            cloud_storage_col: "cloud_storage".to_string(),
             secret_recovery_col: "secret_recovery".to_string(),
             passwords_col: "passwords".to_string(),
+            key_manager_col: "key_manager".to_string(),
         }
     }
 }
@@ -89,6 +94,9 @@ impl MetaPasswordId {
 #[serde(rename_all = "camelCase")]
 pub struct MetaPasswordDoc {
     pub id: MetaPasswordId,
+    //We need to keep the entire vault here,
+    // because the vault can be changed (new members can appear some members can be deleted),
+    // then we won't b e able to restore  the password if we'd have different members than in original vault
     pub vault: VaultDoc,
 }
 
@@ -98,12 +106,17 @@ impl Db {
         self.db.collection::<SecretDistributionDoc>(col_name)
     }
 
+    pub fn cloud_storage_col(&self) -> Collection<SecretDistributionDoc> {
+        let col_name = self.db_schema.cloud_storage_col.as_str();
+        self.db.collection::<SecretDistributionDoc>(col_name)
+    }
+
     pub fn vaults_col(&self) -> Collection<VaultDoc> {
         let col_name = self.db_schema.vault_col.as_str();
         self.db.collection::<VaultDoc>(col_name)
     }
 
-    pub fn passwords_col(&self) -> Collection<MetaPasswordRequest> {
+    pub fn meta_passwords_col(&self) -> Collection<MetaPasswordRequest> {
         let col_name = self.db_schema.passwords_col.as_str();
         self.db.collection::<MetaPasswordRequest>(col_name)
     }
@@ -111,6 +124,11 @@ impl Db {
     pub fn recovery_col(&self) -> Collection<PasswordRecoveryRequest> {
         let col_name = self.db_schema.secret_recovery_col.as_str();
         self.db.collection::<PasswordRecoveryRequest>(col_name)
+    }
+
+    pub fn key_manager_col(&self) -> Collection<SerializedKeyManager> {
+        let col_name = self.db_schema.key_manager_col.as_str();
+        self.db.collection::<SerializedKeyManager>(col_name)
     }
 }
 

@@ -6,6 +6,7 @@ use meta_secret_core::{recover_from_shares, shared_secret};
 use testcontainers::clients::Cli;
 use testcontainers::images::mongo::Mongo;
 use testcontainers::{clients, Container};
+use tracing::info;
 
 use meta_secret_vault_server_lib::api::api::UserSignature;
 use meta_secret_vault_server_lib::api::api::{
@@ -23,6 +24,8 @@ mod testing;
 
 #[rocket::async_test]
 async fn password_distribution() {
+    MetaSecretDocker::init_logging();
+
     let ctx = TestRunner::default();
 
     let docker_cli: Cli = clients::Cli::default();
@@ -88,16 +91,18 @@ async fn password_distribution() {
 
     //restore
     let device_2_shares = test_action.find_shares(&test_app.signatures.sig_2);
-    println!(
+    assert_eq!(1, device_2_shares.len());
+    info!(
         "shares to distribute for device_2: {}",
         serde_json::to_string_pretty(&device_2_shares).unwrap()
     );
 
     let device_3_shares = test_action.find_shares(&test_app.signatures.sig_3);
-    println!(
+    info!(
         "shares to distribute for device_3: {}",
         serde_json::to_string_pretty(&device_3_shares).unwrap()
     );
+    assert_eq!(1, device_3_shares.len());
 
     //get all meta_passwords???
 
@@ -108,7 +113,7 @@ async fn password_distribution() {
         provider: test_app.signatures.sig_2.clone(),
     };
 
-    println!("Claim for password recovery for device_2");
+    info!("Claim for password recovery for device_2");
     let recovery_request_device_2 = test_action.claim_for_password_recovery(&pass_recovery_request_device_2);
     assert_eq!(recovery_request_device_2, MessageStatus::Ok);
 
@@ -117,18 +122,18 @@ async fn password_distribution() {
         consumer: user_sig.clone(),
         provider: test_app.signatures.sig_3.clone(),
     };
-    println!("Claim for password recovery for device_3");
+    info!("Claim for password recovery for device_3");
     let recovery_request_device_3 = test_action.claim_for_password_recovery(&pass_recovery_request_device_3);
     assert_eq!(recovery_request_device_3, MessageStatus::Ok);
 
     //devices read claims
-    println!("Device_2: find password recovery claims");
+    info!("Device_2: find password recovery claims");
     let sig_2_claim = test_action
         .find_password_recovery_claims(&test_app.signatures.sig_2)
         .await;
     assert_eq!(sig_2_claim.len(), 1);
 
-    println!("Device_3: find password recovery claims");
+    info!("Device_3: find password recovery claims");
     let sig_3_claim = test_action
         .find_password_recovery_claims(&test_app.signatures.sig_3)
         .await;
@@ -152,6 +157,8 @@ async fn password_distribution() {
 
     //Device_1 gets the share, decrypts, restores password
     let pass_shares_for_device_1 = test_action.find_shares(user_sig);
+    assert_eq!(pass_shares_for_device_1.len(), 1);
+
     let pass_share_for_device_1: &SecretDistributionDoc = &pass_shares_for_device_1[0];
     assert_eq!(
         pass_share_for_device_1.distribution_type,
@@ -164,7 +171,7 @@ async fn password_distribution() {
     );
 
     let share_from_device_2_json: UserShareDto = serde_json::from_str(&share_from_device_2_json.msg).unwrap();
-    println!("Decrypted share from device 2 {:?}", share_from_device_2_json);
+    info!("Decrypted share from device 2 {:?}", share_from_device_2_json);
 
     let device_1_password_share: UserShareDto = shares[0].clone();
 

@@ -1,8 +1,9 @@
-use crate::db::{MetaPasswordDoc, MetaPasswordId, VaultDoc};
 use meta_secret_core::crypto::encoding::Base64EncodedText;
 use meta_secret_core::crypto::key_pair::KeyPair;
 use meta_secret_core::crypto::keys::{AeadCipherText, KeyManager};
 use serde::{Deserialize, Serialize};
+
+use crate::db::{MetaPasswordDoc, MetaPasswordId, VaultDoc};
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -75,9 +76,10 @@ pub struct JoinRequest {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct EncryptedMessage {
-    /// Massage receiver who can decrypt message.
-    /// Message text encrypted with receivers' RSA public key
+    /// Massage receiver who can decrypt message. We can't use a receiver from inside AeadCipherText because it's static
+    /// and we can't know if a receiver send message back or it's the sender sending message.
     pub receiver: UserSignature,
+    /// Message text encrypted with receivers' RSA public key
     pub encrypted_text: AeadCipherText,
 }
 

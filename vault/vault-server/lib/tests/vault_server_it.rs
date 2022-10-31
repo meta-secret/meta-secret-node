@@ -2,6 +2,7 @@ use meta_secret_core::crypto::key_pair::KeyPair;
 use testcontainers::clients::Cli;
 use testcontainers::images::mongo::Mongo;
 use testcontainers::{clients, Container};
+use tracing::info;
 
 use meta_secret_vault_server_lib::api::api::RegistrationStatus;
 use meta_secret_vault_server_lib::api::api::{EncryptedMessage, MetaPasswordRequest};
@@ -17,6 +18,8 @@ mod testing;
 
 #[rocket::async_test]
 async fn stats() {
+    MetaSecretDocker::init_logging();
+
     let test_runner = TestRunner::default();
     let docker_cli: Cli = clients::Cli::default();
     let container: Container<Mongo> = docker_cli.run(Mongo::default());
@@ -33,24 +36,26 @@ async fn stats() {
 
 #[rocket::async_test]
 async fn register_one_device() {
+    MetaSecretDocker::init_logging();
+
     let test_runner = TestRunner::default();
     let docker_cli: Cli = clients::Cli::default();
     let container: Container<Mongo> = docker_cli.run(Mongo::default());
 
     let infra = MetaSecretDocker::run(&test_runner.fixture, &docker_cli, &container).await;
-    println!("mongodb url: {:?}", infra.mongo_db_url);
+    info!("mongodb url: {:?}", infra.mongo_db_url);
 
     let test_app = MetaSecretTestApp::new(infra);
 
-    test_app.actions(|app| {
-        let user_sig = &app.signatures.sig_1;
-        let resp = TestAction::new(app).register(user_sig);
-        assert_eq!(resp.status, RegistrationStatus::Registered);
-    });
+    let user_sig = &test_app.signatures.sig_1;
+    let resp = TestAction::new(&test_app).register(user_sig);
+    assert_eq!(resp.status, RegistrationStatus::Registered);
 }
 
 #[rocket::async_test]
 async fn split_password() {
+    MetaSecretDocker::init_logging();
+
     let test_runner = TestRunner::default();
     let docker_cli: Cli = clients::Cli::default();
     let container: Container<Mongo> = docker_cli.run(Mongo::default());

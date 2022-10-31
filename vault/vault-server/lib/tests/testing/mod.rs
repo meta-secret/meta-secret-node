@@ -25,12 +25,6 @@ pub mod testify {
             }
         }
     }
-
-    impl TestRunner {
-        pub fn run(self, action: fn(fixture: TestFixture) -> ()) {
-            action(self.fixture)
-        }
-    }
 }
 
 pub mod test_infra {
@@ -40,8 +34,10 @@ pub mod test_infra {
     use testcontainers::clients::Cli;
     use testcontainers::images::mongo::Mongo;
     use testcontainers::Container;
+    use tracing::info;
 
     use meta_secret_vault_server_lib::db::Db;
+    use meta_secret_vault_server_lib::restful_api::commons::{get_server_key_manager, MetaState};
     use meta_secret_vault_server_lib::restful_api::meta_secret_routes;
 
     use crate::testing::testify::TestFixture;
@@ -49,7 +45,6 @@ pub mod test_infra {
     pub struct MetaSecretDocker {
         pub mongo_db_port: u16,
         pub mongo_db_url: String,
-        pub db: Db,
         pub rocket_client: RocketClient,
     }
 
@@ -75,17 +70,36 @@ pub mod test_infra {
                 client: mongo_db_client,
                 db: mongo_db,
             };
+            let key_manager = get_server_key_manager(&db).await;
 
-            let rocket = rocket::build().manage(db.clone()).mount("/", meta_secret_routes());
+            let meta_state = MetaState { db, key_manager };
+
+            let rocket = rocket::build().manage(meta_state).mount("/", meta_secret_routes());
 
             let rocket_client = RocketClient::tracked(rocket).await.expect("valid rocket instance");
 
             Self {
                 mongo_db_port: container.get_host_port_ipv4(27017),
                 mongo_db_url: format!("mongodb://localhost:{}/", host_port),
-                db,
                 rocket_client,
             }
+        }
+    }
+
+    impl MetaSecretDocker {
+        pub fn init_logging() {
+            let tracing = tracing_subscriber::fmt()
+                .compact()
+                // enable everything
+                .with_max_level(tracing::Level::DEBUG)
+                // sets this to be the default, global collector for this application.
+                .try_init();
+
+            if tracing.is_err() {
+                info!("Tracing already initialized");
+            }
+
+            info!("Meta Secret Infra!");
         }
     }
 }
@@ -94,7 +108,7 @@ pub mod framework {
     use async_std::task;
     use meta_secret_core::crypto::keys::KeyManager;
     use rocket::http::{ContentType, Status};
-    use rocket::uri;
+    use rocket::{info, uri};
 
     use meta_secret_vault_server_lib::api::api::{
         JoinRequest, MessageStatus, PasswordRecoveryRequest, RegistrationResponse, RegistrationStatus, UserSignature,
@@ -102,7 +116,7 @@ pub mod framework {
     };
     use meta_secret_vault_server_lib::db::SecretDistributionDoc;
     use meta_secret_vault_server_lib::restful_api;
-    use meta_secret_vault_server_lib::restful_api::commons::MongoDbStats;
+    use meta_secret_vault_server_lib::restful_api::basic::MongoDbStats;
     use meta_secret_vault_server_lib::restful_api::membership::{MemberShipResponse, MembershipStatus};
 
     use crate::MetaSecretDocker;
@@ -180,11 +194,13 @@ pub mod framework {
         }
 
         pub fn stats(self) -> MongoDbStats {
+            info!("Get Db statistics");
+
             let request = self
                 .app
                 .infra
                 .rocket_client
-                .get(uri!(restful_api::commons::stats))
+                .get(uri!(restful_api::basic::stats))
                 .header(ContentType::JSON)
                 .dispatch();
 
@@ -197,6 +213,11 @@ pub mod framework {
         }
 
         pub fn register(self, user_sig: &UserSignature) -> RegistrationResponse {
+            info!(
+                "Registering a new device, vault: {:?}, user pk: {:?}",
+                user_sig.vault_name, user_sig.public_key.base64_text
+            );
+
             let signup_response = self
                 .app
                 .infra
@@ -215,6 +236,11 @@ pub mod framework {
         }
 
         pub fn accept(self, join_req: &JoinRequest) -> MemberShipResponse {
+            info!(
+                "Accept join request. A new device added into the vault/cluster: {}",
+                join_req.candidate.public_key.base64_text
+            );
+
             let join_response = self
                 .app
                 .infra
@@ -233,6 +259,8 @@ pub mod framework {
         }
 
         pub fn create_cluster(&self) {
+            info!("Create meta secret cluster");
+
             let resp = TestAction::new(self.app).register(&self.app.signatures.sig_1);
             assert_eq!(resp.status, RegistrationStatus::Registered);
 
@@ -256,6 +284,8 @@ pub mod framework {
         }
 
         pub fn distribute_password(&self, request: &SecretDistributionDoc) -> MessageStatus {
+            info!("Distribute password: {:?}", request.meta_password.meta_password.id);
+
             let distribute_response = self
                 .app
                 .infra
@@ -278,6 +308,11 @@ pub mod framework {
         }
 
         pub fn get_vault(&self, sig: &UserSignature) -> VaultInfo {
+            info!(
+                "Get vault: {:?}, caller: {:?}",
+                sig.vault_name, sig.public_key.base64_text
+            );
+
             let resp = self
                 .app
                 .infra
@@ -297,6 +332,8 @@ pub mod framework {
         }
 
         pub fn find_shares(&self, sig: &UserSignature) -> Vec<SecretDistributionDoc> {
+            info!("Find shares for {}", sig.public_key.base64_text);
+
             let resp = self
                 .app
                 .infra
@@ -316,6 +353,7 @@ pub mod framework {
         }
 
         pub fn claim_for_password_recovery(&self, recovery_request: &PasswordRecoveryRequest) -> MessageStatus {
+            info!("claim_for_password_recovery");
             let resp = self
                 .app
                 .infra
@@ -338,6 +376,8 @@ pub mod framework {
             &self,
             user_signature: &UserSignature,
         ) -> Vec<PasswordRecoveryRequest> {
+            info!("find_password_recovery_claims");
+
             let resp = self
                 .app
                 .infra
