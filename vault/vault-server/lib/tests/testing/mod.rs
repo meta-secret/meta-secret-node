@@ -193,7 +193,7 @@ pub mod framework {
             Self { app }
         }
 
-        pub fn stats(self) -> MongoDbStats {
+        pub async fn stats(self) -> MongoDbStats {
             info!("Get Db statistics");
 
             let request = self
@@ -208,8 +208,7 @@ pub mod framework {
             assert_eq!(response.status(), Status::Ok);
 
             let resp = response.into_json::<MongoDbStats>();
-            let resp = task::block_on(resp);
-            resp.unwrap()
+            resp.await.unwrap()
         }
 
         pub fn register(self, user_sig: &UserSignature) -> RegistrationResponse {

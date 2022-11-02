@@ -27,11 +27,8 @@ async fn stats() {
     let infra = MetaSecretDocker::run(&test_runner.fixture, &docker_cli, &container).await;
 
     let test_app = MetaSecretTestApp::new(infra);
-
-    test_app.actions(|app| {
-        let resp = TestAction::new(app).stats();
-        assert_eq!(resp.registrations, 0);
-    });
+    let resp = TestAction::new(&test_app).stats();
+    assert_eq!(resp.await.registrations, 0);
 }
 
 #[rocket::async_test]
