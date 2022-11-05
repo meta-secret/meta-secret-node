@@ -15,7 +15,7 @@ use meta_secret_vault_server_lib::api::api::{
 use meta_secret_vault_server_lib::db::{
     MetaPasswordDoc, MetaPasswordId, SecretDistributionDoc, SecretDistributionType,
 };
-use meta_test::framework::{MetaSecretTestApp, TestAction};
+use meta_test::test_framework::{MetaSecretTestApp, TestAction};
 use meta_test::test_infra::{MetaSecretDocker, MetaSecretDockerInfra};
 use meta_test::testify::TestRunner;
 

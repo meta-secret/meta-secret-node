@@ -9,9 +9,10 @@ use meta_secret_vault_server_lib::api::api::{EncryptedMessage, MetaPasswordReque
 use meta_secret_vault_server_lib::db::{
     MetaPasswordDoc, MetaPasswordId, SecretDistributionDoc, SecretDistributionType,
 };
-use meta_test::framework::{MetaSecretTestApp, TestAction};
+use meta_test::test_framework::{MetaSecretTestApp, TestAction};
 use meta_test::test_infra::{MetaSecretDocker, MetaSecretDockerInfra};
 use meta_test::test_spec::{RegisterSpec, UserSignatureSpec};
+
 use meta_test::testify::TestRunner;
 
 #[rocket::async_test]
@@ -51,7 +52,7 @@ async fn register_one_device() {
         user_sig_spec: UserSignatureSpec { user_sig },
     };
 
-    spec.check();
+    spec.check().await;
 }
 
 #[rocket::async_test]

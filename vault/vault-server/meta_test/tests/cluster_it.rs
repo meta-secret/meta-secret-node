@@ -1,5 +1,5 @@
 use async_std::task;
-use meta_test::framework::{MetaSecretTestApp, TestAction};
+use meta_test::test_framework::{MetaSecretTestApp, TestAction};
 use meta_test::test_infra::{MetaSecretDocker, MetaSecretDockerInfra};
 use meta_test::testify::TestRunner;
 use testcontainers::clients::Cli;
