@@ -1,10 +1,11 @@
 [package]
-name = "meta-secret-vault-server-lib"
+name = "meta-test"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 meta-secret-core = "1.3.3"
+meta-secret-vault-server-lib = { path = "../lib" }
 
 tracing = "0.1.37"
 tracing-subscriber = { version = "0.3", features = ["json"] }
@@ -28,7 +29,6 @@ mongodb = "2.3.0"
 
 hex = "0.4"
 
-[dev-dependencies]
 testcontainers = "0.14"
 tokio = { version = "1.20.1", features = ["macros"] }
 pretty_env_logger = "0.4.0"

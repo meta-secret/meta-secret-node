@@ -1,14 +1,11 @@
 use async_std::task;
+use meta_test::framework::{MetaSecretTestApp, TestAction};
+use meta_test::test_infra::{MetaSecretDocker, MetaSecretDockerInfra};
+use meta_test::testify::TestRunner;
 use testcontainers::clients::Cli;
 use testcontainers::images::mongo::Mongo;
 use testcontainers::{clients, Container};
 use tracing::info;
-
-use crate::testing::framework::{MetaSecretTestApp, TestAction};
-use crate::testing::test_infra::{MetaSecretDocker, MetaSecretDockerInfra};
-use crate::testing::testify::TestRunner;
-
-mod testing;
 
 #[rocket::async_test]
 async fn create_cluster() {
@@ -23,9 +20,6 @@ async fn create_cluster() {
     let infra = task::block_on(infra);
     info!("{:?}", infra.mongo_db_url);
 
-    let test_app = MetaSecretTestApp::new(infra);
-
-    test_app.actions(|app| {
-        TestAction::new(app).create_cluster();
-    });
+    let test_app = MetaSecretTestApp::new(&infra);
+    TestAction::new(&test_app).create_cluster();
 }

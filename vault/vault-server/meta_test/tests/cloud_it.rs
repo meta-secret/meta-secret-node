@@ -15,12 +15,9 @@ use meta_secret_vault_server_lib::api::api::{
 use meta_secret_vault_server_lib::db::{
     MetaPasswordDoc, MetaPasswordId, SecretDistributionDoc, SecretDistributionType,
 };
-
-use crate::testing::framework::{MetaSecretTestApp, TestAction};
-use crate::testing::test_infra::{MetaSecretDocker, MetaSecretDockerInfra};
-use crate::testing::testify::TestRunner;
-
-mod testing;
+use meta_test::framework::{MetaSecretTestApp, TestAction};
+use meta_test::test_infra::{MetaSecretDocker, MetaSecretDockerInfra};
+use meta_test::testify::TestRunner;
 
 #[rocket::async_test]
 async fn password_distribution() {
@@ -33,7 +30,7 @@ async fn password_distribution() {
 
     let infra = MetaSecretDocker::run(&ctx.fixture, &docker_cli, &container).await;
 
-    let test_app = MetaSecretTestApp::new(infra);
+    let test_app = MetaSecretTestApp::new_cloud(&infra);
 
     let test_action = &TestAction::new(&test_app);
     test_action.create_cluster();

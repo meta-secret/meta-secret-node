@@ -1,12 +1,12 @@
-.idea
-*.iml
+**/.idea
+**/*.iml
 
 target
-core/target
-core/Cargo.lock
 
 cli/secrets
-cli/Cargo.lock
+cli/target
 
-/retag.sh
-Cargo.lock
+vault/vault-cli/target
+vault/vault-server/target
+
+web-cli/wasm/target

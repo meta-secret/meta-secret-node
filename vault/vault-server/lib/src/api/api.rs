@@ -1,5 +1,6 @@
+use ed25519_dalek::{SignatureError, Verifier};
 use meta_secret_core::crypto::encoding::Base64EncodedText;
-use meta_secret_core::crypto::key_pair::KeyPair;
+use meta_secret_core::crypto::key_pair::{DalekPublicKey, DalekSignature, KeyPair};
 use meta_secret_core::crypto::keys::{AeadCipherText, KeyManager};
 use serde::{Deserialize, Serialize};
 
@@ -49,6 +50,15 @@ impl UserSignature {
             transport_public_key: key_manager.transport_key_pair.public_key(),
             signature: key_manager.dsa.sign(vault_name),
         }
+    }
+
+    pub fn validate(&self) -> Result<(), SignatureError> {
+        let dalek_pk = DalekPublicKey::from(&self.public_key);
+        let dalek_signature = DalekSignature::from(&self.signature);
+
+        let msg = self.vault_name.as_bytes();
+
+        dalek_pk.verify(msg, &dalek_signature)
     }
 }
 

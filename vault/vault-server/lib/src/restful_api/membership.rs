@@ -6,7 +6,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::api::api::JoinRequest;
 use crate::api::api::UserSignature;
-use crate::crypto::crypto;
 use crate::db::VaultDoc;
 use crate::restful_api::commons;
 use crate::restful_api::commons::MetaState;
@@ -57,7 +56,7 @@ pub async fn decline(state: &State<MetaState>, join_request: Json<JoinRequest>) 
 
             if vault_doc.signatures.contains(&join_request.member) {
                 if vault_doc.pending_joins.contains(&candidate) {
-                    if crypto::verify(&candidate) {
+                    if candidate.validate().is_ok() {
                         //we can add a new user signature into a vault
                         let vaults_col = state.db.vaults_col();
                         remove_candidate_from_pending_queue(&candidate, &mut vault_doc);
@@ -102,7 +101,7 @@ pub async fn accept(state: &State<MetaState>, join_request: Json<JoinRequest>) -
 
             if vault_doc.signatures.contains(&join_request.member) {
                 if vault_doc.pending_joins.contains(&candidate) {
-                    if crypto::verify(&candidate) {
+                    if candidate.validate().is_ok() {
                         //we can add a new user signature into a vault
                         remove_candidate_from_pending_queue(&candidate, &mut vault_doc);
 

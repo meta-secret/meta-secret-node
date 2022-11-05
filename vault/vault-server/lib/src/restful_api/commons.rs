@@ -4,11 +4,10 @@ use mongodb::bson;
 use tracing::debug;
 
 use crate::api::api::UserSignature;
-use crate::crypto::crypto;
 use crate::db::{Db, VaultDoc};
 
 pub async fn find_vault(db: &Db, user_sig: &UserSignature) -> Option<VaultDoc> {
-    let is_valid = crypto::verify(user_sig);
+    let is_valid = user_sig.validate().is_ok();
     if !is_valid {
         panic!("Can't pass signature verification");
     }

@@ -8,7 +8,7 @@ tracing = "0.1"
 tracing-subscriber = "0.3"
 
 meta-secret-vault-server-lib = { path = "../lib" }
-meta-secret-core = "1.3.1"
+meta-secret-core = "1.3.3"
 
 rocket = { version = "0.5.0-rc.2", features = ["json"] }
 async-std = { version = "1", features = ["attributes", "tokio1"] }
@@ -17,9 +17,8 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
 ed25519-dalek = { version = "1.0" }
-base64 = "0.13"
+base64 = "0.20.0-alpha.1"
 rand = "0.7"
-openssl = "0.10"
 
 mongodb = "2.3"
 

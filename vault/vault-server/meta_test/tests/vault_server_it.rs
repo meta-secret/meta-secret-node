@@ -9,12 +9,10 @@ use meta_secret_vault_server_lib::api::api::{EncryptedMessage, MetaPasswordReque
 use meta_secret_vault_server_lib::db::{
     MetaPasswordDoc, MetaPasswordId, SecretDistributionDoc, SecretDistributionType,
 };
-
-use crate::testing::framework::{MetaSecretTestApp, TestAction};
-use crate::testing::test_infra::{MetaSecretDocker, MetaSecretDockerInfra};
-use crate::testing::testify::TestRunner;
-
-mod testing;
+use meta_test::framework::{MetaSecretTestApp, TestAction};
+use meta_test::test_infra::{MetaSecretDocker, MetaSecretDockerInfra};
+use meta_test::test_spec::{RegisterSpec, UserSignatureSpec};
+use meta_test::testify::TestRunner;
 
 #[rocket::async_test]
 async fn stats() {
@@ -26,7 +24,7 @@ async fn stats() {
 
     let infra = MetaSecretDocker::run(&test_runner.fixture, &docker_cli, &container).await;
 
-    let test_app = MetaSecretTestApp::new(infra);
+    let test_app = MetaSecretTestApp::new(&infra);
     let resp = TestAction::new(&test_app).stats();
     assert_eq!(resp.await.registrations, 0);
 }
@@ -42,11 +40,18 @@ async fn register_one_device() {
     let infra = MetaSecretDocker::run(&test_runner.fixture, &docker_cli, &container).await;
     info!("mongodb url: {:?}", infra.mongo_db_url);
 
-    let test_app = MetaSecretTestApp::new(infra);
+    let test_app = MetaSecretTestApp::new(&infra);
 
-    let user_sig = &test_app.signatures.sig_1;
-    let resp = TestAction::new(&test_app).register(user_sig);
+    let user_sig = test_app.signatures.sig_1.clone();
+    let resp = TestAction::new(&test_app).register(&user_sig);
     assert_eq!(resp.status, RegistrationStatus::Registered);
+
+    let spec = RegisterSpec {
+        db: &infra.db,
+        user_sig_spec: UserSignatureSpec { user_sig },
+    };
+
+    spec.check();
 }
 
 #[rocket::async_test]
@@ -59,7 +64,7 @@ async fn split_password() {
 
     let infra = MetaSecretDocker::run(&test_runner.fixture, &docker_cli, &container).await;
 
-    let test_app = MetaSecretTestApp::new(infra);
+    let test_app = MetaSecretTestApp::new(&infra);
     let test_action = TestAction::new(&test_app);
 
     let user_sig = test_app.signatures.sig_1.clone();

@@ -40,14 +40,11 @@ pub async fn register(state: &State<MetaState>, register_request: Json<UserSigna
             vault_doc.pending_joins.push(user_sig.clone());
 
             let vault_name = user_sig.vault_name.clone();
-            let vault_filter = bson::doc! {
+            let filter = bson::doc! {
                 "vaultName": vault_name
             };
             let vaults_col = state.db.vaults_col();
-            vaults_col
-                .replace_one(vault_filter, vault_doc.clone(), None)
-                .await
-                .unwrap();
+            vaults_col.replace_one(filter, vault_doc.clone(), None).await.unwrap();
 
             Json(RegistrationResponse {
                 status: RegistrationStatus::AlreadyExists,
