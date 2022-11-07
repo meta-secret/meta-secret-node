@@ -33,7 +33,7 @@ async fn password_distribution() {
     let test_app = MetaSecretTestApp::new_cloud(&infra);
 
     let test_action = &TestAction::new(&test_app);
-    test_action.create_cluster();
+    test_action.create_cluster().await;
 
     let user_sig: &UserSignature = &test_app.signatures.sig_1;
 
@@ -61,10 +61,12 @@ async fn password_distribution() {
         },
     };
 
+    let key_managers = test_app.signatures.all_key_managers();
+    let all_sigs = test_app.signatures.all_signatures();
+
     for i in 1..shares.len() {
         let password_share: &UserShareDto = &shares[i];
-        let receiver_key_manager = test_app.signatures.all_key_managers()[i];
-        let all_sigs = test_app.signatures.all_signatures();
+        let receiver_key_manager = key_managers[i];
 
         let encrypted_share: AeadCipherText = sender_key_manager.transport_key_pair.encrypt_string(
             serde_json::to_string(&password_share).unwrap(),

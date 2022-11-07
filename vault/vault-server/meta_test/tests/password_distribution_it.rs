@@ -35,7 +35,7 @@ async fn password_distribution() {
     let test_app = MetaSecretTestApp::new(&infra);
 
     let test_action = &TestAction::new(&test_app);
-    test_action.create_cluster();
+    test_action.create_cluster().await;
 
     let user_sig: &UserSignature = &test_app.signatures.sig_1;
 

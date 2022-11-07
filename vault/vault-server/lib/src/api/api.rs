@@ -118,7 +118,7 @@ impl VaultInfo {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub enum VaultInfoStatus {
     /// Device is a member of a vault

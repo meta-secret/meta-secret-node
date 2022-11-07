@@ -21,5 +21,5 @@ async fn create_cluster() {
     info!("{:?}", infra.mongo_db_url);
 
     let test_app = MetaSecretTestApp::new(&infra);
-    TestAction::new(&test_app).create_cluster();
+    TestAction::new(&test_app).create_cluster().await;
 }

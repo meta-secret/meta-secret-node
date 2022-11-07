@@ -4,14 +4,14 @@ use testcontainers::images::mongo::Mongo;
 use testcontainers::{clients, Container};
 use tracing::info;
 
-use meta_secret_vault_server_lib::api::api::RegistrationStatus;
 use meta_secret_vault_server_lib::api::api::{EncryptedMessage, MetaPasswordRequest};
+use meta_secret_vault_server_lib::api::api::{RegistrationStatus, VaultInfoStatus};
 use meta_secret_vault_server_lib::db::{
     MetaPasswordDoc, MetaPasswordId, SecretDistributionDoc, SecretDistributionType,
 };
 use meta_test::test_framework::{MetaSecretTestApp, TestAction};
 use meta_test::test_infra::{MetaSecretDocker, MetaSecretDockerInfra};
-use meta_test::test_spec::{RegisterSpec, UserSignatureSpec};
+use meta_test::test_spec::{DbVaultSpec, RegisterSpec, UserSignatureSpec, VaultDocDesiredState, VaultDocSpec};
 
 use meta_test::testify::TestRunner;
 
@@ -47,12 +47,31 @@ async fn register_one_device() {
     let resp = TestAction::new(&test_app).register(&user_sig);
     assert_eq!(resp.status, RegistrationStatus::Registered);
 
+    let vault_name = user_sig.vault_name.clone();
     let spec = RegisterSpec {
         db: &infra.db,
-        user_sig_spec: UserSignatureSpec { user_sig },
+        db_vault_spec: DbVaultSpec {
+            vault_name: vault_name.clone(),
+            db: &infra.db,
+        },
+        user_sig_spec: UserSignatureSpec {
+            user_sig: user_sig.clone(),
+        },
     };
-
     spec.check().await;
+
+    //secondary registration of the same device
+    let resp = TestAction::new(&test_app).register(&user_sig);
+    assert_eq!(resp.status, RegistrationStatus::Registered);
+    spec.check().await;
+
+    let resp = TestAction::new(&test_app).get_vault(&user_sig);
+    assert_eq!(resp.status, VaultInfoStatus::Member);
+    let vault_spec = VaultDocSpec {
+        vault: resp.vault.clone().unwrap(),
+        expected: VaultDocDesiredState::default(),
+    };
+    vault_spec.check();
 }
 
 #[rocket::async_test]
@@ -70,7 +89,7 @@ async fn split_password() {
 
     let user_sig = test_app.signatures.sig_1.clone();
 
-    test_action.create_cluster();
+    test_action.create_cluster().await;
 
     let vault = test_action.get_vault(&user_sig);
 

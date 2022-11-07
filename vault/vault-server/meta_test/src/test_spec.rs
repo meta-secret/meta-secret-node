@@ -14,7 +14,7 @@ impl UserSignatureSpec {
         self.user_sig.validate().unwrap()
     }
 }
-
+#[derive(Debug, Clone)]
 pub struct VaultDocDesiredState {
     pub signatures_num: usize,
     pub declined_joins_num: usize,
@@ -27,6 +27,16 @@ impl Default for VaultDocDesiredState {
             signatures_num: 1,
             declined_joins_num: 0,
             pending_joins_num: 0,
+        }
+    }
+}
+
+impl VaultDocDesiredState {
+    pub fn one_member_one_pending() -> Self {
+        Self {
+            signatures_num: 1,
+            declined_joins_num: 0,
+            pending_joins_num: 1,
         }
     }
 }
@@ -53,28 +63,38 @@ impl VaultDocSpec {
     }
 }
 
-pub struct RegisterSpec<'a> {
+pub struct DbVaultSpec<'a> {
+    pub vault_name: String,
     pub db: &'a Db,
-    pub user_sig_spec: UserSignatureSpec,
 }
 
-impl<'a> RegisterSpec<'a> {
+impl<'a> DbVaultSpec<'a> {
     pub async fn check(&self) {
-        self.user_sig_spec.check();
-
-        let vault_name = &self.user_sig_spec.user_sig.vault_name;
         let vaults_col = self.db.vaults_col();
         let filter = doc! {
-            "vaultName": vault_name,
+            "vaultName": &self.vault_name,
         };
         let vaults_num = vaults_col.count_documents(filter, None).await.unwrap();
 
         if vaults_num != 1 {
             panic!(
                 "There must be only one vault with name: {}, but there are: {} vaults",
-                vault_name, vaults_num
+                self.vault_name, vaults_num
             );
         }
+    }
+}
+
+pub struct RegisterSpec<'a> {
+    pub db: &'a Db,
+    pub db_vault_spec: DbVaultSpec<'a>,
+    pub user_sig_spec: UserSignatureSpec,
+}
+
+impl<'a> RegisterSpec<'a> {
+    pub async fn check(&self) {
+        self.user_sig_spec.check();
+        self.db_vault_spec.check().await;
 
         let vault = commons::find_vault(self.db, &self.user_sig_spec.user_sig)
             .await
@@ -85,5 +105,54 @@ impl<'a> RegisterSpec<'a> {
             expected: Default::default(),
         };
         vault_spec.check();
+    }
+}
+
+pub struct RegisterInClusterSpec<'a> {
+    pub db: &'a Db,
+
+    pub member_user_sig_spec: UserSignatureSpec,
+    pub candidate_user_sig_spec: UserSignatureSpec,
+
+    pub db_vault_spec: DbVaultSpec<'a>,
+    pub expected_vault_state: VaultDocDesiredState,
+}
+
+impl<'a> RegisterInClusterSpec<'a> {
+    /// Check that the second device in a pending state
+    pub async fn check(&self) {
+        self.member_user_sig_spec.check();
+        self.candidate_user_sig_spec.check();
+
+        self.db_vault_spec.check().await;
+
+        let vault = commons::find_vault(self.db, &self.member_user_sig_spec.user_sig)
+            .await
+            .unwrap();
+
+        let member_sig = vault.signatures[0].clone();
+        let pending_sig = vault.pending_joins[0].clone();
+
+        println!("vault: {:?}", vault);
+
+        let vault_spec = VaultDocSpec {
+            vault,
+            expected: self.expected_vault_state.clone(),
+        };
+        vault_spec.check();
+
+        if member_sig != self.member_user_sig_spec.user_sig {
+            panic!(
+                "Vault member should be: {}",
+                &self.member_user_sig_spec.user_sig.public_key.base64_text
+            );
+        }
+
+        if pending_sig != self.candidate_user_sig_spec.user_sig {
+            panic!(
+                "Pending member should be: {}",
+                &self.candidate_user_sig_spec.user_sig.public_key.base64_text
+            );
+        }
     }
 }

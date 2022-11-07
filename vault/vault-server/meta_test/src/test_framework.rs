@@ -5,6 +5,7 @@ use rocket::http::{ContentType, Status};
 use rocket::{info, uri};
 
 use crate::test_infra::MetaSecretDocker;
+use crate::test_spec::{DbVaultSpec, RegisterInClusterSpec, UserSignatureSpec, VaultDocDesiredState};
 use meta_secret_vault_server_lib::api::api::{
     JoinRequest, MessageStatus, PasswordRecoveryRequest, RegistrationResponse, RegistrationStatus, UserSignature,
     VaultInfo,
@@ -173,7 +174,7 @@ impl<'a> TestAction<'a> {
         resp.unwrap()
     }
 
-    pub fn create_cluster(&self) {
+    pub async fn create_cluster(&self) {
         info!("Create meta secret cluster");
 
         let resp = TestAction::new(self.app).register(&self.app.signatures.sig_1);
@@ -181,6 +182,22 @@ impl<'a> TestAction<'a> {
 
         let resp = TestAction::new(self.app).register(&self.app.signatures.sig_2);
         assert_eq!(resp.status, RegistrationStatus::AlreadyExists);
+
+        let register_second_device_spec = RegisterInClusterSpec {
+            db: &self.app.infra.db,
+            member_user_sig_spec: UserSignatureSpec {
+                user_sig: self.app.signatures.sig_1.clone(),
+            },
+            candidate_user_sig_spec: UserSignatureSpec {
+                user_sig: self.app.signatures.sig_2.clone(),
+            },
+            db_vault_spec: DbVaultSpec {
+                vault_name: self.app.signatures.sig_1.vault_name.clone(),
+                db: &self.app.infra.db,
+            },
+            expected_vault_state: VaultDocDesiredState::one_member_one_pending(),
+        };
+        register_second_device_spec.check().await;
 
         let resp = TestAction::new(self.app).register(&self.app.signatures.sig_3);
         assert_eq!(resp.status, RegistrationStatus::AlreadyExists);
