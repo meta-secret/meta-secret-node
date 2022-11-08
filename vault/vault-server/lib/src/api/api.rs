@@ -11,14 +11,6 @@ use crate::db::{MetaPasswordDoc, MetaPasswordId, VaultDoc};
 pub struct DeviceInfo {
     pub device_name: String,
     pub device_id: String,
-    pub device_type: DeviceType,
-}
-
-#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
-#[serde(rename_all = "camelCase")]
-pub enum DeviceType {
-    Real,
-    Virtual,
 }
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
@@ -53,7 +45,6 @@ impl UserSignature {
             device: DeviceInfo {
                 device_name: "test_device".to_string(),
                 device_id: "123".to_string(),
-                device_type: DeviceType::Real,
             },
             public_key: key_manager.dsa.public_key(),
             transport_public_key: key_manager.transport_key_pair.public_key(),
