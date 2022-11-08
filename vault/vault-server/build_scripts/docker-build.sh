@@ -10,6 +10,7 @@ mkdir -p "${DOCKER_BUILD_DIR}"
 
 cp Dockerfile "${DOCKER_BUILD_DIR}"
 cp app/Rocket.toml "${DOCKER_BUILD_DIR}"
+cp app/mongo-config.json "${DOCKER_BUILD_DIR}"
 cp target/release/meta-secret-vault-server "${DOCKER_BUILD_DIR}"
 
 cd ${DOCKER_BUILD_DIR}
