@@ -1,5 +1,0 @@
-[workspace]
-
-members = [
-    "app", "lib", "meta_test"
-]

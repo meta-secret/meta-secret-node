@@ -1,8 +1,0 @@
-{
-  "credential": {
-    "username": "admin",
-    "password": "password"
-  },
-
-  "url": "mongodb://localhost/?retryWrites=true&w=majority"
-}
