@@ -53,7 +53,7 @@
     "vite-plugin-top-level-await": "^1.1.1",
     "vite-plugin-wasm": "^3.0.0",
     "vite-plugin-wasm-pack": "^0.1.12",
-    "vitest": "^0.24.0",
+    "vitest": "^0.25.7",
     "vue-tsc": "^1.0.3",
     "webpack": "^5.74.0",
     "webpack-cli": "^4.10.0"
