@@ -1,11 +1,47 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
-import type {BoxKeyPair} from 'tweetnacl';
-import nacl from 'tweetnacl';
+import init, {generate_new_user} from "meta-secret-web-cli";
 
-interface Vault {
-  userId?: string;
-  keyPair?: BoxKeyPair;
+interface DeviceInfo {
+  deviceId: string;
+  deviceName: string
+}
+
+interface UserInfo {
+  userId: string;
+  device: DeviceInfo
+}
+
+interface User {
+  userInfo?: UserInfo;
+  keyManager?: KeyManager;
+  userSignature?: UserSignature
+}
+
+interface UserSignature {
+  vaultName: string;
+  device: DeviceInfo;
+  publicKey: Base64EncodedText,
+  transportPublicKey: Base64EncodedText
+}
+
+interface KeyManager {
+  dsa: SerializedDsaKeyPair;
+  transport: SerializedTransportKeyPair
+}
+
+interface SerializedDsaKeyPair {
+  keyPair: Base64EncodedText;
+  publicKey: Base64EncodedText
+}
+
+interface SerializedTransportKeyPair {
+  secretKey: Base64EncodedText;
+  publicKey: Base64EncodedText
+}
+
+interface Base64EncodedText {
+  base64Text: string
 }
 
 interface Share {
@@ -18,20 +54,20 @@ interface PasswordStorage {
 
 export default defineComponent({
   data() {
-    let defaultVault: Vault = {};
+    let defaultUser: User = {};
     let defaultPasswordStorage: PasswordStorage = {
       shares: []
     };
 
     return {
-      vault: defaultVault,
+      user: defaultUser,
       userId: '',
       passwordStorage: defaultPasswordStorage
     }
   },
   mounted() {
-    if (localStorage.vault) {
-      this.vault = localStorage.vault;
+    if (localStorage.user) {
+      this.user = localStorage.user;
     }
 
     if (localStorage.passwordStorage) {
@@ -40,23 +76,29 @@ export default defineComponent({
   },
 
   watch: {
-    vault(newVault) {
-      localStorage.vault = newVault;
+    user(newUser) {
+      localStorage.user = newUser;
     }
   },
 
   methods: {
-    generateVault() {
-      //if (this.vault.empty) {
-      //return this.vault;
-      //}
+    generateUser() {
+      init().then(() => {
+        let userInfo: UserInfo = {
+          device: {
+            deviceId: "yay",
+            deviceName: "d1"
+          },
+          userId: "test"
+        }
+        console.log("Generate new user js, with: " + JSON.stringify(userInfo));
+        let generated_user = generate_new_user(userInfo);
+        //console.log("new user: " + newUser);
+        //return newUser;
+        //return {};
 
-      this.vault = {
-        keyPair: nacl.box.keyPair(),
-        userId: this.userId
-      };
-
-      console.log("user:", this.vault.userId, "has been registered");
+        console.log("user:", JSON.stringify(generated_user, null, 2), "has been registered");
+      })
     },
 
     addPassword() {
@@ -107,7 +149,7 @@ export default defineComponent({
     <button
         class="flex-shrink-0 bg-teal-500 hover:bg-teal-700 border-teal-500 hover:border-teal-700 text-sm border-4 text-white py-1 px-2 rounded"
         type="button"
-        @click="generateVault"
+        @click="generateUser"
     >
       Register
     </button>

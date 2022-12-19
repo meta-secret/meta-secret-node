@@ -4,7 +4,7 @@ import {MenuIcon, XIcon} from '@heroicons/vue/outline'
 
 const navigation = [
   {name: 'Home', href: '/', current: false},
-  {name: 'GitHub', href: 'https://github.com/meta-secret/meta-secret-node', current: false},
+  {name: 'GitHub', href: 'https://github.com/meta-secret', current: false},
   {name: 'Contact', href: '/contact', current: false},
 ]
 </script>

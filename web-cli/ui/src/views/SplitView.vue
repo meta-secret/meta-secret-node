@@ -14,7 +14,7 @@ export default {
 
   methods: {
     splitPassword() {
-      init().then(() => {
+      init().then(async () => {
         console.log("Split password: ", this.password);
 
         let qrImages = document.getElementById('qr-images');
