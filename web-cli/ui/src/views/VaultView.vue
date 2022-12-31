@@ -1,21 +1,22 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
-import init, {generate_new_user} from "meta-secret-web-cli";
+import init, {generate_security_box, get_user_sig} from "meta-secret-web-cli";
+import DeviceInfo from "core-models-ts";
 
 interface DeviceInfo {
   deviceId: string;
   deviceName: string
 }
 
-interface UserInfo {
-  userId: string;
-  device: DeviceInfo
+interface User {
+
+  userSignature?: UserSignature
 }
 
-interface User {
-  userInfo?: UserInfo;
+interface UserSecurityBox {
+  vaultName: string;
   keyManager?: KeyManager;
-  userSignature?: UserSignature
+
 }
 
 interface UserSignature {
@@ -84,20 +85,20 @@ export default defineComponent({
   methods: {
     generateUser() {
       init().then(() => {
-        let userInfo: UserInfo = {
-          device: {
-            deviceId: "yay",
-            deviceName: "d1"
-          },
-          userId: "test"
+        let device: DeviceInfo = {
+          deviceId: "yay",
+          deviceName: "d1"
         }
-        console.log("Generate new user js, with: " + JSON.stringify(userInfo));
-        let generated_user = generate_new_user(userInfo);
-        //console.log("new user: " + newUser);
-        //return newUser;
-        //return {};
 
-        console.log("user:", JSON.stringify(generated_user, null, 2), "has been registered");
+        let securityBox = generate_security_box("test_vault");
+        let userSig = get_user_sig(securityBox, device);
+
+        //this.user = {
+        //    keyManager
+        //};
+
+        console.log("security box:", JSON.stringify(securityBox, null, 2), "has been registered");
+        console.log("user sig:", JSON.stringify(userSig, null, 2), "has been registered");
       })
     },
 
