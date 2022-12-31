@@ -1,12 +1,10 @@
-use meta_secret_core::crypto::encoding::serialized_key_manager::SerializedKeyManager;
 use meta_secret_core::crypto::keys::KeyManager;
+use meta_secret_core::models::{DeviceInfo, UserSecurityBox};
 use meta_secret_core::recover_from_shares;
-use meta_secret_core::sdk::vault::{UserInfo, UserSignature};
 use meta_secret_core::shared_secret::data_block::common::SharedSecretConfig;
 use meta_secret_core::shared_secret::shared_secret::{
     PlainText, SharedSecretEncryption, UserShareDto,
 };
-use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
 mod utils;
@@ -28,21 +26,21 @@ extern "C" {
 }
 
 #[wasm_bindgen]
-//pub fn generate_new_user(user_info_json: JsValue) -> JsValue {
-pub fn generate_new_user(user_info_json: JsValue) -> JsValue {
+pub fn generate_security_box(vault_name: &str) -> JsValue {
     log("generate new user! wasm");
 
-    let key_manager = KeyManager::generate();
-    let serialized_km = SerializedKeyManager::from(&key_manager);
-    let user_info: UserInfo = serde_wasm_bindgen::from_value(user_info_json).unwrap();
-    let user_sig = UserSignature::get_from(&key_manager, &user_info);
-    let js_user = JsUser {
-        user_info,
-        key_manager: serialized_km,
-        user_signature: user_sig,
-    };
+    let security_box = KeyManager::generate_security_box(vault_name.to_string());
+    serde_wasm_bindgen::to_value(&security_box).unwrap()
+}
 
-    serde_wasm_bindgen::to_value(&js_user).unwrap()
+#[wasm_bindgen]
+pub fn get_user_sig(security_box: JsValue, device: JsValue) -> JsValue {
+    log("generate new user! wasm");
+    let security_box: UserSecurityBox = serde_wasm_bindgen::from_value(security_box).unwrap();
+    let device: DeviceInfo = serde_wasm_bindgen::from_value(device).unwrap();
+
+    let user_sig = security_box.get_user_sig(&device);
+    serde_wasm_bindgen::to_value(&user_sig).unwrap()
 }
 
 /// https://rustwasm.github.io/docs/wasm-bindgen/reference/arbitrary-data-with-serde.html
@@ -78,12 +76,4 @@ pub fn restore_password(shares_json: JsValue) -> String {
             panic!("umerlo");
         }
     }
-}
-
-#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct JsUser {
-    pub user_info: UserInfo,
-    pub key_manager: SerializedKeyManager,
-    user_signature: UserSignature,
 }

@@ -13,7 +13,7 @@ default = ["console_error_panic_hook"]
 [dependencies]
 wasm-bindgen = { version = "0.2.83", features = ["serde-serialize"] }
 
-meta-secret-core = { version = "1.8.1" }
+meta-secret-core = { version = "1.10.0" }
 #meta-secret-core = { path = "../../../meta-secret-core/core" }
 
 serde = { version = "1.0.151", features = ["derive"] }
