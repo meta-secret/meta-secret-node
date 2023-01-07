@@ -10,3 +10,4 @@ vault/vault-cli/target
 vault/vault-server/target
 
 web-cli/wasm/target
+web-cli/ui/src/model

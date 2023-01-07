@@ -1,7 +1,7 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
 import init, {generate_security_box, get_user_sig} from "meta-secret-web-cli";
-import DeviceInfo from "core-models-ts";
+import * as models from '@/model/models';
 
 interface DeviceInfo {
   deviceId: string;
@@ -96,6 +96,12 @@ export default defineComponent({
         //this.user = {
         //    keyManager
         //};
+
+        let xxx: models.Base64EncodedText = {
+          base64Text: "qwe"
+        }
+
+        console.log("base64::: ", JSON.stringify(xxx, null, 2))
 
         console.log("security box:", JSON.stringify(securityBox, null, 2), "has been registered");
         console.log("user sig:", JSON.stringify(userSig, null, 2), "has been registered");

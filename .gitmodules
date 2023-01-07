@@ -1,0 +1,3 @@
+[submodule "meta-secret-core"]
+	path = meta-secret-core
+	url = git@github.com:meta-secret/meta-secret-core.git
