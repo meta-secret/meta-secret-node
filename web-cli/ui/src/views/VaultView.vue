@@ -1,48 +1,11 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
-import init, {generate_security_box, get_user_sig} from "meta-secret-web-cli";
-import * as models from '@/model/models';
-
-interface DeviceInfo {
-  deviceId: string;
-  deviceName: string
-}
+import init, {generate_security_box, get_user_sig, register} from "meta-secret-web-cli";
+import type {DeviceInfo, UserSecurityBox, UserSignature} from "@/model/models";
 
 interface User {
-
-  userSignature?: UserSignature
-}
-
-interface UserSecurityBox {
-  vaultName: string;
-  keyManager?: KeyManager;
-
-}
-
-interface UserSignature {
-  vaultName: string;
-  device: DeviceInfo;
-  publicKey: Base64EncodedText,
-  transportPublicKey: Base64EncodedText
-}
-
-interface KeyManager {
-  dsa: SerializedDsaKeyPair;
-  transport: SerializedTransportKeyPair
-}
-
-interface SerializedDsaKeyPair {
-  keyPair: Base64EncodedText;
-  publicKey: Base64EncodedText
-}
-
-interface SerializedTransportKeyPair {
-  secretKey: Base64EncodedText;
-  publicKey: Base64EncodedText
-}
-
-interface Base64EncodedText {
-  base64Text: string
+  securityBox?: UserSecurityBox,
+  userSig?: UserSignature
 }
 
 interface Share {
@@ -83,28 +46,25 @@ export default defineComponent({
   },
 
   methods: {
-    generateUser() {
-      init().then(() => {
+    async generateUser() {
+      init().then(async () => {
         let device: DeviceInfo = {
           deviceId: "yay",
           deviceName: "d1"
         }
 
-        let securityBox = generate_security_box("test_vault");
+        let securityBox = generate_security_box("test_vault_web");
         let userSig = get_user_sig(securityBox, device);
 
-        //this.user = {
-        //    keyManager
-        //};
+        this.user = {
+          securityBox: securityBox,
+          userSig: userSig
+        };
 
-        let xxx: models.Base64EncodedText = {
-          base64Text: "qwe"
-        }
+        let registrationStatus = await register(userSig);
+        console.log("Registration status: ", registrationStatus);
 
-        console.log("base64::: ", JSON.stringify(xxx, null, 2))
 
-        console.log("security box:", JSON.stringify(securityBox, null, 2), "has been registered");
-        console.log("user sig:", JSON.stringify(userSig, null, 2), "has been registered");
       })
     },
 

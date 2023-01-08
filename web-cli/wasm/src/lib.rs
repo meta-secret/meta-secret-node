@@ -1,11 +1,14 @@
+use js_sys::Promise;
 use meta_secret_core::crypto::keys::KeyManager;
-use meta_secret_core::models::{DeviceInfo, UserSecurityBox};
+use meta_secret_core::models::{DeviceInfo, UserSecurityBox, UserSignature};
+use meta_secret_core::node::server_api;
 use meta_secret_core::recover_from_shares;
 use meta_secret_core::shared_secret::data_block::common::SharedSecretConfig;
 use meta_secret_core::shared_secret::shared_secret::{
     PlainText, SharedSecretEncryption, UserShareDto,
 };
 use wasm_bindgen::prelude::*;
+use wasm_bindgen_futures::future_to_promise;
 
 mod utils;
 
@@ -23,6 +26,21 @@ extern "C" {
 
     #[wasm_bindgen(js_namespace = console)]
     fn log(s: &str);
+}
+
+#[wasm_bindgen]
+pub fn register(user_sig: JsValue) -> Promise {
+    log("wasm: register a new user!");
+
+    let user_sig = serde_wasm_bindgen::from_value(user_sig).unwrap();
+    let task = server_registration(user_sig);
+    future_to_promise(task)
+}
+
+async fn server_registration(user_sig: UserSignature) -> Result<JsValue, JsValue> {
+    log("Registration on server!!!!");
+    let register_async_task = server_api::register(&user_sig).await.unwrap();
+    Ok(serde_wasm_bindgen::to_value(&register_async_task).unwrap())
 }
 
 #[wasm_bindgen]
