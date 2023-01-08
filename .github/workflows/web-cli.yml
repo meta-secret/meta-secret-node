@@ -46,6 +46,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
       - name: Download wasm package
         uses: actions/download-artifact@v3
@@ -64,6 +66,15 @@ jobs:
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
+
+      - name: generate schema
+        working-directory: meta-secret-core/schema
+        run: |
+          make generate_schema_type_script
+
+      - name: copy models to ui project
+        run: |
+          cp -r meta-secret-core/schema/target/core-models-ts/model web-cli/ui/src
 
       - name: npm build
         working-directory: web-cli/ui

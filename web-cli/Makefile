@@ -14,3 +14,7 @@ build:
 generate_typescript_models:
 	cd ../meta-secret-core/schema && make generate_schema_type_script
 	cp -r  ../meta-secret-core/schema/target/core-models-ts/model ui/src
+
+install_wasm_pack:
+	curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+	cargo install cargo-generate
