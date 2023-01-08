@@ -70,6 +70,7 @@ jobs:
       - name: generate schema
         working-directory: meta-secret-core/schema
         run: |
+          npm install @openapitools/openapi-generator-cli -g
           make generate_schema_type_script
 
       - name: copy models to ui project
