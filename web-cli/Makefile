@@ -1,14 +1,22 @@
 
 clean:
 	rm -rf ui/src/model
+	rm -rf ui/node_modules
+	rm -rf ui/dist
+	rm -rf ui/package-lock.json
 	rm -rf ../meta-secret-core/schema/target
 
 build:
-	cd wasm && wasm-pack build --target web --dev
+	cd wasm && wasm-pack build --target web
 
 	rm -rf ui/pkg
 	cp -R wasm/pkg ui
 
+	cd ui && npm install vue-tsc
+
+	cd ui && npm run build
+
+run: build
 	cd ui && npm run dev
 
 generate_typescript_models:

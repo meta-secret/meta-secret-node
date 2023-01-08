@@ -75,6 +75,7 @@ jobs:
 
       - name: copy models to ui project
         run: |
+          rm -rf web-cli/ui/src/model
           cp -r meta-secret-core/schema/target/core-models-ts/model web-cli/ui/src
 
       - name: npm build

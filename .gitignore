@@ -11,3 +11,5 @@ vault/vault-server/target
 
 web-cli/wasm/target
 web-cli/ui/src/model
+web-cli/ui/node_modules
+meta-secret-core/schema/openapitools.json
