@@ -1,5 +1,5 @@
 # https://docs.docker.com/develop/develop-images/multistage-build/
-FROM rust:1.65.0 as build
+FROM rust:1.66.0 as build
 COPY ./ /build
 WORKDIR /build
 RUN cargo test
