@@ -5,7 +5,7 @@ WORKDIR /build
 RUN cargo test
 RUN cargo build --release
 
-FROM ubuntu:22.10
+FROM ubuntu:23.04
 
 COPY --from=build /build/target/release/meta-secret-cli /app/meta-secret-cli
 COPY config.yaml /app/config.yaml
