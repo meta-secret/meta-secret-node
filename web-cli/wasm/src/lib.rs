@@ -30,7 +30,7 @@ extern "C" {
 
 #[wasm_bindgen]
 pub fn register(user_sig: JsValue) -> Promise {
-    log("wasm: register a new user!");
+    log(format!("wasm: register a new user! with: {:?}", user_sig).as_str());
 
     let user_sig = serde_wasm_bindgen::from_value(user_sig).unwrap();
     let task = server_registration(user_sig);
@@ -41,6 +41,23 @@ async fn server_registration(user_sig: UserSignature) -> Result<JsValue, JsValue
     log("Registration on server!!!!");
     let register_async_task = server_api::register(&user_sig).await.unwrap();
     Ok(serde_wasm_bindgen::to_value(&register_async_task).unwrap())
+}
+
+#[wasm_bindgen]
+pub fn get_vault(user_sig: JsValue) -> Promise {
+    log("wasm: get vault!");
+
+    let user_sig = serde_wasm_bindgen::from_value(user_sig).unwrap();
+    log("wasm: user sig!");
+    let vault_future = get_vault_from_server(user_sig);
+    log("wasm: request!");
+    future_to_promise(vault_future)
+}
+
+async fn get_vault_from_server(user_sig: UserSignature) -> Result<JsValue, JsValue> {
+    log("wasm: get vault request");
+    let get_vault_task = server_api::get_vault(&user_sig).await.unwrap();
+    Ok(serde_wasm_bindgen::to_value(&get_vault_task).unwrap())
 }
 
 #[wasm_bindgen]
