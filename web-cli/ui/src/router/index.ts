@@ -6,6 +6,9 @@ import VaultView from "../views/VaultView.vue";
 import ContactView from "../views/ContactView.vue";
 import NotFoundView from "../views/404View.vue";
 
+import VaultDevices from "../components/vault/Devices.vue";
+import VaultSecrets from "../components/vault/Secrets.vue";
+
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
     routes: [
@@ -23,6 +26,23 @@ const router = createRouter({
             path: "/vault",
             name: "vault",
             component: VaultView,
+            children: [
+                {
+                    path: "",
+                    name: 'vault-default',
+                    component: VaultSecrets,
+                },
+                {
+                    path: "secrets",
+                    name: "vaultSecrets",
+                    component: VaultSecrets,
+                },
+                {
+                    path: "devices",
+                    name: "vaultDevices",
+                    component: VaultDevices,
+                },
+            ],
         },
         {
             path: "/recover",
