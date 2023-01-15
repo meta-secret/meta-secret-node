@@ -7,13 +7,9 @@
 </template>
 
 <style module>
-.md {
-  max-width: 28rem;
-}
 
 .devices {
-  composes: md;
-  justify-content: center;
+  @apply flex max-w-md py-2;
   margin-left: auto;
   margin-right: auto;
 }
