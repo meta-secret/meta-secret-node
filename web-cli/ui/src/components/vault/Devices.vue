@@ -1,21 +1,21 @@
 
 <template>
-  <div class="devices md">
+  <div :class="$style.devices">
     <h4>Devices:</h4>
 
   </div>
 </template>
 
-<style scoped>
+<style module>
+.md {
+  max-width: 28rem;
+}
+
 .devices {
-  display: flex;
+  composes: md;
   justify-content: center;
   margin-left: auto;
   margin-right: auto;
-}
-
-.md {
-  max-width: 28rem;
 }
 
 </style>

@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import NavBar from "@/components/NavBar.vue";
-</script>
+import NavBar from "@/components/NavBar.vue";</script>
 
 <template>
   <header>
@@ -16,7 +15,6 @@ import NavBar from "@/components/NavBar.vue";
 </template>
 
 <style>
-@import "@/assets/base.css";
 
 .container {
   display: flex;
