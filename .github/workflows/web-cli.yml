@@ -74,14 +74,14 @@ jobs:
         working-directory: web-cli
         run: |
           npm install @openapitools/openapi-generator-cli -g
-          make clean generate_typescript_models build
+          make clean generate_typescript_models
 
-      #- name: npm build
-      #  working-directory: web-cli/ui
-      #  run: |
-      #    npm install vue-tsc
-      #    npm install
-      #    npm run build
+      - name: npm build
+        working-directory: web-cli/ui
+        run: |
+          npm install vue-tsc
+          npm install
+          npm run build
 
       - name: Deploy static web site (github pages)
         uses: peaceiris/actions-gh-pages@v3
