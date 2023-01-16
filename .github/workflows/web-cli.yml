@@ -17,6 +17,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
       - uses: ./.github/workflows/actions/project-cache
 
       - name: install wasm-pack
