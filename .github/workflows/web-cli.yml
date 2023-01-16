@@ -71,12 +71,7 @@ jobs:
         working-directory: meta-secret-core/schema
         run: |
           npm install @openapitools/openapi-generator-cli -g
-          make generate_schema_type_script
-
-      - name: copy models to ui project
-        run: |
-          rm -rf web-cli/ui/src/model
-          cp -r meta-secret-core/schema/target/core-models-ts/model web-cli/ui/src
+          make clean generate_schema_type_script
 
       - name: npm build
         working-directory: web-cli/ui
