@@ -71,10 +71,10 @@ jobs:
             ${{ runner.os }}-node-
 
       - name: generate schema
-        working-directory: meta-secret-core/schema
+        working-directory: web-cli
         run: |
           npm install @openapitools/openapi-generator-cli -g
-          make clean generate_schema_type_script
+          make clean generate_typescript_models
 
       - name: npm build
         working-directory: web-cli/ui
