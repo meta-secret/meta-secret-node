@@ -18,6 +18,7 @@ export default defineComponent({
     return {
       userId: '',
       passwordStorage: defaultPasswordStorage,
+      secrets: [{id: "secret1", description: "auf secret"}]
     }
   },
   mounted() {
@@ -53,22 +54,33 @@ export default defineComponent({
 
 
 <template>
-  <div class="container flex flex-col items-center justify-center max-w-md py-2 px-4">
-    <div class="flex">
-      <p class="text-xl py-2">Password</p>
-    </div>
+  <div class="py-4"/>
 
-    <div class="flex py-4 px-4">
-      <input class="border px-2" type="text">
-      <button class="px-4 border" @click="addPassword">Add</button>
-    </div>
-  </div>
-
-  <div class="container flex flex-col py-4 px-4 border max-w-md">
-    <div class="flex flex-col py-2 hover:cursor-pointer" @click="alert">
-      <div class="px-2">Password</div>
-      <div class="px-4">id: 12345678</div>
-      <div class="px-4">share: my share 1</div>
-    </div>
+  <!-- https://www.tailwind-kit.com/components/list -->
+  <div :class="$style.secrets">
+    <ul class="w-full flex flex-col divide-y divide p-2">
+      <li v-for="secret in secrets" :key="secret.id" class="flex flex-row">
+        <div class="flex items-center flex-1 p-4 cursor-pointer select-none">
+          <div class="flex-1 pl-1 mr-16">
+            <div class="font-medium dark:text-white">
+              {{ secret.id }}
+            </div>
+            <div class="text-sm text-gray-600 dark:text-gray-200">
+              {{ secret.description }}
+            </div>
+          </div>
+          <div class="text-xs text-gray-600 dark:text-gray-200">
+            metameta
+          </div>
+        </div>
+      </li>
+    </ul>
   </div>
 </template>
+
+<style module>
+.secrets {
+  @apply container max-w-md flex flex-col items-center justify-center w-full;
+  @apply mx-auto bg-white rounded-lg shadow dark:bg-gray-800;
+}
+</style>
