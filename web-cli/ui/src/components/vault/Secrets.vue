@@ -1,5 +1,8 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
+import init, {get_meta_passwords} from "meta-secret-web-cli";
+import type {UserSignature} from "@/model/UserSignature";
+import type {MetaPasswordsData} from "@/model/MetaPasswordsData";
 
 interface Share {
   msg: string
@@ -18,7 +21,7 @@ export default defineComponent({
     return {
       userId: '',
       passwordStorage: defaultPasswordStorage,
-      secrets: [{id: "secret1", description: "auf secret"}]
+      secrets: {}
     }
   },
   mounted() {
@@ -29,6 +32,12 @@ export default defineComponent({
     if (localStorage.passwordStorage) {
       this.passwordStorage = localStorage.passwordStorage;
     }
+
+    init().then(async () => {
+      let userSig = JSON.parse(localStorage.user).userSig as UserSignature;
+      let passwordsResp = await get_meta_passwords(userSig);
+      this.secrets = passwordsResp.data as MetaPasswordsData;
+    });
   },
 
   methods: {
@@ -59,14 +68,14 @@ export default defineComponent({
   <!-- https://www.tailwind-kit.com/components/list -->
   <div :class="$style.secrets">
     <ul class="w-full flex flex-col divide-y divide p-2">
-      <li v-for="secret in secrets" :key="secret.id" class="flex flex-row">
+      <li v-for="secret in this.secrets.passwords" :key="secret.id" class="flex flex-row">
         <div class="flex items-center flex-1 p-4 cursor-pointer select-none">
           <div class="flex-1 pl-1 mr-16">
             <div class="font-medium dark:text-white">
-              {{ secret.id }}
+              {{ secret.id.id }}
             </div>
             <div class="text-sm text-gray-600 dark:text-gray-200">
-              {{ secret.description }}
+              {{ secret.id.name }}
             </div>
           </div>
           <div class="text-xs text-gray-600 dark:text-gray-200">

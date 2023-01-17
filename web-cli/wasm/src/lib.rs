@@ -1,6 +1,8 @@
 use js_sys::Promise;
 use meta_secret_core::crypto::keys::KeyManager;
-use meta_secret_core::models::{DeviceInfo, UserSecurityBox, UserSignature};
+use meta_secret_core::models::{
+    DeviceInfo, JoinRequest, MembershipRequestType, UserSecurityBox, UserSignature,
+};
 use meta_secret_core::node::server_api;
 use meta_secret_core::recover_from_shares;
 use meta_secret_core::shared_secret::data_block::common::SharedSecretConfig;
@@ -29,6 +31,36 @@ extern "C" {
 }
 
 #[wasm_bindgen]
+pub fn membership(join_request: JsValue, request_type: JsValue) -> Promise {
+    let join_request: JoinRequest = serde_wasm_bindgen::from_value(join_request).unwrap();
+    let request_type: MembershipRequestType = serde_wasm_bindgen::from_value(request_type).unwrap();
+
+    let log_msg = format!(
+        "wasm: membership request. type: {:?}, request: {:?}",
+        request_type, join_request
+    );
+    log(log_msg.as_str());
+
+    let task = internal::membership(join_request, request_type);
+    future_to_promise(task)
+}
+
+#[wasm_bindgen]
+pub fn get_meta_passwords(user_sig: JsValue) -> Promise {
+    log(format!("wasm: get meta passwords for: {:?}", user_sig).as_str());
+
+    let user_sig = serde_wasm_bindgen::from_value(user_sig).unwrap();
+    let task = get_meta_passwords_from_server(user_sig);
+    future_to_promise(task)
+}
+
+async fn get_meta_passwords_from_server(user_sig: UserSignature) -> Result<JsValue, JsValue> {
+    log("wasm: get meta paswords");
+    let secrets = server_api::get_meta_passwords(&user_sig).await.unwrap();
+    Ok(serde_wasm_bindgen::to_value(&secrets).unwrap())
+}
+
+#[wasm_bindgen]
 pub fn register(user_sig: JsValue) -> Promise {
     log(format!("wasm: register a new user! with: {:?}", user_sig).as_str());
 
@@ -48,21 +80,18 @@ pub fn get_vault(user_sig: JsValue) -> Promise {
     log("wasm: get vault!");
 
     let user_sig = serde_wasm_bindgen::from_value(user_sig).unwrap();
-    log("wasm: user sig!");
     let vault_future = get_vault_from_server(user_sig);
-    log("wasm: request!");
     future_to_promise(vault_future)
 }
 
 async fn get_vault_from_server(user_sig: UserSignature) -> Result<JsValue, JsValue> {
-    log("wasm: get vault request");
     let get_vault_task = server_api::get_vault(&user_sig).await.unwrap();
     Ok(serde_wasm_bindgen::to_value(&get_vault_task).unwrap())
 }
 
 #[wasm_bindgen]
 pub fn generate_security_box(vault_name: &str) -> JsValue {
-    log("generate new user! wasm");
+    log("wasm: generate new user");
 
     let security_box = KeyManager::generate_security_box(vault_name.to_string());
     serde_wasm_bindgen::to_value(&security_box).unwrap()
@@ -70,7 +99,6 @@ pub fn generate_security_box(vault_name: &str) -> JsValue {
 
 #[wasm_bindgen]
 pub fn get_user_sig(security_box: JsValue, device: JsValue) -> JsValue {
-    log("generate new user! wasm");
     let security_box: UserSecurityBox = serde_wasm_bindgen::from_value(security_box).unwrap();
     let device: DeviceInfo = serde_wasm_bindgen::from_value(device).unwrap();
 
@@ -110,5 +138,25 @@ pub fn restore_password(shares_json: JsValue) -> String {
         Err(_error) => {
             panic!("umerlo");
         }
+    }
+}
+
+mod internal {
+    use meta_secret_core::models::{JoinRequest, MembershipRequestType};
+    use meta_secret_core::node::server_api;
+    use wasm_bindgen::JsValue;
+
+    use crate::log;
+
+    pub async fn membership(
+        join_request: JoinRequest,
+        request_type: MembershipRequestType,
+    ) -> Result<JsValue, JsValue> {
+        let secrets = match request_type {
+            MembershipRequestType::Accept => server_api::accept(&join_request).await.unwrap(),
+            MembershipRequestType::Decline => server_api::decline(&join_request).await.unwrap(),
+        };
+
+        Ok(serde_wasm_bindgen::to_value(&secrets).unwrap())
     }
 }

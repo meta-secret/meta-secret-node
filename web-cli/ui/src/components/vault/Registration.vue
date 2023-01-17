@@ -8,6 +8,7 @@ import {
   type UserSignature,
   VaultInfoStatus
 } from "@/model/models";
+import router from "@/router";
 
 export interface User {
   securityBox?: UserSecurityBox,
@@ -86,14 +87,14 @@ export default defineComponent({
 
     async userRegistration() {
       let userSig = JSON.parse(localStorage.user).userSig;
-      alert("User registration with: " + userSig);
+      console.log("User registration with: " + userSig);
 
       let registrationStatus = await register(userSig);
       console.log("registration status: ", registrationStatus.data);
       switch (registrationStatus.data) {
         case RegistrationStatus.Registered:
           // register button gets unavailable, userId kept in local storage
-          alert("Your vault has been registered");
+          router.push({path: '/vault/secrets'})
           return;
         case RegistrationStatus.AlreadyExists:
           alert("Join request has been sent, please wait for approval");
