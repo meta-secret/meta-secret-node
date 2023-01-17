@@ -42,19 +42,7 @@ export default defineComponent({
 
   methods: {
     addPassword() {
-      console.log("Add password into a distributed storage");
-
-      //get a password
-      //split
-      //encrypt your share
-      //add your share into password db
-      let share1: Share = {msg: 'share_1_password'};
-      let share2: Share = {msg: 'share_2_password'};
-      let share3: Share = {msg: 'share_3_password'};
-      let shares: Array<Share> = [share1, share2, share3];
-
-      //crypto-js to cypher shares with AES? Private key is a password
-      this.passwordStorage.shares.push(share1);
+      alert("Add new password!")
     }
   }
 })
@@ -63,6 +51,18 @@ export default defineComponent({
 
 
 <template>
+  <div class="py-2"/>
+
+  <div :class="$style.newSecret">
+    <button
+        class="flex-shrink-0 bg-orange-400 hover:bg-orange-700 border-orange-500 hover:border-orange-700 text-sm border-2 text-white py-1 px-4 rounded"
+        type="button"
+        @click="addPassword"
+    >
+      Add
+    </button>
+  </div>
+
   <div class="py-4"/>
 
   <!-- https://www.tailwind-kit.com/components/list -->
@@ -89,7 +89,11 @@ export default defineComponent({
 
 <style module>
 .secrets {
-  @apply container max-w-md flex flex-col items-center justify-center w-full;
-  @apply mx-auto bg-white rounded-lg shadow dark:bg-gray-800;
+  @apply container max-w-md flex flex-col items-center justify-center w-full py-20;
+  @apply mx-auto bg-white shadow dark:bg-gray-800;
+}
+
+.newSecret {
+  @apply container max-w-md flex flex-row justify-end mx-auto dark:bg-gray-800;
 }
 </style>

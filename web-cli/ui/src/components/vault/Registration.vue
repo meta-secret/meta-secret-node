@@ -137,7 +137,7 @@ export default defineComponent({
     <div class="container flex items-center justify-center max-w-md border-b border-t border-l border-r py-2 px-4">
       <label>@</label>
       <input
-          class="appearance-none bg-transparent border-none w-full text-gray-700 mr-3 py-1 px-2 leading-tight focus:outline-none"
+          :class="$style.nicknameUserInput"
           type="text"
           placeholder="user_id"
           aria-label="Full name"
@@ -157,8 +157,7 @@ export default defineComponent({
 
   <div v-if="joinComponent">
     <div class="container flex items-center max-w-md py-2 px-4">
-      <label
-          class="appearance-none bg-transparent border-none w-full text-gray-700 mr-3 py-1 leading-tight focus:outline-none">
+      <label :class="$style.joinLabel">
         Vault already exists, would you like to join?
       </label>
       <button
@@ -171,3 +170,13 @@ export default defineComponent({
     </div>
   </div>
 </template>
+
+<style module>
+.joinLabel {
+  @apply appearance-none bg-transparent border-none w-full text-gray-700 mr-3 py-1 leading-tight focus:outline-none
+}
+
+.nicknameUserInput {
+  @apply appearance-none bg-transparent border-none w-full text-gray-700 mr-3 py-1 px-2 leading-tight focus:outline-none
+}
+</style>
