@@ -48,12 +48,6 @@ export default defineComponent({
     addPassword() {
       init().then(async () => {
         console.log("Add new password!");
-        //локальная часть:
-        // - ввести пароль,
-        // - разорвать пароль,
-        // - получить волт
-        //    - зашифровать гары для каждого девайса
-        //дистра: разослать по девайсам
         let user = JSON.parse(localStorage.user) as User;
 
         let userSig = this.getUserSig();
@@ -62,6 +56,12 @@ export default defineComponent({
 
         let id = Math.random().toString(36).substring(2,7)
         await cluster_distribution(id, this.newPassword, user.securityBox, userSig, vaultInfo.vault);
+      });
+    },
+
+    restore() {
+      init().then(async () => {
+        alert("Restore password!")
       });
     },
 
@@ -99,15 +99,15 @@ export default defineComponent({
         <div class="flex items-center flex-1 p-4 cursor-pointer select-none">
           <div class="flex-1 pl-1 mr-16">
             <div class="font-medium dark:text-white">
-              {{ secret.id.id }}
-            </div>
-            <div class="text-sm text-gray-600 dark:text-gray-200">
               {{ secret.id.name }}
             </div>
+            <div class="text-sm text-gray-600 dark:text-gray-200">
+              {{ secret.id.id.slice(0, 12) }}
+            </div>
           </div>
-          <div class="text-xs text-gray-600 dark:text-gray-200">
-            metameta
-          </div>
+          <button :class="$style.actionButtonText" @click="restore">
+            Restore
+          </button>
         </div>
       </li>
     </ul>
@@ -116,7 +116,7 @@ export default defineComponent({
 
 <style module>
 .secrets {
-  @apply container max-w-md flex flex-col items-center justify-center w-full py-20;
+  @apply container max-w-md flex flex-col items-center justify-center w-full;
   @apply mx-auto bg-white shadow dark:bg-gray-800;
 }
 
@@ -127,5 +127,9 @@ export default defineComponent({
 .addButton {
   @apply flex-shrink-0 bg-orange-400 border-orange-500 text-sm border-2 text-white py-1 px-4 rounded;
   @apply hover:bg-orange-700 hover:border-orange-700;
+}
+
+.actionButtonText {
+  @apply flex justify-end w-24 text-right
 }
 </style>
