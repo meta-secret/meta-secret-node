@@ -1,7 +1,7 @@
 use js_sys::Promise;
 use meta_secret_core::crypto::keys::KeyManager;
 use meta_secret_core::models::{
-    DeviceInfo, JoinRequest, MembershipRequestType, UserSecurityBox, UserSignature,
+    DeviceInfo, JoinRequest, MembershipRequestType, UserSecurityBox, UserSignature, VaultDoc,
 };
 use meta_secret_core::node::server_api;
 use meta_secret_core::recover_from_shares;
@@ -9,6 +9,7 @@ use meta_secret_core::shared_secret::data_block::common::SharedSecretConfig;
 use meta_secret_core::shared_secret::shared_secret::{
     PlainText, SharedSecretEncryption, UserShareDto,
 };
+use meta_secret_core::shared_secret::MetaDistributor;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::future_to_promise;
 
@@ -28,6 +29,31 @@ extern "C" {
 
     #[wasm_bindgen(js_namespace = console)]
     fn log(s: &str);
+}
+
+#[wasm_bindgen]
+pub fn cluster_distribution(
+    pass_id: &str,
+    pass: &str,
+    security_box: JsValue,
+    user_sig: JsValue,
+    vault: JsValue,
+) -> Promise {
+    log("wasm: cluster distribution!!!!");
+
+    let security_box: UserSecurityBox = serde_wasm_bindgen::from_value(security_box).unwrap();
+    let user_sig: UserSignature = serde_wasm_bindgen::from_value(user_sig).unwrap();
+    let vault: VaultDoc = serde_wasm_bindgen::from_value(vault).unwrap();
+
+    let distributor = MetaDistributor {
+        security_box,
+        user_sig,
+        vault,
+    };
+
+    let task = internal::cluster_distribution(pass_id.to_string(), pass.to_string(), distributor);
+
+    future_to_promise(task)
 }
 
 #[wasm_bindgen]
@@ -55,7 +81,7 @@ pub fn get_meta_passwords(user_sig: JsValue) -> Promise {
 }
 
 async fn get_meta_passwords_from_server(user_sig: UserSignature) -> Result<JsValue, JsValue> {
-    log("wasm: get meta paswords");
+    log("wasm: get meta passwords");
     let secrets = server_api::get_meta_passwords(&user_sig).await.unwrap();
     Ok(serde_wasm_bindgen::to_value(&secrets).unwrap())
 }
@@ -144,6 +170,7 @@ pub fn restore_password(shares_json: JsValue) -> String {
 mod internal {
     use meta_secret_core::models::{JoinRequest, MembershipRequestType};
     use meta_secret_core::node::server_api;
+    use meta_secret_core::shared_secret::MetaDistributor;
     use wasm_bindgen::JsValue;
 
     use crate::log;
@@ -158,5 +185,16 @@ mod internal {
         };
 
         Ok(serde_wasm_bindgen::to_value(&secrets).unwrap())
+    }
+
+    pub async fn cluster_distribution(
+        pass_id: String,
+        pass: String,
+        distributor: MetaDistributor,
+    ) -> Result<JsValue, JsValue> {
+        distributor
+            .distribute(pass_id.to_string(), pass.to_string())
+            .await;
+        Ok(JsValue::from_str("ok"))
     }
 }

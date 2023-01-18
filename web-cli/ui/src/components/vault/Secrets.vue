@@ -1,8 +1,10 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
-import init, {get_meta_passwords} from "meta-secret-web-cli";
+import init, {cluster_distribution, get_meta_passwords, get_vault} from "meta-secret-web-cli";
 import type {UserSignature} from "@/model/UserSignature";
 import type {MetaPasswordsData} from "@/model/MetaPasswordsData";
+import type {User} from "@/components/vault/Registration.vue";
+import type {VaultInfoData} from "@/model/VaultInfoData";
 
 interface Share {
   msg: string
@@ -20,11 +22,12 @@ export default defineComponent({
 
     return {
       userId: '',
+      newPassword: '',
       passwordStorage: defaultPasswordStorage,
       secrets: {}
     }
   },
-  mounted() {
+  created() {
     if (localStorage.userId) {
       this.userId = localStorage.userId;
     }
@@ -37,12 +40,38 @@ export default defineComponent({
       let userSig = JSON.parse(localStorage.user).userSig as UserSignature;
       let passwordsResp = await get_meta_passwords(userSig);
       this.secrets = passwordsResp.data as MetaPasswordsData;
+      console.log(JSON.stringify(this.secrets, null, 2))
     });
   },
 
   methods: {
     addPassword() {
-      alert("Add new password!")
+      init().then(async () => {
+        console.log("Add new password!");
+        //локальная часть:
+        // - ввести пароль,
+        // - разорвать пароль,
+        // - получить волт
+        //    - зашифровать гары для каждого девайса
+        //дистра: разослать по девайсам
+        let user = JSON.parse(localStorage.user) as User;
+
+        let userSig = this.getUserSig();
+        let vaultResponse = await get_vault(userSig);
+        let vaultInfo = vaultResponse.data as VaultInfoData
+
+        let id = Math.random().toString(36).substring(2,7)
+        await cluster_distribution(id, this.newPassword, user.securityBox, userSig, vaultInfo.vault);
+      });
+    },
+
+    getUserSig() {
+      let user = JSON.parse(localStorage.user) as User;
+      if (user.userSig) {
+         return user.userSig;
+      } else {
+        throw new Error("Critical error. User signature not present");
+      }
     }
   }
 })
@@ -53,12 +82,10 @@ export default defineComponent({
 <template>
   <div class="py-2"/>
 
-  <div :class="$style.newSecret">
-    <button
-        class="flex-shrink-0 bg-orange-400 hover:bg-orange-700 border-orange-500 hover:border-orange-700 text-sm border-2 text-white py-1 px-4 rounded"
-        type="button"
-        @click="addPassword"
-    >
+  <div class="container flex items-center justify-center max-w-md border-b border-t border-l border-r py-2 px-4">
+    <label>pass: </label>
+    <input type="text" :class="$style.passwordInput" placeholder="top$ecret" v-model="newPassword">
+    <button :class="$style.addButton" @click="addPassword">
       Add
     </button>
   </div>
@@ -93,7 +120,12 @@ export default defineComponent({
   @apply mx-auto bg-white shadow dark:bg-gray-800;
 }
 
-.newSecret {
-  @apply container max-w-md flex flex-row justify-end mx-auto dark:bg-gray-800;
+.passwordInput {
+  @apply appearance-none bg-transparent border-none w-full text-gray-700 mr-3 py-1 px-2 leading-tight focus:outline-none
+}
+
+.addButton {
+  @apply flex-shrink-0 bg-orange-400 border-orange-500 text-sm border-2 text-white py-1 px-4 rounded;
+  @apply hover:bg-orange-700 hover:border-orange-700;
 }
 </style>
