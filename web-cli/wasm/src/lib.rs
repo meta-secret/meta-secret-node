@@ -12,7 +12,9 @@ use meta_secret_core::shared_secret::shared_secret::{
 use meta_secret_core::shared_secret::MetaDistributor;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::future_to_promise;
+use web_sys::{IdbDatabase, IdbTransaction};
 
+mod db;
 mod utils;
 
 /// Json utilities https://github.com/rustwasm/wasm-bindgen/blob/main/crates/js-sys/tests/wasm/JSON.rs
@@ -25,10 +27,35 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[wasm_bindgen]
 extern "C" {
-    fn alert(s: &str);
+    pub fn alert(s: &str);
 
     #[wasm_bindgen(js_namespace = console)]
-    fn log(s: &str);
+    pub fn log(s: &str);
+}
+
+#[wasm_bindgen]
+pub fn db_test() {
+    //https://rustwasm.github.io/wasm-bindgen/examples/closures.html
+
+    const STORE_NAME: &str = "meta_passwords";
+
+    let query_task = Box::from(|_db: &IdbDatabase, tx: &IdbTransaction| {
+        let store = tx.object_store(STORE_NAME).unwrap();
+
+        let user = serde_json::json!({
+            "name": "meta_user",
+            "email": "fake@meta-secret.org",
+        });
+        // Convert it to `JsValue`
+        let user = serde_wasm_bindgen::to_value(&user).unwrap();
+
+        // Add the employee to the store
+        log("save to db");
+        let key = serde_wasm_bindgen::to_value("meta_user").unwrap();
+        store.add_with_key(&user, &key).unwrap();
+    });
+
+    db::tx(&[STORE_NAME], query_task);
 }
 
 #[wasm_bindgen]

@@ -23,7 +23,7 @@ export default defineComponent({
 <template>
 
   <div class="flex justify-center py-6">
-    <p class="text-2xl">Distributed Vault</p>
+    <p class="text-2xl">Distributed Password Manager</p>
   </div>
 
   <div v-if="isNewUser()">

@@ -1,6 +1,6 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
-import init, {cluster_distribution, get_meta_passwords, get_vault} from "meta-secret-web-cli";
+import init, {cluster_distribution, db_test, get_meta_passwords, get_vault} from "meta-secret-web-cli";
 import type {UserSignature} from "@/model/UserSignature";
 import type {MetaPasswordsData} from "@/model/MetaPasswordsData";
 import type {User} from "@/components/vault/Registration.vue";
@@ -54,7 +54,7 @@ export default defineComponent({
         let vaultResponse = await get_vault(userSig);
         let vaultInfo = vaultResponse.data as VaultInfoData
 
-        let id = Math.random().toString(36).substring(2,7)
+        let id = Math.random().toString(36).substring(2, 7)
         await cluster_distribution(id, this.newPassword, user.securityBox, userSig, vaultInfo.vault);
       });
     },
@@ -68,10 +68,16 @@ export default defineComponent({
     getUserSig() {
       let user = JSON.parse(localStorage.user) as User;
       if (user.userSig) {
-         return user.userSig;
+        return user.userSig;
       } else {
         throw new Error("Critical error. User signature not present");
       }
+    },
+
+    dbTest() {
+      init().then(async () => {
+        db_test();
+      });
     }
   }
 })
