@@ -1,53 +1,38 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
-import init, {cluster_distribution, db_test, get_meta_passwords, get_vault} from "meta-secret-web-cli";
+import init, {cluster_distribution, db_test, get_meta_passwords, get_vault, sync} from "meta-secret-web-cli";
 import type {UserSignature} from "@/model/UserSignature";
 import type {MetaPasswordsData} from "@/model/MetaPasswordsData";
 import type {User} from "@/components/vault/Registration.vue";
 import type {VaultInfoData} from "@/model/VaultInfoData";
 
-interface Share {
-  msg: string
-}
-
-interface PasswordStorage {
-  shares: Array<Share>
-}
-
 export default defineComponent({
   data() {
-    let defaultPasswordStorage: PasswordStorage = {
-      shares: []
-    };
-
     return {
       userId: '',
       newPassword: '',
-      passwordStorage: defaultPasswordStorage,
-      secrets: {}
+      secrets: {},
+      polling: 0
     }
   },
   created() {
+    this.pollData()
+
     if (localStorage.userId) {
       this.userId = localStorage.userId;
-    }
-
-    if (localStorage.passwordStorage) {
-      this.passwordStorage = localStorage.passwordStorage;
     }
 
     init().then(async () => {
       let userSig = JSON.parse(localStorage.user).userSig as UserSignature;
       let passwordsResp = await get_meta_passwords(userSig);
       this.secrets = passwordsResp.data as MetaPasswordsData;
-      console.log(JSON.stringify(this.secrets, null, 2))
     });
   },
 
   methods: {
     addPassword() {
       init().then(async () => {
-        console.log("Add new password!");
+        console.log("Add a new password!");
         let user = JSON.parse(localStorage.user) as User;
 
         let userSig = this.getUserSig();
@@ -78,8 +63,18 @@ export default defineComponent({
       init().then(async () => {
         db_test();
       });
+    },
+
+    pollData() {
+      this.polling = setInterval(async () => {
+        await sync(this.getUserSig());
+      }, 3000)
     }
-  }
+  },
+
+  beforeDestroy () {
+    clearInterval(this.polling)
+  },
 })
 
 </script>
