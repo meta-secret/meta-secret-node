@@ -1,10 +1,12 @@
 use js_sys::Promise;
 use meta_secret_core::crypto::keys::KeyManager;
 use meta_secret_core::models::{
-    DeviceInfo, JoinRequest, MembershipRequestType, UserSecurityBox, UserSignature, VaultDoc,
+    DeviceInfo, JoinRequest, MembershipRequestType, SecretDistributionType, UserSecurityBox,
+    UserSignature, VaultDoc,
 };
 use meta_secret_core::node::server_api;
 use meta_secret_core::recover_from_shares;
+use meta_secret_core::sdk::api::MessageType;
 use meta_secret_core::shared_secret::data_block::common::SharedSecretConfig;
 use meta_secret_core::shared_secret::shared_secret::{
     PlainText, SharedSecretEncryption, UserShareDto,
@@ -35,7 +37,29 @@ extern "C" {
 #[wasm_bindgen]
 pub async fn sync(user_sig: JsValue) -> Result<JsValue, JsValue> {
     let user_sig: UserSignature = serde_wasm_bindgen::from_value(user_sig)?;
-    let shares = server_api::find_shares(&user_sig).await;
+    let shares_response = server_api::find_shares(&user_sig)
+        .await
+        .map_err(JsError::from)?;
+
+    match shares_response.msg_type {
+        MessageType::Ok => {
+            let shares = shares_response.data.unwrap();
+            for share in shares.shares {
+                match share.distribution_type {
+                    SecretDistributionType::Split => {
+                        //save to db
+                    }
+                    SecretDistributionType::Recover => {
+                        //restore password
+                    }
+                }
+            }
+        }
+        MessageType::Err => {
+            let err_js = serde_wasm_bindgen::to_value(&shares_response.err.unwrap())?;
+            //Err(err_js);
+        }
+    }
 
     //save shares to db
     Ok(JsValue::null())
@@ -114,8 +138,12 @@ pub async fn get_meta_passwords(user_sig: JsValue) -> Result<JsValue, JsValue> {
 
 async fn get_meta_passwords_from_server(user_sig: UserSignature) -> Result<JsValue, JsValue> {
     log("wasm: get meta passwords");
-    let secrets = server_api::get_meta_passwords(&user_sig).await.unwrap();
-    Ok(serde_wasm_bindgen::to_value(&secrets).unwrap())
+    let secrets = server_api::get_meta_passwords(&user_sig)
+        .await
+        .map_err(JsError::from)?;
+
+    let secrets_js = serde_wasm_bindgen::to_value(&secrets)?;
+    Ok(secrets_js)
 }
 
 #[wasm_bindgen]
@@ -128,8 +156,11 @@ pub async fn register(user_sig: JsValue) -> Result<JsValue, JsValue> {
 
 async fn server_registration(user_sig: UserSignature) -> Result<JsValue, JsValue> {
     log("Registration on server!!!!");
-    let register_async_task = server_api::register(&user_sig).await.unwrap();
-    let register_js = serde_wasm_bindgen::to_value(&register_async_task)?;
+    let register_response = server_api::register(&user_sig)
+        .await
+        .map_err(JsError::from)?;
+
+    let register_js = serde_wasm_bindgen::to_value(&register_response)?;
     Ok(register_js)
 }
 
@@ -142,9 +173,11 @@ pub async fn get_vault(user_sig: JsValue) -> Result<JsValue, JsValue> {
 }
 
 async fn get_vault_from_server(user_sig: UserSignature) -> Result<JsValue, JsValue> {
-    let get_vault_task = server_api::get_vault(&user_sig).await.unwrap();
-    let vault = serde_wasm_bindgen::to_value(&get_vault_task)?;
-    Ok(vault)
+    let vault = server_api::get_vault(&user_sig)
+        .await
+        .map_err(JsError::from)?;
+    let vault_js = serde_wasm_bindgen::to_value(&vault)?;
+    Ok(vault_js)
 }
 
 #[wasm_bindgen]
@@ -174,7 +207,7 @@ pub fn split(pass: &str) -> Result<JsValue, JsValue> {
         number_of_shares: 3,
         threshold: 2,
     };
-    let shared_secret = SharedSecretEncryption::new(config, &plain_text).unwrap();
+    let shared_secret = SharedSecretEncryption::new(config, &plain_text).map_err(JsError::from)?;
 
     let mut res: Vec<UserShareDto> = vec![];
     for share_index in 0..config.number_of_shares {
@@ -187,19 +220,13 @@ pub fn split(pass: &str) -> Result<JsValue, JsValue> {
 }
 
 #[wasm_bindgen]
-pub fn restore_password(shares_json: JsValue) -> String {
+pub fn restore_password(shares_json: JsValue) -> Result<JsValue, JsValue> {
     log("wasm: restore password, core functionality");
 
-    let user_shares: Vec<UserShareDto> = serde_wasm_bindgen::from_value(shares_json).unwrap();
+    let user_shares: Vec<UserShareDto> = serde_wasm_bindgen::from_value(shares_json)?;
 
-    let maybe_plain_text = recover_from_shares(user_shares);
-
-    match maybe_plain_text {
-        Ok(plain_text) => plain_text.text,
-        Err(_error) => {
-            panic!("Error recovering from secret from shares");
-        }
-    }
+    let plain_text = recover_from_shares(user_shares).map_err(JsError::from)?;
+    Ok(JsValue::from_str(plain_text.text.as_str()))
 }
 
 mod internal {
