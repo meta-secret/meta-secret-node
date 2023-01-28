@@ -44,9 +44,9 @@ export default defineComponent({
       });
     },
 
-    restore() {
+    recover() {
       init().then(async () => {
-        alert("Restore password!")
+        console.log("Recover password!");
       });
     },
 
@@ -106,8 +106,8 @@ export default defineComponent({
               {{ secret.id.id.slice(0, 12) }}
             </div>
           </div>
-          <button :class="$style.actionButtonText" @click="restore">
-            Restore
+          <button :class="$style.actionButtonText" @click="recover">
+            Recover
           </button>
         </div>
       </li>

@@ -1,4 +1,8 @@
+use std::fmt::Error;
+
 use js_sys::Array;
+use meta_secret_core::models::{UserSecurityBox, UserSignature};
+use meta_secret_core::node::db::BasicRepo;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::{closure::Closure, JsCast};
 use web_sys::{
@@ -7,7 +11,7 @@ use web_sys::{
 
 use crate::log;
 
-pub fn tx<T: AsRef<str>>(store_names: &[T], task: Box<dyn Fn(&IdbDatabase, &IdbTransaction)>) {
+pub fn tx<T: AsRef<str>>(store_names: &[T], task: Box<dyn FnOnce(&IdbDatabase, &IdbTransaction)>) {
     let factory: IdbFactory = web_sys::window().unwrap().indexed_db().unwrap().unwrap();
     let open_db_request: IdbOpenDbRequest = factory.open("meta_secret").unwrap();
 
@@ -47,7 +51,7 @@ pub fn tx<T: AsRef<str>>(store_names: &[T], task: Box<dyn Fn(&IdbDatabase, &IdbT
             .transaction_with_str_sequence_and_mode(&store_names, rw_mode)
             .unwrap();
 
-        task.as_ref()(db, &tx);
+        task(db, &tx);
 
         tx.commit().unwrap();
     });
@@ -57,4 +61,47 @@ pub fn tx<T: AsRef<str>>(store_names: &[T], task: Box<dyn Fn(&IdbDatabase, &IdbT
     //todo fix memory leaks (see wasm_bindgen::Closure doc and https://rustwasm.github.io/wasm-bindgen/reference/passing-rust-closures-to-js.html)
     on_success_action.forget();
     on_upgrade_action.forget();
+}
+
+fn yaya() {
+    let dbb = SecurityBoxRepo {};
+    let sec_box = UserSecurityBox {
+        vault_name: "".to_string(),
+        signature: Box::new(Default::default()),
+        key_manager: Box::new(Default::default()),
+    };
+    let boxx = dbb.save(&sec_box);
+    let sec_boxx: Result<UserSecurityBox, Error> = dbb.get();
+    let sig_sig: Result<UserSignature, Error> = dbb.get();
+
+    let sig = UserSignature {
+        vault_name: "".to_string(),
+        device: Box::new(Default::default()),
+        public_key: Box::new(Default::default()),
+        transport_public_key: Box::new(Default::default()),
+        signature: Box::new(Default::default()),
+    };
+    let boxx2 = dbb.save(&sig);
+}
+
+struct SecurityBoxRepo {}
+
+impl BasicRepo<UserSecurityBox> for SecurityBoxRepo {
+    fn save(self, entity: &UserSecurityBox) {
+        todo!();
+    }
+
+    fn get(self) -> Result<UserSecurityBox, Error> {
+        todo!();
+    }
+}
+
+impl BasicRepo<UserSignature> for SecurityBoxRepo {
+    fn save(self, entity: &UserSignature) {
+        todo!()
+    }
+
+    fn get(self) -> Result<UserSignature, Error> {
+        todo!()
+    }
 }

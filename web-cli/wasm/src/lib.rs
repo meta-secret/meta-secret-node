@@ -1,8 +1,9 @@
 use js_sys::Promise;
 use meta_secret_core::crypto::keys::KeyManager;
 use meta_secret_core::models::{
-    DeviceInfo, JoinRequest, MembershipRequestType, SecretDistributionType, UserSecurityBox,
-    UserSignature, VaultDoc,
+    DeviceInfo, FindSharesRequest, JoinRequest, MembershipRequestType, MetaPasswordDoc,
+    MetaPasswordId, MetaPasswordsData, PasswordRecoveryRequest, SecretDistributionDocData,
+    SecretDistributionType, UserSecurityBox, UserSignature, VaultDoc,
 };
 use meta_secret_core::node::server_api;
 use meta_secret_core::recover_from_shares;
@@ -34,60 +35,79 @@ extern "C" {
     pub fn log(s: &str);
 }
 
+///https://rustwasm.github.io/wasm-bindgen/examples/closures.html
 #[wasm_bindgen]
-pub async fn sync(user_sig: JsValue) -> Result<JsValue, JsValue> {
-    let user_sig: UserSignature = serde_wasm_bindgen::from_value(user_sig)?;
-    let shares_response = server_api::find_shares(&user_sig)
-        .await
-        .map_err(JsError::from)?;
+pub async fn recover(meta_pass: JsValue) -> Result<JsValue, JsValue> {
+    //get security_box and user_sig from the database!!!!!
 
-    match shares_response.msg_type {
-        MessageType::Ok => {
-            let shares = shares_response.data.unwrap();
-            for share in shares.shares {
-                match share.distribution_type {
-                    SecretDistributionType::Split => {
-                        //save to db
-                    }
-                    SecretDistributionType::Recover => {
-                        //restore password
-                    }
-                }
-            }
-        }
-        MessageType::Err => {
-            let err_js = serde_wasm_bindgen::to_value(&shares_response.err.unwrap())?;
-            //Err(err_js);
+    //let meta_pass: MetaPasswordDoc = serde_wasm_bindgen::from_value(pass_id)?;
+
+    /*
+    for provider in meta_pass.vault.signatures {
+        let recovery_request = PasswordRecoveryRequest {
+            id: Box::from(pass_id),
+            consumer: ,
+            provider: Box::from(provider),
         }
     }
-
-    //save shares to db
+    server_api::claim_for_password_recovery(&recovery_request)
+    */
     Ok(JsValue::null())
 }
 
 #[wasm_bindgen]
-pub fn db_test() -> Result<JsValue, JsValue> {
-    //https://rustwasm.github.io/wasm-bindgen/examples/closures.html
+pub async fn sync(user_sig: JsValue) -> Result<JsValue, JsValue> {
+    log("sync!");
+    const STORE_NAME: &str = "secret_shares";
 
-    const STORE_NAME: &str = "meta_passwords";
+    let user_sig: UserSignature = serde_wasm_bindgen::from_value(user_sig)?;
+    let request = FindSharesRequest {
+        user_request_type: SecretDistributionType::Split,
+        user_signature: Box::new(user_sig),
+    };
 
-    let query_task = Box::from(|_db: &IdbDatabase, tx: &IdbTransaction| {
-        let store = tx.object_store(STORE_NAME).unwrap();
+    let shares_response = server_api::find_shares(&request)
+        .await
+        .map_err(JsError::from)?;
 
-        let user = serde_json::json!({
-            "name": "meta_user",
-            "email": "fake@meta-secret.org",
-        });
-        // Convert it to `JsValue`
-        let user = serde_wasm_bindgen::to_value(&user).unwrap();
+    let query_task = |_db: &IdbDatabase, tx: &IdbTransaction| {
+        match shares_response.msg_type {
+            MessageType::Ok => {
+                log("wasm, sync: save shares to db");
+                let shares_result = shares_response.data.unwrap();
+                for share in shares_result.shares {
+                    match share.distribution_type {
+                        SecretDistributionType::Split => {
+                            log("wasm, sync: split");
 
-        // Add the employee to the store
-        log("save to db");
-        let key = serde_wasm_bindgen::to_value("meta_user").unwrap();
-        store.add_with_key(&user, &key).unwrap();
-    });
+                            let store = tx.object_store(STORE_NAME).unwrap();
+                            let share_js = serde_wasm_bindgen::to_value(&share).unwrap();
 
-    db::tx(&[STORE_NAME], query_task);
+                            // Add the employee to the store
+                            log("save to db");
+                            let pass_id = share.meta_password.meta_password.id.id;
+                            let key = serde_wasm_bindgen::to_value(&pass_id).unwrap();
+                            store.add_with_key(&share_js, &key).unwrap();
+                        }
+                        SecretDistributionType::Recover => {
+                            //restore password
+                            log("wasm, sync: recover");
+                        }
+                    }
+                }
+            }
+            MessageType::Err => {
+                let err_js = serde_wasm_bindgen::to_value(&shares_response.err.unwrap()).unwrap();
+                log(format!("wasm, sync: error: {:?}", err_js).as_str());
+                //Err(err_js);
+            }
+        }
+    };
+
+    log("wasm, sync: save to db");
+    db::tx(&[STORE_NAME], Box::from(query_task));
+
+    //save shares to db
     Ok(JsValue::null())
 }
 
@@ -111,7 +131,10 @@ pub async fn cluster_distribution(
         vault,
     };
 
-    internal::cluster_distribution(pass_id.to_string(), pass.to_string(), distributor).await
+    distributor
+        .distribute(pass_id.to_string(), pass.to_string())
+        .await;
+    Ok(JsValue::from_str("ok"))
 }
 
 #[wasm_bindgen]
@@ -125,7 +148,13 @@ pub async fn membership(join_request: JsValue, request_type: JsValue) -> Result<
     );
     log(log_msg.as_str());
 
-    internal::membership(join_request, request_type).await
+    let secrets = match request_type {
+        MembershipRequestType::Accept => server_api::accept(&join_request).await.unwrap(),
+        MembershipRequestType::Decline => server_api::decline(&join_request).await.unwrap(),
+    };
+
+    let secrets_js = serde_wasm_bindgen::to_value(&secrets)?;
+    Ok(secrets_js)
 }
 
 #[wasm_bindgen]
@@ -133,10 +162,6 @@ pub async fn get_meta_passwords(user_sig: JsValue) -> Result<JsValue, JsValue> {
     log(format!("wasm: get meta passwords for: {:?}", user_sig).as_str());
 
     let user_sig = serde_wasm_bindgen::from_value(user_sig)?;
-    get_meta_passwords_from_server(user_sig).await
-}
-
-async fn get_meta_passwords_from_server(user_sig: UserSignature) -> Result<JsValue, JsValue> {
     log("wasm: get meta passwords");
     let secrets = server_api::get_meta_passwords(&user_sig)
         .await
@@ -151,10 +176,6 @@ pub async fn register(user_sig: JsValue) -> Result<JsValue, JsValue> {
     log(format!("wasm: register a new user! with: {:?}", user_sig).as_str());
 
     let user_sig = serde_wasm_bindgen::from_value(user_sig)?;
-    server_registration(user_sig).await
-}
-
-async fn server_registration(user_sig: UserSignature) -> Result<JsValue, JsValue> {
     log("Registration on server!!!!");
     let register_response = server_api::register(&user_sig)
         .await
@@ -169,10 +190,6 @@ pub async fn get_vault(user_sig: JsValue) -> Result<JsValue, JsValue> {
     log("wasm: get vault!");
 
     let user_sig = serde_wasm_bindgen::from_value(user_sig)?;
-    get_vault_from_server(user_sig).await
-}
-
-async fn get_vault_from_server(user_sig: UserSignature) -> Result<JsValue, JsValue> {
     let vault = server_api::get_vault(&user_sig)
         .await
         .map_err(JsError::from)?;
@@ -227,35 +244,4 @@ pub fn restore_password(shares_json: JsValue) -> Result<JsValue, JsValue> {
 
     let plain_text = recover_from_shares(user_shares).map_err(JsError::from)?;
     Ok(JsValue::from_str(plain_text.text.as_str()))
-}
-
-mod internal {
-    use meta_secret_core::models::{JoinRequest, MembershipRequestType};
-    use meta_secret_core::node::server_api;
-    use meta_secret_core::shared_secret::MetaDistributor;
-    use wasm_bindgen::JsValue;
-
-    pub async fn membership(
-        join_request: JoinRequest,
-        request_type: MembershipRequestType,
-    ) -> Result<JsValue, JsValue> {
-        let secrets = match request_type {
-            MembershipRequestType::Accept => server_api::accept(&join_request).await.unwrap(),
-            MembershipRequestType::Decline => server_api::decline(&join_request).await.unwrap(),
-        };
-
-        let secrets_js = serde_wasm_bindgen::to_value(&secrets)?;
-        Ok(secrets_js)
-    }
-
-    pub async fn cluster_distribution(
-        pass_id: String,
-        pass: String,
-        distributor: MetaDistributor,
-    ) -> Result<JsValue, JsValue> {
-        distributor
-            .distribute(pass_id.to_string(), pass.to_string())
-            .await;
-        Ok(JsValue::from_str("ok"))
-    }
 }
