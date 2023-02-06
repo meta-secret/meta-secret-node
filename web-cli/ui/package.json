@@ -19,7 +19,7 @@
     "pinia": "~2.0.28",
     "qr-code-styling": "~1.6.0-rc.1",
     "serve": "~14.1.2",
-    "vite-plugin-wasm": "~3.1.1",
+    "vite-plugin-wasm": "~3.2.1",
     "vue": "~3.2.45",
     "vue-github-button": "~3.1.0",
     "vue-router": "~4.1.6",
