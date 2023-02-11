@@ -2,19 +2,29 @@
 import {defineComponent} from 'vue'
 import RegistrationComponent from "@/components/vault/Registration.vue";
 
+import "@/common/DbUtils"
+import {AppState} from "@/stores/app-state"
+import init from "meta-secret-web-cli";
+
 export default defineComponent({
   components: {
     RegistrationComponent
   },
 
+  async setup() {
+    await init();
+
+    const appState = AppState();
+    await appState.loadMetaVault();
+
+    return {
+      appState: appState
+    }
+  },
+
   methods: {
-    isNewUser() {
-      if (localStorage.userId) {
-        if (localStorage.userId !== '') {
-          return false;
-        }
-      }
-      return true;
+    isEmptyEnv() {
+      return this.appState.metaVault == undefined;
     }
   }
 });
@@ -26,7 +36,7 @@ export default defineComponent({
     <p class="text-2xl">Distributed Password Manager</p>
   </div>
 
-  <div v-if="isNewUser()">
+  <div v-if="isEmptyEnv()">
     <RegistrationComponent/>
   </div>
 

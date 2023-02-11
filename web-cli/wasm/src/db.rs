@@ -1,60 +1,112 @@
-use js_sys::Array;
-use wasm_bindgen::prelude::*;
-use wasm_bindgen::{closure::Closure, JsCast};
-use web_sys::{
-    Event, IdbDatabase, IdbFactory, IdbOpenDbRequest, IdbRequest, IdbTransaction, Window,
-};
+use serde::Serialize;
+use wasm_bindgen::JsValue;
+use web_sys::DomException;
 
-use crate::log;
+pub const DB_NAME: &str = "meta_secret_db";
 
-pub fn tx<T: AsRef<str>>(store_names: &[T], task: Box<dyn Fn(&IdbDatabase, &IdbTransaction)>) {
-    let factory: IdbFactory = web_sys::window().unwrap().indexed_db().unwrap().unwrap();
-    let open_db_request: IdbOpenDbRequest = factory.open("meta_secret").unwrap();
+#[derive(thiserror::Error, Debug)]
+pub enum WasmDbError {
+    #[error("IndexedDb error")]
+    JsIndexedDbError(DomException),
 
-    let store_names_2: Array = store_names
-        .iter()
-        .map(|s| JsValue::from(s.as_ref()))
-        .collect();
+    #[error(transparent)]
+    WasmBindgenError {
+        #[from]
+        source: serde_wasm_bindgen::Error,
+    },
 
-    let on_upgrade_action: Closure<dyn FnMut(Event)> = Closure::once(move |event: Event| {
-        log("db onUpgrade event");
+    #[error("JsValue error")]
+    JsValueError(JsValue),
 
-        let target = event.target().unwrap();
-        let request: &IdbRequest = AsRef::<JsValue>::as_ref(&target).unchecked_ref();
-        let db: IdbDatabase = request.result().unwrap().unchecked_into();
+    #[error("Db error: {0}")]
+    DbCustomError(String),
+}
 
-        for store_name in store_names_2.iter() {
-            db.create_object_store(store_name.as_string().unwrap().as_str())
-                .unwrap();
+pub mod user_credentials {
+    use async_trait::async_trait;
+    use meta_secret_core::models::UserCredentials;
+    use meta_secret_core::node::db::{GenericRepo, UserCredentialsRepo};
+
+    use crate::db::{WasmDbError, DB_NAME};
+    use crate::{idbGet, idbSave};
+
+    pub mod store_conf {
+        pub const STORE_NAME: &str = "user_credentials";
+        pub const KEY_NAME: &str = "creds";
+    }
+
+    pub struct UserCredentialsWasmRepo {}
+
+    impl UserCredentialsWasmRepo {
+        pub async fn find_user_credentials(&self) -> Result<Option<UserCredentials>, WasmDbError> {
+            self.get(store_conf::KEY_NAME).await
         }
-    });
-    open_db_request.set_onupgradeneeded(Some(on_upgrade_action.as_ref().unchecked_ref()));
+    }
 
-    let store_names: Array = store_names
-        .iter()
-        .map(|s| JsValue::from(s.as_ref()))
-        .collect();
+    #[async_trait(? Send)]
+    impl GenericRepo<UserCredentials> for UserCredentialsWasmRepo {
+        type Error = WasmDbError;
 
-    let on_success_action: Closure<dyn FnMut(Event)> = Closure::once(move |event: Event| {
-        let target = event.target().unwrap();
-        let request: &IdbRequest = AsRef::<JsValue>::as_ref(&target).unchecked_ref();
+        async fn save(&self, key: &str, creds: &UserCredentials) -> Result<(), Self::Error> {
+            let creds_js = serde_wasm_bindgen::to_value(creds)?;
+            idbSave(DB_NAME, store_conf::STORE_NAME, key, creds_js).await;
+            Ok(())
+        }
 
-        let raw_db = request.result().unwrap();
-        let db: &IdbDatabase = raw_db.as_ref().unchecked_ref();
+        async fn get(&self, key: &str) -> Result<Option<UserCredentials>, Self::Error> {
+            let creds_js = idbGet(DB_NAME, store_conf::STORE_NAME, key).await;
+            let creds: UserCredentials = serde_wasm_bindgen::from_value(creds_js)?;
+            Ok(Some(creds))
+        }
+    }
 
-        let rw_mode = web_sys::IdbTransactionMode::Readwrite;
-        let tx: IdbTransaction = db
-            .transaction_with_str_sequence_and_mode(&store_names, rw_mode)
-            .unwrap();
+    #[async_trait(? Send)]
+    impl UserCredentialsRepo for UserCredentialsWasmRepo {}
+}
 
-        task.as_ref()(db, &tx);
+pub mod meta_vault {
+    use async_trait::async_trait;
+    use meta_secret_core::models::MetaVault;
+    use meta_secret_core::node::db::{GenericRepo, MetaVaultRepo};
 
-        tx.commit().unwrap();
-    });
+    use crate::db::WasmDbError;
+    use crate::db::DB_NAME;
+    use crate::{idbGet, idbSave};
 
-    open_db_request.set_onsuccess(Some(on_success_action.as_ref().unchecked_ref()));
+    pub mod store_conf {
+        pub const STORE_NAME: &str = "meta_vault";
+        pub const KEY_NAME: &str = "vault";
+    }
 
-    //todo fix memory leaks (see wasm_bindgen::Closure doc and https://rustwasm.github.io/wasm-bindgen/reference/passing-rust-closures-to-js.html)
-    on_success_action.forget();
-    on_upgrade_action.forget();
+    pub struct MetaVaultWasmRepo {}
+
+    #[async_trait(? Send)]
+    impl GenericRepo<MetaVault> for MetaVaultWasmRepo {
+        type Error = WasmDbError;
+
+        async fn save(&self, key: &str, vault: &MetaVault) -> Result<(), Self::Error> {
+            let vault_js = serde_wasm_bindgen::to_value(vault)?;
+            idbSave(DB_NAME, store_conf::STORE_NAME, key, vault_js).await;
+            Ok(())
+        }
+
+        async fn get(&self, key: &str) -> Result<Option<MetaVault>, Self::Error> {
+            let vault_js = idbGet(DB_NAME, store_conf::STORE_NAME, key).await;
+            if vault_js.is_undefined() {
+                Ok(None)
+            } else {
+                let vault = serde_wasm_bindgen::from_value(vault_js)?;
+                Ok(Some(vault))
+            }
+        }
+    }
+
+    #[async_trait(? Send)]
+    impl MetaVaultRepo for MetaVaultWasmRepo {}
+
+    impl MetaVaultWasmRepo {
+        pub async fn find_meta_vault(&self) -> Result<Option<MetaVault>, WasmDbError> {
+            self.get(store_conf::KEY_NAME).await
+        }
+    }
 }

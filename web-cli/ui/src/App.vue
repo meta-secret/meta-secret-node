@@ -7,10 +7,11 @@ import NavBar from "@/components/NavBar.vue";</script>
   </header>
 
   <div class="py-4"/>
-
-  <div>
-    <RouterView />
-  </div>
+  <Suspense>
+    <div>
+      <RouterView/>
+    </div>
+  </Suspense>
 
 </template>
 

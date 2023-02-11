@@ -1,9 +1,10 @@
-use js_sys::Promise;
+use indexed_db_futures::prelude::*;
 use meta_secret_core::crypto::keys::KeyManager;
 use meta_secret_core::models::{
-    DeviceInfo, JoinRequest, MembershipRequestType, SecretDistributionType, UserSecurityBox,
-    UserSignature, VaultDoc,
+    DeviceInfo, FindSharesRequest, JoinRequest, MembershipRequestType, MetaVault,
+    SecretDistributionType, UserCredentials, UserSecurityBox, UserSignature, VaultDoc,
 };
+use meta_secret_core::node::db::GenericRepo;
 use meta_secret_core::node::server_api;
 use meta_secret_core::recover_from_shares;
 use meta_secret_core::sdk::api::MessageType;
@@ -13,7 +14,11 @@ use meta_secret_core::shared_secret::shared_secret::{
 };
 use meta_secret_core::shared_secret::MetaDistributor;
 use wasm_bindgen::prelude::*;
-use web_sys::{IdbDatabase, IdbTransaction};
+use web_sys::{IdbObjectStore as WebSysIdbObjectStore, IdbTransaction as WebSysIdbTransaction};
+
+use crate::db::meta_vault::MetaVaultWasmRepo;
+use crate::db::user_credentials::UserCredentialsWasmRepo;
+use crate::db::{meta_vault, user_credentials};
 
 mod db;
 mod utils;
@@ -32,62 +37,171 @@ extern "C" {
 
     #[wasm_bindgen(js_namespace = console)]
     pub fn log(s: &str);
+
+    pub async fn idbGet(db_name: &str, store_name: &str, key: &str) -> JsValue;
+    pub async fn idbSave(db_name: &str, store_name: &str, key: &str, value: JsValue);
 }
 
 #[wasm_bindgen]
-pub async fn sync(user_sig: JsValue) -> Result<JsValue, JsValue> {
-    let user_sig: UserSignature = serde_wasm_bindgen::from_value(user_sig)?;
-    let shares_response = server_api::find_shares(&user_sig)
+pub async fn get_meta_vault() -> Result<Option<JsValue>, JsValue> {
+    let maybe_meta_vault = internal::find_meta_vault().await.map_err(JsError::from)?;
+
+    if let Some(meta_vault) = maybe_meta_vault {
+        let meta_vault_js = serde_wasm_bindgen::to_value(&meta_vault)?;
+        Ok(Some(meta_vault_js))
+    } else {
+        Ok(None)
+    }
+}
+
+#[wasm_bindgen]
+pub async fn create_meta_vault(vault_name: &str, device_name: &str) -> Result<JsValue, JsValue> {
+    let meta_vault_repo = MetaVaultWasmRepo {};
+
+    let device = DeviceInfo {
+        device_id: meta_secret_core::crypto::utils::generate_hash(),
+        device_name: device_name.to_string(),
+    };
+
+    let meta_vault = MetaVault {
+        vault_name: vault_name.to_string(),
+        device: Box::new(device),
+    };
+
+    meta_vault_repo
+        .save(meta_vault::store_conf::KEY_NAME, &meta_vault)
         .await
         .map_err(JsError::from)?;
 
-    match shares_response.msg_type {
-        MessageType::Ok => {
-            let shares = shares_response.data.unwrap();
-            for share in shares.shares {
-                match share.distribution_type {
-                    SecretDistributionType::Split => {
-                        //save to db
-                    }
-                    SecretDistributionType::Recover => {
-                        //restore password
-                    }
-                }
-            }
-        }
-        MessageType::Err => {
-            let err_js = serde_wasm_bindgen::to_value(&shares_response.err.unwrap())?;
-            //Err(err_js);
-        }
-    }
+    let meta_vault_js = serde_wasm_bindgen::to_value(&meta_vault)?;
 
-    //save shares to db
-    Ok(JsValue::null())
+    Ok(meta_vault_js)
 }
 
 #[wasm_bindgen]
-pub fn db_test() -> Result<JsValue, JsValue> {
-    //https://rustwasm.github.io/wasm-bindgen/examples/closures.html
+pub async fn generate_user_credentials() -> Result<(), JsValue> {
+    log("wasm: generate a new security box");
 
-    const STORE_NAME: &str = "meta_passwords";
+    let maybe_meta_vault = internal::find_meta_vault().await.map_err(JsError::from)?;
 
-    let query_task = Box::from(|_db: &IdbDatabase, tx: &IdbTransaction| {
-        let store = tx.object_store(STORE_NAME).unwrap();
+    match maybe_meta_vault {
+        Some(meta_vault) => {
+            let security_box = KeyManager::generate_security_box(meta_vault.vault_name);
+            let user_sig = security_box.get_user_sig(&meta_vault.device);
+            let creds = UserCredentials::new(security_box, user_sig);
 
-        let user = serde_json::json!({
-            "name": "meta_user",
-            "email": "fake@meta-secret.org",
-        });
-        // Convert it to `JsValue`
-        let user = serde_wasm_bindgen::to_value(&user).unwrap();
+            let creds_repo = UserCredentialsWasmRepo {};
+            creds_repo
+                .save(user_credentials::store_conf::KEY_NAME, &creds)
+                .await
+                .map_err(JsError::from)?;
 
-        // Add the employee to the store
-        log("save to db");
-        let key = serde_wasm_bindgen::to_value("meta_user").unwrap();
-        store.add_with_key(&user, &key).unwrap();
-    });
+            Ok(())
+        }
+        None => {
+            let err_msg =
+                JsValue::from("The parameters have not yet set for the vault. Empty meta vault");
+            Err(err_msg)
+        }
+    }
+}
 
-    db::tx(&[STORE_NAME], query_task);
+#[wasm_bindgen]
+pub async fn get_vault() -> Result<JsValue, JsValue> {
+    log("wasm: get vault!");
+
+    let maybe_creds = internal::find_user_credentials()
+        .await
+        .map_err(JsError::from)?;
+
+    match maybe_creds {
+        Some(creds) => {
+            let user_sig = creds.user_sig;
+            let vault = server_api::get_vault(&user_sig)
+                .await
+                .map_err(JsError::from)?;
+
+            let vault_js = serde_wasm_bindgen::to_value(&vault)?;
+            Ok(vault_js)
+        }
+        None => Err(JsValue::from("Empty user credentials")),
+    }
+}
+
+/*
+///https://rustwasm.github.io/wasm-bindgen/examples/closures.html
+#[wasm_bindgen]
+pub async fn recover() -> Result<JsValue, JsValue> {
+    //get security_box and user_sig from the database!!!!!
+    log("wasm recover!");
+
+    let db = open_db().await?;
+
+    let tx: IdbTransaction =
+        db.transaction_on_one_with_mode("security_box", IdbTransactionMode::Readwrite)?;
+
+    tx.await.into_result()?;
+
+    /*
+    server_api::claim_for_password_recovery(&recovery_request)
+    */
+
+    Ok(JsValue::null())
+}
+ */
+
+#[wasm_bindgen]
+pub async fn sync(user_sig: JsValue) -> Result<JsValue, JsValue> {
+    log("sync!");
+    const STORE_NAME: &str = "secret_shares";
+
+    let user_sig: UserSignature = serde_wasm_bindgen::from_value(user_sig)?;
+    let request = FindSharesRequest {
+        user_request_type: SecretDistributionType::Split,
+        user_signature: Box::new(user_sig),
+    };
+
+    let shares_response = server_api::find_shares(&request)
+        .await
+        .map_err(JsError::from)?;
+
+    let query_task = |_db: &IdbDatabase, tx: &WebSysIdbTransaction| {
+        match shares_response.msg_type {
+            MessageType::Ok => {
+                log("wasm, sync: save shares to db");
+                let shares_result = shares_response.data.unwrap();
+                for share in shares_result.shares {
+                    match share.distribution_type {
+                        SecretDistributionType::Split => {
+                            log("wasm, sync: split");
+
+                            let store: WebSysIdbObjectStore = tx.object_store(STORE_NAME).unwrap();
+                            let share_js = serde_wasm_bindgen::to_value(&share).unwrap();
+
+                            // Add the employee to the store
+                            log("save to db");
+                            let pass_id = share.meta_password.meta_password.id.id;
+                            let key = serde_wasm_bindgen::to_value(&pass_id).unwrap();
+                            store.add_with_key(&share_js, &key).unwrap();
+                        }
+                        SecretDistributionType::Recover => {
+                            //restore password
+                            log("wasm, sync: recover");
+                        }
+                    }
+                }
+            }
+            MessageType::Err => {
+                let err_js = serde_wasm_bindgen::to_value(&shares_response.err.unwrap()).unwrap();
+                log(format!("wasm, sync: error: {:?}", err_js).as_str());
+                //Err(err_js);
+            }
+        }
+    };
+
+    log("wasm, sync: save to db");
+
+    //save shares to db
     Ok(JsValue::null())
 }
 
@@ -111,7 +225,10 @@ pub async fn cluster_distribution(
         vault,
     };
 
-    internal::cluster_distribution(pass_id.to_string(), pass.to_string(), distributor).await
+    distributor
+        .distribute(pass_id.to_string(), pass.to_string())
+        .await;
+    Ok(JsValue::from_str("ok"))
 }
 
 #[wasm_bindgen]
@@ -125,7 +242,13 @@ pub async fn membership(join_request: JsValue, request_type: JsValue) -> Result<
     );
     log(log_msg.as_str());
 
-    internal::membership(join_request, request_type).await
+    let secrets = match request_type {
+        MembershipRequestType::Accept => server_api::accept(&join_request).await.unwrap(),
+        MembershipRequestType::Decline => server_api::decline(&join_request).await.unwrap(),
+    };
+
+    let secrets_js = serde_wasm_bindgen::to_value(&secrets)?;
+    Ok(secrets_js)
 }
 
 #[wasm_bindgen]
@@ -133,10 +256,6 @@ pub async fn get_meta_passwords(user_sig: JsValue) -> Result<JsValue, JsValue> {
     log(format!("wasm: get meta passwords for: {:?}", user_sig).as_str());
 
     let user_sig = serde_wasm_bindgen::from_value(user_sig)?;
-    get_meta_passwords_from_server(user_sig).await
-}
-
-async fn get_meta_passwords_from_server(user_sig: UserSignature) -> Result<JsValue, JsValue> {
     log("wasm: get meta passwords");
     let secrets = server_api::get_meta_passwords(&user_sig)
         .await
@@ -147,56 +266,23 @@ async fn get_meta_passwords_from_server(user_sig: UserSignature) -> Result<JsVal
 }
 
 #[wasm_bindgen]
-pub async fn register(user_sig: JsValue) -> Result<JsValue, JsValue> {
-    log(format!("wasm: register a new user! with: {:?}", user_sig).as_str());
-
-    let user_sig = serde_wasm_bindgen::from_value(user_sig)?;
-    server_registration(user_sig).await
-}
-
-async fn server_registration(user_sig: UserSignature) -> Result<JsValue, JsValue> {
-    log("Registration on server!!!!");
-    let register_response = server_api::register(&user_sig)
+pub async fn register() -> Result<JsValue, JsValue> {
+    let maybe_creds = internal::find_user_credentials()
         .await
         .map_err(JsError::from)?;
 
-    let register_js = serde_wasm_bindgen::to_value(&register_response)?;
-    Ok(register_js)
-}
+    match maybe_creds {
+        Some(creds) => {
+            let user_sig = creds.user_sig;
+            let register_response = server_api::register(&user_sig)
+                .await
+                .map_err(JsError::from)?;
 
-#[wasm_bindgen]
-pub async fn get_vault(user_sig: JsValue) -> Result<JsValue, JsValue> {
-    log("wasm: get vault!");
-
-    let user_sig = serde_wasm_bindgen::from_value(user_sig)?;
-    get_vault_from_server(user_sig).await
-}
-
-async fn get_vault_from_server(user_sig: UserSignature) -> Result<JsValue, JsValue> {
-    let vault = server_api::get_vault(&user_sig)
-        .await
-        .map_err(JsError::from)?;
-    let vault_js = serde_wasm_bindgen::to_value(&vault)?;
-    Ok(vault_js)
-}
-
-#[wasm_bindgen]
-pub fn generate_security_box(vault_name: &str) -> Result<JsValue, JsValue> {
-    log("wasm: generate new user");
-
-    let security_box = KeyManager::generate_security_box(vault_name.to_string());
-    let security_box_js = serde_wasm_bindgen::to_value(&security_box)?;
-    Ok(security_box_js)
-}
-
-#[wasm_bindgen]
-pub fn get_user_sig(security_box: JsValue, device: JsValue) -> Result<JsValue, JsValue> {
-    let security_box: UserSecurityBox = serde_wasm_bindgen::from_value(security_box)?;
-    let device: DeviceInfo = serde_wasm_bindgen::from_value(device)?;
-
-    let user_sig = security_box.get_user_sig(&device);
-    let user_sig_js = serde_wasm_bindgen::to_value(&user_sig)?;
-    Ok(user_sig_js)
+            let register_js = serde_wasm_bindgen::to_value(&register_response)?;
+            Ok(register_js)
+        }
+        None => Err(JsValue::from("User credentials not found")),
+    }
 }
 
 /// https://rustwasm.github.io/docs/wasm-bindgen/reference/arbitrary-data-with-serde.html
@@ -229,33 +315,20 @@ pub fn restore_password(shares_json: JsValue) -> Result<JsValue, JsValue> {
     Ok(JsValue::from_str(plain_text.text.as_str()))
 }
 
-mod internal {
-    use meta_secret_core::models::{JoinRequest, MembershipRequestType};
-    use meta_secret_core::node::server_api;
-    use meta_secret_core::shared_secret::MetaDistributor;
-    use wasm_bindgen::JsValue;
+pub mod internal {
+    use meta_secret_core::models::{MetaVault, UserCredentials};
 
-    pub async fn membership(
-        join_request: JoinRequest,
-        request_type: MembershipRequestType,
-    ) -> Result<JsValue, JsValue> {
-        let secrets = match request_type {
-            MembershipRequestType::Accept => server_api::accept(&join_request).await.unwrap(),
-            MembershipRequestType::Decline => server_api::decline(&join_request).await.unwrap(),
-        };
+    use crate::db::meta_vault::MetaVaultWasmRepo;
+    use crate::db::user_credentials::UserCredentialsWasmRepo;
+    use crate::db::WasmDbError;
 
-        let secrets_js = serde_wasm_bindgen::to_value(&secrets)?;
-        Ok(secrets_js)
+    pub async fn find_meta_vault() -> Result<Option<MetaVault>, WasmDbError> {
+        let meta_vault_repo = MetaVaultWasmRepo {};
+        meta_vault_repo.find_meta_vault().await
     }
 
-    pub async fn cluster_distribution(
-        pass_id: String,
-        pass: String,
-        distributor: MetaDistributor,
-    ) -> Result<JsValue, JsValue> {
-        distributor
-            .distribute(pass_id.to_string(), pass.to_string())
-            .await;
-        Ok(JsValue::from_str("ok"))
+    pub async fn find_user_credentials() -> Result<Option<UserCredentials>, WasmDbError> {
+        let repo = UserCredentialsWasmRepo {};
+        repo.find_user_credentials().await
     }
 }

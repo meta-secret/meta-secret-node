@@ -1,99 +1,61 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
-import init, {generate_security_box, get_user_sig, get_vault, register} from "meta-secret-web-cli";
-import {
-  type DeviceInfo,
-  RegistrationStatus,
-  type UserSecurityBox,
-  type UserSignature,
-  VaultInfoStatus
-} from "@/model/models";
+import init, {create_meta_vault, generate_user_credentials, get_vault, register} from "meta-secret-web-cli";
+import {RegistrationStatus, VaultInfoStatus} from "@/model/models";
 import router from "@/router";
 
-export interface User {
-  securityBox?: UserSecurityBox,
-  userSig?: UserSignature
-}
+import "@/common/DbUtils"
+import {AppState} from "@/stores/app-state"
 
 export default defineComponent({
-  data() {
-    let defaultUser: User = {};
 
+  async setup() {
+    const appState = AppState();
     return {
-      user: defaultUser,
-      userId: '',
-      joinComponent: false
-    }
-  },
-  mounted() {
-    if (localStorage.userId) {
-      this.userId = localStorage.userId;
-    }
+      appState: appState,
+      joinComponent: false,
 
-    if (localStorage.user) {
-      this.user = JSON.parse(localStorage.user);
+      vaultName: '',
+      deviceName: ''
     }
   },
 
-  /**
-   * https://v2.vuejs.org/v2/cookbook/client-side-storage.html
-   */
-  watch: {
-    user(newUser: User) {
-      localStorage.user = JSON.stringify(newUser);
-    },
-  },
+  watch: {},
 
   methods: {
-    async generateUser() {
-      init().then(async () => {
-        let device: DeviceInfo = {
-          deviceId: "yay",
-          deviceName: "d1"
-        }
 
-        let securityBox = generate_security_box(this.userId);
-        let userSig = get_user_sig(securityBox, device);
-        console.log("generated user sig: ", userSig);
+    async generateVault() {
+      await init();
+      await create_meta_vault(this.vaultName, this.deviceName);
+      await generate_user_credentials();
 
-        this.user = {
-          securityBox: securityBox,
-          userSig: userSig
-        };
-        this.initUser();
+      let vault = await get_vault();
 
-        let vault = await get_vault(userSig);
-        console.log("vault: ", JSON.stringify(vault));
+      if (vault.data.vaultInfo === VaultInfoStatus.NotFound) {
+        await this.userRegistration();
+      }
 
-        if (vault.data.vaultInfo === VaultInfoStatus.NotFound) {
-          await this.userRegistration();
-        }
-
-        // Unknown status means, user is not a member of a vault
-        if (vault.data.vaultInfo === VaultInfoStatus.Unknown) {
-          //join to the vault or choose another vault name
-          this.joinComponent = true;
-        }
-      })
+      // Unknown status means, user is not a member of a vault
+      if (vault.data.vaultInfo === VaultInfoStatus.Unknown) {
+        //join to the vault or choose another vault name
+        this.joinComponent = true;
+      }
     },
 
     async join() {
-      init().then(async () => {
-        //send join request
-        console.log("js user sig: ", JSON.parse(localStorage.user).userSig);
-        return await this.userRegistration();
-      })
+      await init();
+      //send join request
+      console.log("js user sig: ", JSON.parse(localStorage.user).userSig);
+      return await this.userRegistration();
+
     },
 
     async userRegistration() {
-      let userSig = JSON.parse(localStorage.user).userSig;
-      console.log("User registration with: " + userSig);
-
-      let registrationStatus = await register(userSig);
+      let registrationStatus = await register();
       console.log("registration status: ", registrationStatus.data);
       switch (registrationStatus.data) {
         case RegistrationStatus.Registered:
-          // register button gets unavailable, userId kept in local storage
+          // register button gets unavailable, vaultName kept in local storage
           router.push({path: '/vault/secrets'})
           return;
         case RegistrationStatus.AlreadyExists:
@@ -105,31 +67,16 @@ export default defineComponent({
       }
     },
 
-    cleanUpUser() {
-      localStorage.setItem('userId', '');
+    isNewVault() {
+      return this.appState.metaVault == undefined;
     },
-
-    isNewUser() {
-      if (localStorage.userId) {
-        if (localStorage.userId !== '') {
-          return false;
-        }
-      }
-
-      return true;
-    },
-
-    initUser() {
-      localStorage.userId = this.userId;
-      localStorage.user = JSON.stringify(this.user);
-    }
   }
 })
 
 </script>
 
 <template>
-  <div>
+  <div v-if="this.isNewVault()">
     <div class="container flex items-center max-w-md py-2">
       <label>User:</label>
     </div>
@@ -139,16 +86,21 @@ export default defineComponent({
       <input
           :class="$style.nicknameUserInput"
           type="text"
-          placeholder="user_id"
-          aria-label="Full name"
-          v-model="userId"
-          v-bind:disabled="!isNewUser()"
+          placeholder="vault name"
+          aria-label="vault_name"
+          v-model="vaultName"
+      >
+      <input
+          :class="$style.nicknameUserInput"
+          type="text"
+          placeholder="device name"
+          aria-label="device_name"
+          v-model="deviceName"
       >
       <button
           class="flex-shrink-0 bg-teal-500 hover:bg-teal-700 border-teal-500 hover:border-teal-700 text-sm border-4 text-white py-1 px-2 rounded"
           type="button"
-          @click="generateUser"
-          v-if="isNewUser()"
+          @click="generateVault"
       >
         Register
       </button>
