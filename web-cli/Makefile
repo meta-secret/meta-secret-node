@@ -6,17 +6,17 @@ clean:
 	rm -rf ui/package-lock.json
 	rm -rf ../meta-secret-core/schema/target
 
-build:
+build_wasm:
 	cd wasm && wasm-pack build --target web
 
 	rm -rf ui/pkg
 	cp -R wasm/pkg ui
 
+build_js: build_wasm
 	cd ui && npm install vue-tsc
-
 	cd ui && npm run build
 
-run: build
+run: build_wasm
 	cd ui && npm run dev
 
 generate_typescript_models:

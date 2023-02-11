@@ -1,10 +1,8 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
-import init, {cluster_distribution, db_test, get_meta_passwords, get_vault, sync} from "meta-secret-web-cli";
+import init, {get_meta_passwords} from "meta-secret-web-cli";
 import type {UserSignature} from "@/model/UserSignature";
 import type {MetaPasswordsData} from "@/model/MetaPasswordsData";
-import type {User} from "@/components/vault/Registration.vue";
-import type {VaultInfoData} from "@/model/VaultInfoData";
 
 export default defineComponent({
   data() {
@@ -16,7 +14,7 @@ export default defineComponent({
     }
   },
   created() {
-    this.pollData()
+    //this.pollData()
 
     if (localStorage.userId) {
       this.userId = localStorage.userId;
@@ -30,23 +28,24 @@ export default defineComponent({
   },
 
   methods: {
-    addPassword() {
-      init().then(async () => {
-        console.log("Add a new password!");
-        let user = JSON.parse(localStorage.user) as User;
+    /*
+    async addPassword() {
+      await init()
+      console.log("Add a new password!");
+      let user = JSON.parse(localStorage.user) as User;
 
-        let userSig = this.getUserSig();
-        let vaultResponse = await get_vault(userSig);
-        let vaultInfo = vaultResponse.data as VaultInfoData
+      let userSig = this.getUserSig();
+      let vaultResponse = await get_vault(userSig);
+      let vaultInfo = vaultResponse.data as VaultInfoData
 
-        let id = Math.random().toString(36).substring(2, 7)
-        await cluster_distribution(id, this.newPassword, user.securityBox, userSig, vaultInfo.vault);
-      });
+      let id = Math.random().toString(36).substring(2, 7)
+      await cluster_distribution(id, this.newPassword, user.securityBox, userSig, vaultInfo.vault);
     },
 
     recover() {
       init().then(async () => {
         console.log("Recover password!");
+        await recover();
       });
     },
 
@@ -59,17 +58,13 @@ export default defineComponent({
       }
     },
 
-    dbTest() {
-      init().then(async () => {
-        db_test();
-      });
-    },
-
     pollData() {
       this.polling = setInterval(async () => {
-        await sync(this.getUserSig());
+        //await sync(this.getUserSig());
+        await sync();
       }, 3000)
     }
+     */
   },
 
   beforeDestroy () {

@@ -1,11 +1,5 @@
 <script lang="ts">
-import init, {get_vault, membership as wasmMembership} from "meta-secret-web-cli";
 import type {UserSignature} from "@/model/UserSignature";
-import type {VaultInfoData} from "@/model/VaultInfoData";
-import type {JoinRequest} from "@/model/JoinRequest";
-import type {User} from "@/components/vault/Registration.vue";
-import {MembershipRequestType} from "@/model/MembershipRequestType";
-import router from "@/router";
 
 export interface DeviceUiElement {
   userSig: UserSignature
@@ -20,19 +14,19 @@ export default {
     }
   },
 
-  created() {
-    init().then(async () => {
-      let userSig = JSON.parse(localStorage.user).userSig as UserSignature;
+  /*
+  async created() {
+    await init();
+    let userSig = JSON.parse(localStorage.user).userSig as UserSignature;
 
-      let vaultResp = await get_vault(userSig);
-      let vault = vaultResp.data as VaultInfoData;
-      console.log("vault: ", JSON.stringify(vault, null, 2));
+    let vaultResp = await get_vault(userSig);
+    let vault = vaultResp.data as VaultInfoData;
+    console.log("vault: ", JSON.stringify(vault, null, 2));
 
-      let activeDevices = getDevices(vault.vault.signatures, "active");
-      let pendingDevices = getDevices(vault.vault.pendingJoins, "pending");
+    let activeDevices = getDevices(vault.vault.signatures, "active");
+    let pendingDevices = getDevices(vault.vault.pendingJoins, "pending");
 
-      this.devices = activeDevices.concat(pendingDevices);
-    });
+    this.devices = activeDevices.concat(pendingDevices);
 
     function getDevices(signatures: Array<UserSignature>, status: string) {
       return signatures.map(memberSig => {
@@ -45,8 +39,10 @@ export default {
       });
     }
   },
+   */
 
   methods: {
+    /*
     accept(deviceInfo: DeviceUiElement) {
       init().then(async () => {
         await this.membership(deviceInfo, MembershipRequestType.Accept);
@@ -58,6 +54,7 @@ export default {
         await this.membership(deviceInfo, MembershipRequestType.Decline);
       });
     },
+
 
     async membership(deviceInfo: DeviceUiElement, requestType: MembershipRequestType) {
       let user = JSON.parse(localStorage.user) as User;
@@ -83,6 +80,7 @@ export default {
       }
       return joinRequest;
     }
+     */
   }
 }
 </script>

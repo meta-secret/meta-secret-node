@@ -23,7 +23,8 @@
     "vue": "~3.2.45",
     "vue-github-button": "~3.1.0",
     "vue-router": "~4.1.6",
-    "wasm-pack": "~0.10.3"
+    "wasm-pack": "~0.10.3",
+    "idb": "^7.1.1"
   },
   "devDependencies": {
     "@rushstack/eslint-patch": "~1.2.0",
