@@ -1,4 +1,3 @@
-use indexed_db_futures::prelude::*;
 use meta_secret_core::crypto::keys::KeyManager;
 use meta_secret_core::models::{
     DeviceInfo, FindSharesRequest, JoinRequest, MembershipRequestType, MetaVault,
@@ -14,8 +13,6 @@ use meta_secret_core::shared_secret::shared_secret::{
 };
 use meta_secret_core::shared_secret::MetaDistributor;
 use wasm_bindgen::prelude::*;
-use web_sys::{IdbObjectStore as WebSysIdbObjectStore, IdbTransaction as WebSysIdbTransaction};
-
 use crate::db::meta_vault::MetaVaultWasmRepo;
 use crate::db::user_credentials::UserCredentialsWasmRepo;
 use crate::db::{meta_vault, user_credentials};
@@ -165,39 +162,37 @@ pub async fn sync(user_sig: JsValue) -> Result<JsValue, JsValue> {
         .await
         .map_err(JsError::from)?;
 
-    let query_task = |_db: &IdbDatabase, tx: &WebSysIdbTransaction| {
-        match shares_response.msg_type {
-            MessageType::Ok => {
-                log("wasm, sync: save shares to db");
-                let shares_result = shares_response.data.unwrap();
-                for share in shares_result.shares {
-                    match share.distribution_type {
-                        SecretDistributionType::Split => {
-                            log("wasm, sync: split");
+    match shares_response.msg_type {
+        MessageType::Ok => {
+            log("wasm, sync: save shares to db");
+            let shares_result = shares_response.data.unwrap();
+            for share in shares_result.shares {
+                match share.distribution_type {
+                    SecretDistributionType::Split => {
+                        log("wasm, sync: split");
 
-                            let store: WebSysIdbObjectStore = tx.object_store(STORE_NAME).unwrap();
-                            let share_js = serde_wasm_bindgen::to_value(&share).unwrap();
+                        //let store: WebSysIdbObjectStore = tx.object_store(STORE_NAME).unwrap();
+                        let share_js = serde_wasm_bindgen::to_value(&share).unwrap();
 
-                            // Add the employee to the store
-                            log("save to db");
-                            let pass_id = share.meta_password.meta_password.id.id;
-                            let key = serde_wasm_bindgen::to_value(&pass_id).unwrap();
-                            store.add_with_key(&share_js, &key).unwrap();
-                        }
-                        SecretDistributionType::Recover => {
-                            //restore password
-                            log("wasm, sync: recover");
-                        }
+                        // Add the employee to the store
+                        log("save to db");
+                        let pass_id = share.meta_password.meta_password.id.id;
+                        let key = serde_wasm_bindgen::to_value(&pass_id).unwrap();
+                        //store.add_with_key(&share_js, &key).unwrap();
+                    }
+                    SecretDistributionType::Recover => {
+                        //restore password
+                        log("wasm, sync: recover");
                     }
                 }
             }
-            MessageType::Err => {
-                let err_js = serde_wasm_bindgen::to_value(&shares_response.err.unwrap()).unwrap();
-                log(format!("wasm, sync: error: {:?}", err_js).as_str());
-                //Err(err_js);
-            }
         }
-    };
+        MessageType::Err => {
+            let err_js = serde_wasm_bindgen::to_value(&shares_response.err.unwrap()).unwrap();
+            log(format!("wasm, sync: error: {:?}", err_js).as_str());
+            //Err(err_js);
+        }
+    }
 
     log("wasm, sync: save to db");
 

@@ -15,6 +15,7 @@
   "dependencies": {
     "@headlessui/vue": "~1.7.7",
     "@heroicons/vue": "1.0.6",
+    "idb": "^7.1.1",
     "meta-secret-web-cli": "file:./pkg",
     "pinia": "~2.0.28",
     "qr-code-styling": "~1.6.0-rc.1",
@@ -23,8 +24,7 @@
     "vue": "~3.2.45",
     "vue-github-button": "~3.1.0",
     "vue-router": "~4.1.6",
-    "wasm-pack": "~0.10.3",
-    "idb": "^7.1.1"
+    "wasm-pack": "~0.10.3"
   },
   "devDependencies": {
     "@rushstack/eslint-patch": "~1.2.0",

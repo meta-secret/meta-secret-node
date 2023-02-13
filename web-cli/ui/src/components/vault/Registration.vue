@@ -13,8 +13,6 @@ export default defineComponent({
     const appState = AppState();
     return {
       appState: appState,
-      joinComponent: false,
-
       vaultName: '',
       deviceName: ''
     }
@@ -26,6 +24,7 @@ export default defineComponent({
 
     async generateVault() {
       await init();
+
       await create_meta_vault(this.vaultName, this.deviceName);
       await generate_user_credentials();
 
@@ -38,16 +37,14 @@ export default defineComponent({
       // Unknown status means, user is not a member of a vault
       if (vault.data.vaultInfo === VaultInfoStatus.Unknown) {
         //join to the vault or choose another vault name
-        this.joinComponent = true;
+        this.appState.joinComponent = true;
       }
     },
 
     async join() {
       await init();
       //send join request
-      console.log("js user sig: ", JSON.parse(localStorage.user).userSig);
       return await this.userRegistration();
-
     },
 
     async userRegistration() {
@@ -67,7 +64,7 @@ export default defineComponent({
       }
     },
 
-    isNewVault() {
+    isEmptyEnv() {
       return this.appState.metaVault == undefined;
     },
   }
@@ -76,13 +73,13 @@ export default defineComponent({
 </script>
 
 <template>
-  <div v-if="this.isNewVault()">
+  <div v-if="this.isEmptyEnv()">
     <div class="container flex items-center max-w-md py-2">
       <label>User:</label>
     </div>
 
-    <div class="container flex items-center justify-center max-w-md border-b border-t border-l border-r py-2 px-4">
-      <label>@</label>
+    <div class="container flex items-center justify-center max-w-md border-b border-t border-l border-r py-2">
+      <label class="pl-2">@</label>
       <input
           :class="$style.nicknameUserInput"
           type="text"
@@ -101,34 +98,35 @@ export default defineComponent({
           class="flex-shrink-0 bg-teal-500 hover:bg-teal-700 border-teal-500 hover:border-teal-700 text-sm border-4 text-white py-1 px-2 rounded"
           type="button"
           @click="generateVault"
+          v-if="!this.appState.joinComponent"
       >
         Register
       </button>
     </div>
   </div>
 
-  <div v-if="joinComponent">
-    <div class="container flex items-center max-w-md py-2 px-4">
+  <div v-if="this.appState.joinComponent">
+    <div class="container flex items-center max-w-md py-2">
       <label :class="$style.joinLabel">
         Vault already exists, would you like to join?
       </label>
-      <button
-          class="flex-shrink-0 bg-teal-500 hover:bg-teal-700 border-teal-500 hover:border-teal-700 text-sm border-4 text-white py-1 px-4 rounded"
-          type="button"
-          @click="join"
-      >
-        Join
-      </button>
+      <input type="button" :class="$style.joinButton" @click="join" value="Join">
     </div>
   </div>
 </template>
 
 <style module>
 .joinLabel {
-  @apply appearance-none bg-transparent border-none w-full text-gray-700 mr-3 py-1 leading-tight focus:outline-none
+    @apply appearance-none bg-transparent border-none w-full text-gray-700 mr-3 py-1 leading-tight focus:outline-none
+}
+
+.joinButton {
+    @apply flex-shrink-0 bg-teal-500;
+    @apply hover:bg-teal-700 border-teal-500 hover:border-teal-700 text-sm border-4 text-white py-1 px-4 rounded;
 }
 
 .nicknameUserInput {
-  @apply appearance-none bg-transparent border-none w-full text-gray-700 mr-3 py-1 px-2 leading-tight focus:outline-none
+    @apply appearance-none bg-transparent border-none;
+    @apply w-full text-gray-700 mr-3 py-1 px-2 leading-tight focus:outline-none;
 }
 </style>

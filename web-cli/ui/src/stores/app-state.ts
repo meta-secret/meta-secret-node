@@ -6,7 +6,8 @@ export const AppState = defineStore({
   id: "app_state",
   state: () => {
     return {
-      metaVault: undefined as MetaVault | undefined
+      metaVault: undefined as MetaVault | undefined,
+      joinComponent: true,
     }
   },
 
