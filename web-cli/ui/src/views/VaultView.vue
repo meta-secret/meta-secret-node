@@ -41,6 +41,10 @@ export default defineComponent({
   </div>
 
   <div v-else>
+    <div class="container flex justify-center max-w-md py-2 items-stretch">
+      <p class="flex"> {{ this.appState.metaVault.vaultName }}</p>
+    </div>
+
     <div class="container flex max-w-md py-2 items-stretch">
       <RouterLink
           class="w-1/2 text-center rounded-l-lg px-6 py-3 text-white bg-orange-600 active:bg-orange-800"

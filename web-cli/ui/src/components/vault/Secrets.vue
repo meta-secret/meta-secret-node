@@ -1,74 +1,53 @@
 <script lang="ts">
-import {defineComponent} from 'vue'
-import init, {get_meta_passwords} from "meta-secret-web-cli";
-import type {UserSignature} from "@/model/UserSignature";
+import {defineComponent, onBeforeUnmount, onMounted} from 'vue'
+import init, {cluster_distribution, get_meta_passwords, recover, sync} from "meta-secret-web-cli";
 import type {MetaPasswordsData} from "@/model/MetaPasswordsData";
 
+function setupPolling() {
+  let polling: any = null;
+
+  onMounted(() => {
+    polling = setInterval(async () => {
+      await sync();
+    }, 3000);
+  })
+
+  onBeforeUnmount(async () => {
+    clearInterval(polling)
+  })
+  return polling;
+}
+
 export default defineComponent({
-  data() {
+  async setup() {
+    let polling = setupPolling();
+
+    await init();
+
+    let passwordsResp = await get_meta_passwords();
+    let secrets = passwordsResp.data as MetaPasswordsData;
+
     return {
-      userId: '',
       newPassword: '',
-      secrets: {},
-      polling: 0
-    }
-  },
-  created() {
-    //this.pollData()
+      newPassDescription: '',
 
-    if (localStorage.userId) {
-      this.userId = localStorage.userId;
+      secrets: secrets,
+      polling: polling
     }
-
-    init().then(async () => {
-      let userSig = JSON.parse(localStorage.user).userSig as UserSignature;
-      let passwordsResp = await get_meta_passwords(userSig);
-      this.secrets = passwordsResp.data as MetaPasswordsData;
-    });
   },
 
   methods: {
-    /*
     async addPassword() {
       await init()
-      console.log("Add a new password!");
-      let user = JSON.parse(localStorage.user) as User;
-
-      let userSig = this.getUserSig();
-      let vaultResponse = await get_vault(userSig);
-      let vaultInfo = vaultResponse.data as VaultInfoData
-
-      let id = Math.random().toString(36).substring(2, 7)
-      await cluster_distribution(id, this.newPassword, user.securityBox, userSig, vaultInfo.vault);
+      await cluster_distribution(this.newPassDescription, this.newPassword);
     },
 
-    recover() {
-      init().then(async () => {
-        console.log("Recover password!");
-        await recover();
-      });
-    },
 
-    getUserSig() {
-      let user = JSON.parse(localStorage.user) as User;
-      if (user.userSig) {
-        return user.userSig;
-      } else {
-        throw new Error("Critical error. User signature not present");
-      }
-    },
-
-    pollData() {
-      this.polling = setInterval(async () => {
-        //await sync(this.getUserSig());
-        await sync();
-      }, 3000)
+    async recover() {
+      await init()
+      console.log("Recover password!");
+      await recover();
     }
-     */
-  },
-
-  beforeDestroy () {
-    clearInterval(this.polling)
   },
 })
 
@@ -78,12 +57,19 @@ export default defineComponent({
 <template>
   <div class="py-2"/>
 
-  <div class="container flex items-center justify-center max-w-md border-b border-t border-l border-r py-2 px-4">
-    <label>pass: </label>
-    <input type="text" :class="$style.passwordInput" placeholder="top$ecret" v-model="newPassword">
-    <button :class="$style.addButton" @click="addPassword">
-      Add
-    </button>
+  <div :class="$style.newPasswordDiv">
+
+    <div class="flex items-center">
+      <label>description: </label>
+      <input type="text" :class="$style.passwordInput" placeholder="my meta secret" v-model="newPassDescription">
+    </div>
+    <div class="flex items-center">
+      <label>secret: </label>
+      <input type="text" :class="$style.passwordInput" placeholder="top$ecret" v-model="newPassword">
+    </div>
+    <div class="flex justify-end">
+      <button :class="$style.addButton" @click="addPassword">Add</button>
+    </div>
   </div>
 
   <div class="py-4"/>
@@ -114,6 +100,10 @@ export default defineComponent({
 .secrets {
   @apply container max-w-md flex flex-col items-center justify-center w-full;
   @apply mx-auto bg-white shadow dark:bg-gray-800;
+}
+
+.newPasswordDiv {
+  @apply block max-w-md mx-auto items-center justify-center max-w-md border-b border-t border-l border-r py-2 px-4
 }
 
 .passwordInput {

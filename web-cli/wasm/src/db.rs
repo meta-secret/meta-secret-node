@@ -110,3 +110,41 @@ pub mod meta_vault {
         }
     }
 }
+
+pub mod meta_pass {
+    use async_trait::async_trait;
+    use meta_secret_core::node::db::{GenericRepo, UserPasswordEntity, UserPasswordsRepo};
+
+    use crate::db::{WasmDbError, DB_NAME};
+    use crate::{idbGet, idbSave};
+
+    pub mod store_conf {
+        pub const STORE_NAME: &str = "user_shares";
+    }
+
+    pub struct UserPasswordsWasmRepo {}
+
+    #[async_trait(? Send)]
+    impl GenericRepo<UserPasswordEntity> for UserPasswordsWasmRepo {
+        type Error = WasmDbError;
+
+        async fn save(&self, key: &str, pass: &UserPasswordEntity) -> Result<(), Self::Error> {
+            let pass_js = serde_wasm_bindgen::to_value(pass)?;
+            idbSave(DB_NAME, store_conf::STORE_NAME, key, pass_js).await;
+            Ok(())
+        }
+
+        async fn get(&self, key: &str) -> Result<Option<UserPasswordEntity>, Self::Error> {
+            let pass_js = idbGet(DB_NAME, store_conf::STORE_NAME, key).await;
+            if pass_js.is_undefined() {
+                Ok(None)
+            } else {
+                let pass = serde_wasm_bindgen::from_value(pass_js)?;
+                Ok(Some(pass))
+            }
+        }
+    }
+
+    #[async_trait(? Send)]
+    impl UserPasswordsRepo for UserPasswordsWasmRepo {}
+}
