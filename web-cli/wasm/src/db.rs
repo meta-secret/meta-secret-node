@@ -119,7 +119,7 @@ pub mod meta_pass {
     use crate::{idbGet, idbSave};
 
     pub mod store_conf {
-        pub const STORE_NAME: &str = "user_shares";
+        pub const STORE_NAME: &str = "meta_passwords";
     }
 
     pub struct UserPasswordsWasmRepo {}

@@ -75,8 +75,6 @@ pub async fn recover() -> Result<JsValue, JsValue> {
 /// Sync all password shares on local device from server
 #[wasm_bindgen]
 pub async fn sync() -> Result<JsValue, JsValue> {
-    log("wasm.sync!");
-
     let maybe_creds = security::internal::find_user_credentials()
         .await
         .map_err(JsError::from)?;
@@ -94,7 +92,6 @@ pub async fn sync() -> Result<JsValue, JsValue> {
 
             match shares_response.msg_type {
                 MessageType::Ok => {
-                    log("wasm, sync: save shares to the local db");
                     let shares_result = shares_response.data.unwrap();
                     for share in shares_result.shares {
                         match share.distribution_type {
@@ -104,28 +101,27 @@ pub async fn sync() -> Result<JsValue, JsValue> {
                                 let user_passes_repo = meta_pass::UserPasswordsWasmRepo {};
 
                                 let pass_id = &share.meta_password.meta_password.id.id;
-                                let maybe_user_pass = user_passes_repo
+                                let maybe_user_pass: Option<UserPasswordEntity> = user_passes_repo
                                     .get(pass_id.as_str())
                                     .await
                                     .map_err(JsError::from)?;
 
-                                match maybe_user_pass {
-                                    Some(user_pass) => {
-                                        let share_js =
-                                            serde_wasm_bindgen::to_value(&share).unwrap();
+                                let user_pass_entity = match maybe_user_pass {
+                                    Some(mut user_pass) => {
+                                        user_pass.shares.push(share.clone());
+                                        user_pass
+                                    }
+                                    None => UserPasswordEntity {
+                                        meta_pass_id: *share.meta_password.meta_password.id.clone(),
+                                        shares: vec![share.clone()],
+                                    },
+                                };
 
-                                        // Add the employee to the store
-                                        log("save to db");
-                                        let key = serde_wasm_bindgen::to_value(pass_id).unwrap();
-                                        //encrypt
-                                        todo!("yay");
-                                        //user_pass.shares.push()
-                                    }
-                                    None => {
-                                        let err_msg = JsValue::from("user pass not found");
-                                        //Err(err_msg);
-                                    }
-                                }
+                                alert("Save user pass!!!");
+                                user_passes_repo
+                                    .save(pass_id.as_str(), &user_pass_entity)
+                                    .await
+                                    .map_err(JsError::from)?;
                             }
                             SecretDistributionType::Recover => {
                                 //restore password
