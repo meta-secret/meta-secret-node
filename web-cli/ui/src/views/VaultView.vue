@@ -4,7 +4,7 @@ import RegistrationComponent from "@/components/vault/Registration.vue";
 
 import "@/common/DbUtils"
 import {AppState} from "@/stores/app-state"
-import init from "meta-secret-web-cli";
+import init, {find_all} from "meta-secret-web-cli";
 
 export default defineComponent({
   components: {
@@ -13,6 +13,10 @@ export default defineComponent({
 
   async setup() {
     await init();
+
+    alert("load commit log");
+    let events = await find_all();
+    alert(JSON.stringify(events));
 
     const appState = AppState();
     await appState.loadMetaVault();

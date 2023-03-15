@@ -1,6 +1,6 @@
 use meta_secret_core::crypto::keys::KeyManager;
 use meta_secret_core::models::{DeviceInfo, MetaVault, UserCredentials};
-use meta_secret_core::node::db::GenericRepo;
+use meta_secret_core::node::db::SaveCommand;
 use wasm_bindgen::prelude::*;
 
 use crate::db::meta_vault::MetaVaultWasmRepo;

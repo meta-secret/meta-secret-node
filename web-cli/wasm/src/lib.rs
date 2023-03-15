@@ -1,8 +1,7 @@
 use meta_secret_core::models::{
-    FindSharesRequest, JoinRequest, MembershipRequestType, MetaVault, SecretDistributionType,
-    UserCredentials, UserSecurityBox, UserSignature, VaultDoc, VaultInfoData,
+    FindSharesRequest, JoinRequest, MembershipRequestType, SecretDistributionType, UserSignature,
 };
-use meta_secret_core::node::db::{GenericRepo, UserPasswordEntity};
+use meta_secret_core::node::db::{FindAllQuery, GetCommand, SaveCommand, UserPasswordEntity};
 use meta_secret_core::node::server_api;
 use meta_secret_core::recover_from_shares;
 use meta_secret_core::sdk::api::MessageType;
@@ -13,8 +12,11 @@ use meta_secret_core::shared_secret::shared_secret::{
 use meta_secret_core::shared_secret::MetaDistributor;
 use wasm_bindgen::prelude::*;
 
+use crate::commit_log::indexed_db::CommitLogWasmRepo;
+use crate::commit_log::{DataEvent, Key};
 use crate::db::meta_pass;
 
+mod commit_log;
 mod db;
 mod security;
 mod utils;
@@ -36,6 +38,32 @@ extern "C" {
 
     pub async fn idbGet(db_name: &str, store_name: &str, key: &str) -> JsValue;
     pub async fn idbSave(db_name: &str, store_name: &str, key: &str, value: JsValue);
+    pub async fn idbFindAll(db_name: &str, store_name: &str) -> JsValue;
+}
+
+#[wasm_bindgen]
+pub async fn find_all() -> Result<JsValue, JsValue> {
+    let commit_log_repo = CommitLogWasmRepo {
+        db_name: "meta_secret_db".to_string(),
+        store_name: "commit_log".to_string(),
+    };
+
+    let hash = meta_secret_core::crypto::utils::generate_hash();
+
+    let event = DataEvent {
+        key: Key {
+            ns: "meta_secret_db".to_string(),
+            store: "commit_log".to_string(),
+            id: hash.clone(),
+        },
+        value: Default::default(),
+    };
+
+    commit_log_repo.save(hash.as_str(), &event).await.unwrap();
+
+    let all_events = commit_log_repo.find_all().await.unwrap();
+
+    Ok(serde_wasm_bindgen::to_value(&all_events).unwrap())
 }
 
 #[wasm_bindgen]

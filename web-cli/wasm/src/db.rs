@@ -1,4 +1,3 @@
-use serde::Serialize;
 use wasm_bindgen::JsValue;
 use web_sys::DomException;
 
@@ -25,7 +24,7 @@ pub enum WasmDbError {
 pub mod user_credentials {
     use async_trait::async_trait;
     use meta_secret_core::models::UserCredentials;
-    use meta_secret_core::node::db::{GenericRepo, UserCredentialsRepo};
+    use meta_secret_core::node::db::{GetCommand, SaveCommand, UserCredentialsRepo};
 
     use crate::db::{WasmDbError, DB_NAME};
     use crate::{idbGet, idbSave};
@@ -44,7 +43,7 @@ pub mod user_credentials {
     }
 
     #[async_trait(? Send)]
-    impl GenericRepo<UserCredentials> for UserCredentialsWasmRepo {
+    impl SaveCommand<UserCredentials> for UserCredentialsWasmRepo {
         type Error = WasmDbError;
 
         async fn save(&self, key: &str, creds: &UserCredentials) -> Result<(), Self::Error> {
@@ -52,6 +51,11 @@ pub mod user_credentials {
             idbSave(DB_NAME, store_conf::STORE_NAME, key, creds_js).await;
             Ok(())
         }
+    }
+
+    #[async_trait(? Send)]
+    impl GetCommand<UserCredentials> for UserCredentialsWasmRepo {
+        type Error = WasmDbError;
 
         async fn get(&self, key: &str) -> Result<Option<UserCredentials>, Self::Error> {
             let creds_js = idbGet(DB_NAME, store_conf::STORE_NAME, key).await;
@@ -67,7 +71,7 @@ pub mod user_credentials {
 pub mod meta_vault {
     use async_trait::async_trait;
     use meta_secret_core::models::MetaVault;
-    use meta_secret_core::node::db::{GenericRepo, MetaVaultRepo};
+    use meta_secret_core::node::db::{GetCommand, MetaVaultRepo, SaveCommand};
 
     use crate::db::WasmDbError;
     use crate::db::DB_NAME;
@@ -81,7 +85,7 @@ pub mod meta_vault {
     pub struct MetaVaultWasmRepo {}
 
     #[async_trait(? Send)]
-    impl GenericRepo<MetaVault> for MetaVaultWasmRepo {
+    impl SaveCommand<MetaVault> for MetaVaultWasmRepo {
         type Error = WasmDbError;
 
         async fn save(&self, key: &str, vault: &MetaVault) -> Result<(), Self::Error> {
@@ -89,6 +93,11 @@ pub mod meta_vault {
             idbSave(DB_NAME, store_conf::STORE_NAME, key, vault_js).await;
             Ok(())
         }
+    }
+
+    #[async_trait(? Send)]
+    impl GetCommand<MetaVault> for MetaVaultWasmRepo {
+        type Error = WasmDbError;
 
         async fn get(&self, key: &str) -> Result<Option<MetaVault>, Self::Error> {
             let vault_js = idbGet(DB_NAME, store_conf::STORE_NAME, key).await;
@@ -113,7 +122,9 @@ pub mod meta_vault {
 
 pub mod meta_pass {
     use async_trait::async_trait;
-    use meta_secret_core::node::db::{GenericRepo, UserPasswordEntity, UserPasswordsRepo};
+    use meta_secret_core::node::db::{
+        GetCommand, SaveCommand, UserPasswordEntity, UserPasswordsRepo,
+    };
 
     use crate::db::{WasmDbError, DB_NAME};
     use crate::{idbGet, idbSave};
@@ -125,7 +136,7 @@ pub mod meta_pass {
     pub struct UserPasswordsWasmRepo {}
 
     #[async_trait(? Send)]
-    impl GenericRepo<UserPasswordEntity> for UserPasswordsWasmRepo {
+    impl SaveCommand<UserPasswordEntity> for UserPasswordsWasmRepo {
         type Error = WasmDbError;
 
         async fn save(&self, key: &str, pass: &UserPasswordEntity) -> Result<(), Self::Error> {
@@ -133,6 +144,11 @@ pub mod meta_pass {
             idbSave(DB_NAME, store_conf::STORE_NAME, key, pass_js).await;
             Ok(())
         }
+    }
+
+    #[async_trait(? Send)]
+    impl GetCommand<UserPasswordEntity> for UserPasswordsWasmRepo {
+        type Error = WasmDbError;
 
         async fn get(&self, key: &str) -> Result<Option<UserPasswordEntity>, Self::Error> {
             let pass_js = idbGet(DB_NAME, store_conf::STORE_NAME, key).await;
