@@ -1,9 +1,9 @@
-import {openDB} from 'idb';
+import { openDB } from "idb";
 
 async function openDb(dbName: string) {
   const db = await openDB(dbName, 1, {
     upgrade(db) {
-      let storeNames = ["meta_vault", "user_credentials", "meta_passwords", "commit_log"];
+      let storeNames = ["meta_vault", "meta_passwords", "commit_log"];
 
       for (let storeName of storeNames) {
         db.createObjectStore(storeName);

@@ -30,7 +30,7 @@ pub mod user_credentials {
     use crate::{idbGet, idbSave};
 
     pub mod store_conf {
-        pub const STORE_NAME: &str = "user_credentials";
+        pub const STORE_NAME: &str = "meta_vault";
         pub const KEY_NAME: &str = "creds";
     }
 

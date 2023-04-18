@@ -2,35 +2,6 @@ use meta_secret_core::models::{MetaVault, UserCredentials};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-#[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
-pub struct DataEvent {
-    pub key: Key,
-    pub value: Value,
-}
-
-#[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
-pub struct Key {
-    pub ns: String,
-    pub store: String,
-    pub id: String,
-}
-
-pub struct MetaDb {
-    pub meta_store: MetaStore,
-}
-
-pub struct DbLog {
-    pub events: Vec<DataEvent>,
-}
-
-pub struct MetaStore {
-    pub meta_vault: Option<MetaVault>,
-    pub credentials: Option<UserCredentials>,
-}
-
-/// Read commit log from the database
-pub fn load_commit_log() {}
-
 /// Reads db log and transforms to the latest snapshot of the database
 pub fn transform_commit_log(commit_log: &DbLog) -> MetaDb {
     let mut meta_db = MetaDb {
@@ -57,7 +28,7 @@ pub fn transform_commit_log(commit_log: &DbLog) -> MetaDb {
 
 pub mod indexed_db {
     use async_trait::async_trait;
-    use meta_secret_core::node::db::{FindAllQuery, GetCommand, SaveCommand};
+    use meta_secret_core::node::db::{FindAllQuery, SaveCommand};
 
     use crate::commit_log::DataEvent;
     use crate::db::WasmDbError;

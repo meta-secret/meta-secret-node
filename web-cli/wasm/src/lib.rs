@@ -100,7 +100,24 @@ pub async fn recover() -> Result<JsValue, JsValue> {
     Ok(JsValue::null())
 }
 
-/// Sync all password shares on local device from server
+/// Sync local commit log with server
+#[wasm_bindgen]
+pub async fn db_sync() -> Result<(), JsValue> {
+    let maybe_creds = security::internal::find_user_credentials()
+        .await
+        .map_err(JsError::from)?;
+
+    match maybe_creds {
+        Some(creds) => {
+            todo!("sync commit log");
+
+            Ok(())
+        }
+        None => Err(JsValue::from("User credentials not found")),
+    }
+}
+
+/// Sync local commit log with server
 #[wasm_bindgen]
 pub async fn sync() -> Result<JsValue, JsValue> {
     let maybe_creds = security::internal::find_user_credentials()

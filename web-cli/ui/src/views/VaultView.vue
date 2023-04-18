@@ -1,69 +1,65 @@
 <script lang="ts">
-import {defineComponent} from 'vue'
+import { defineComponent } from "vue";
 import RegistrationComponent from "@/components/vault/Registration.vue";
 
-import "@/common/DbUtils"
-import {AppState} from "@/stores/app-state"
-import init, {find_all} from "meta-secret-web-cli";
+import "@/common/DbUtils";
+import { AppState } from "@/stores/app-state";
+import init from "meta-secret-web-cli";
 
 export default defineComponent({
   components: {
-    RegistrationComponent
+    RegistrationComponent,
   },
 
   async setup() {
     await init();
 
-    alert("load commit log");
-    let events = await find_all();
-    alert(JSON.stringify(events));
-
     const appState = AppState();
     await appState.loadMetaVault();
 
     return {
-      appState: appState
-    }
+      appState: appState,
+    };
   },
 
   methods: {
     isEmptyEnv() {
       return this.appState.metaVault == undefined;
-    }
-  }
+    },
+  },
 });
 </script>
 
 <template>
-
   <div class="flex justify-center py-6">
     <p class="text-2xl">Distributed Password Manager</p>
   </div>
 
   <div v-if="isEmptyEnv()">
-    <RegistrationComponent/>
+    <RegistrationComponent />
   </div>
 
   <div v-else>
     <div class="container flex justify-center max-w-md py-2 items-stretch">
-      <p class="flex"> {{ this.appState.metaVault.vaultName }}</p>
+      <p class="flex">{{ this.appState.metaVault.vaultName }}</p>
     </div>
 
     <div class="container flex max-w-md py-2 items-stretch">
       <RouterLink
-          class="w-1/2 text-center rounded-l-lg px-6 py-3 text-white bg-orange-600 active:bg-orange-800"
-          to="/vault/secrets">Secrets
+        class="w-1/2 text-center rounded-l-lg px-6 py-3 text-white bg-orange-600 active:bg-orange-800"
+        to="/vault/secrets"
+        >Secrets
       </RouterLink>
 
       <RouterLink
-          class="w-1/2 text-center rounded-r-lg px-6 py-3 text-dark bg-gray-100 active:bg-gray-300"
-          to="/vault/devices">Devices
+        class="w-1/2 text-center rounded-r-lg px-6 py-3 text-dark bg-gray-100 active:bg-gray-300"
+        to="/vault/devices"
+        >Devices
       </RouterLink>
     </div>
 
     <div>
-      <RouterView/>
+      <RouterView />
     </div>
   </div>
-
 </template>

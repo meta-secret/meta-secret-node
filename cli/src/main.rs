@@ -6,7 +6,9 @@ use std::string::FromUtf8Error;
 use anyhow::{Context, Result};
 use clap::{ArgEnum, Parser, Subcommand};
 use meta_secret_core::shared_secret::data_block::common::SharedSecretConfig;
-use meta_secret_core::{convert_qr_images_to_json_files, recover, split, RecoveryOperationError};
+use meta_secret_core::{
+    convert_qr_images_to_json_files, recover, split, CoreResult, RecoveryOperationError,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Parser)]
@@ -89,8 +91,8 @@ pub enum RestoreError {
     },
 }
 
-fn restore_from_json() -> Result<String, RestoreError> {
+fn restore_from_json() -> CoreResult<String> {
     let text = recover()?;
-    let password = String::from_utf8(text.text)?;
+    let password = text.text;
     Ok(password)
 }
