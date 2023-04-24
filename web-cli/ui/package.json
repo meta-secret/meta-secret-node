@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@headlessui/vue": "~1.7.7",
-    "@heroicons/vue": "1.0.6",
+    "@heroicons/vue": "2.0.17",
     "idb": "^7.1.1",
     "meta-secret-web-cli": "file:./pkg",
     "pinia": "~2.0.32",
