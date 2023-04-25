@@ -2,8 +2,10 @@
 <p align="center">
   <img alt="Meta Secret" src="https://github.com/meta-secret/meta-secret-node/blob/main/docs/img/meta-secret-logo.jpg" width="250" />
   
-  <h4 align="center"> https://meta-secret.org </h4>
-  <h4 align="center"> https://meta-secret.github.io </h4>
+  <h4 align="center"> <a href="https://apps.apple.com/app/metasecret/id1644286751">Meta Secret Mobile Application</a></h4>
+  
+  <h5 align="center"> <a href="https://meta-secret.org">Web site</a> </h5>
+  <h5 align="center"> <a href="https://meta-secret.github.io">Shamir Secret Sharing web app</a> </h5>
 </p>
 
 ## Application Design
