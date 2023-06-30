@@ -1,18 +1,17 @@
 <script lang="ts">
-import { defineComponent, onBeforeUnmount, onMounted } from "vue";
-import init, {
-  cluster_distribution,
-  get_meta_passwords,
-  recover,
-} from "meta-secret-web-cli";
-import type { MetaPasswordsData } from "@/model/MetaPasswordsData";
+import {defineComponent, onBeforeUnmount, onMounted} from "vue";
+import init, {cluster_distribution, recover,} from "meta-secret-web-cli";
 
 function setupDbSync() {
+  console.log("Setup db sync");
+
   let polling: any = null;
 
   onMounted(() => {
+    console.log("Setup Db sync scheduler");
     polling = setInterval(async () => {
-      await db_sync();
+      console.log("db_sync!!!!!!!!!!!!!!!!11");
+      //await db_sync();
     }, 3000);
   });
 
@@ -24,12 +23,14 @@ function setupDbSync() {
 
 export default defineComponent({
   async setup() {
+    console.log("Secrets Component. Init");
+
     let polling = setupDbSync();
 
     await init();
 
-    let passwordsResp = await get_meta_passwords();
-    let secrets = passwordsResp.data as MetaPasswordsData;
+    let passwordsResp = {}; //await get_meta_passwords();
+    let secrets = {};//passwordsResp.data as MetaPasswordsData;
 
     return {
       newPassword: "",

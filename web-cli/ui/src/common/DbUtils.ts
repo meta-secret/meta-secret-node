@@ -1,9 +1,9 @@
-import { openDB } from "idb";
+import {openDB} from "idb";
 
 async function openDb(dbName: string) {
   const db = await openDB(dbName, 1, {
     upgrade(db) {
-      let storeNames = ["meta_vault", "meta_passwords", "commit_log"];
+      let storeNames = ["meta_passwords", "commit_log"];
 
       for (let storeName of storeNames) {
         db.createObjectStore(storeName);
@@ -22,10 +22,13 @@ window.idbGet = async function (dbName: string, storeName: string, key: string):
   const entity = await store.get(key);
 
   await tx.done;
+  
   return Promise.resolve(entity);
 }
 
 window.idbSave = async function (dbName: string, storeName: string, key: string, value: any): Promise<void> {
+  console.log("Save to db. Key: ", JSON.stringify(key, null, 2));
+  
   const db = await openDb(dbName);
   const tx = db.transaction(storeName, 'readwrite');
   const store = tx.objectStore(storeName);

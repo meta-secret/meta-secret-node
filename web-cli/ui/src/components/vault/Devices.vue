@@ -1,19 +1,20 @@
 <script lang="ts">
-import type { UserSignature } from "@/model/UserSignature";
-import init, { get_vault, membership } from "meta-secret-web-cli";
-import type { VaultInfoData } from "@/model/VaultInfoData";
-import type { DeviceUiElement } from "@/stores/app-state";
-import { AppState } from "@/stores/app-state";
+import type {UserSignature} from "@/model/UserSignature";
+import init, {get_vault, membership} from "meta-secret-web-cli";
+import type {VaultInfoData} from "@/model/VaultInfoData";
+import type {DeviceUiElement} from "@/stores/app-state";
+import {AppState} from "@/stores/app-state";
 import router from "@/router";
-import { MembershipRequestType } from "@/model/MembershipRequestType";
+import {MembershipRequestType} from "@/model/MembershipRequestType";
 
 export default {
   async setup() {
+    console.log("Device component. Init")
+
     await init();
 
     const appState = AppState();
 
-    //todo: get db snapshot!!!!!!!!!!!!!!!!!
     let vaultResp = await get_vault();
     let vault = vaultResp.data as VaultInfoData;
     console.log("vault: ", JSON.stringify(vault, null, 2));

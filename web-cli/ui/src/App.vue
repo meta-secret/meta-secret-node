@@ -1,5 +1,38 @@
-<script setup lang="ts">
-import NavBar from "@/components/NavBar.vue";</script>
+<script lang="ts">
+import NavBar from "@/components/NavBar.vue";
+import {defineComponent, onBeforeUnmount, onMounted} from "vue";
+
+function setupMetaServer() {
+  console.log("Setup meta server");
+
+  let polling: any = null;
+
+  onMounted(() => {
+    console.log("Setup meta server scheduler");
+    polling = setInterval(async () => {
+      console.log("meta server scheduler !!!!!!!!!!!!!!!!11");
+      //await db_sync();
+    }, 3000);
+  });
+
+  onBeforeUnmount(async () => {
+    clearInterval(polling);
+  });
+  return polling;
+}
+
+export default defineComponent({
+  components: {NavBar},
+
+  async setup() {
+    let polling = setupMetaServer();
+    return {
+      polling: polling
+    }
+  }
+});
+
+</script>
 
 <template>
   <header>
@@ -7,12 +40,10 @@ import NavBar from "@/components/NavBar.vue";</script>
   </header>
 
   <div class="py-4"/>
-  <Suspense>
+
     <div>
       <RouterView/>
     </div>
-  </Suspense>
-
 </template>
 
 <style>

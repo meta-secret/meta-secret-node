@@ -11,6 +11,7 @@ export interface DeviceUiElement {
 export const AppState = defineStore({
   id: "app_state",
   state: () => {
+    console.log("App state. Init");
     let emptyDevices: Array<DeviceUiElement> = []
 
     return {
@@ -22,8 +23,11 @@ export const AppState = defineStore({
 
   actions: {
     async loadMetaVault() {
+      console.log("Load meta vault");
       await init();
-      this.metaVault = await get_meta_vault();
+      let asyncMetaVault = get_meta_vault();
+      this.metaVault = await asyncMetaVault;
+      return asyncMetaVault;
     },
   },
 });

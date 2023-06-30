@@ -1,9 +1,9 @@
 <script lang="ts">
-import { defineComponent } from "vue";
+import {defineComponent} from "vue";
 import RegistrationComponent from "@/components/vault/Registration.vue";
 
 import "@/common/DbUtils";
-import { AppState } from "@/stores/app-state";
+import {AppState} from "@/stores/app-state";
 import init from "meta-secret-web-cli";
 
 export default defineComponent({
@@ -12,6 +12,8 @@ export default defineComponent({
   },
 
   async setup() {
+    console.log("VaultView. Init");
+
     await init();
 
     const appState = AppState();

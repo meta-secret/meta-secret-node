@@ -1,7 +1,7 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
 import init, {create_meta_vault, generate_user_credentials, get_vault, register} from "meta-secret-web-cli";
-import {RegistrationStatus, VaultInfoStatus} from "@/model/models";
+import {RegistrationStatus, VaultInfoData, VaultInfoStatus} from "@/model/models";
 import router from "@/router";
 
 import "@/common/DbUtils"
@@ -10,6 +10,8 @@ import {AppState} from "@/stores/app-state"
 export default defineComponent({
 
   async setup() {
+    console.log("Registration component. Init")
+
     const appState = AppState();
     return {
       appState: appState,
@@ -23,31 +25,38 @@ export default defineComponent({
   methods: {
 
     async generateVault() {
+      console.log("Generate vault");
+
       await init();
 
       await create_meta_vault(this.vaultName, this.deviceName);
       await generate_user_credentials();
 
-      let vault = await get_vault();
+      let vault: VaultInfoData = await get_vault();
 
-      if (vault.data.vaultInfo === VaultInfoStatus.NotFound) {
+      if (vault.vaultInfo === VaultInfoStatus.NotFound) {
         await this.userRegistration();
       }
 
       // Unknown status means, user is not a member of a vault
-      if (vault.data.vaultInfo === VaultInfoStatus.Unknown) {
+      if (vault.vaultInfo === VaultInfoStatus.Unknown) {
         //join to the vault or choose another vault name
+        alert("join to the vault or choose another vault name");
         this.appState.joinComponent = true;
       }
     },
 
     async join() {
+      console.log("Registration component. Join cluster");
+
       await init();
       //send join request
       return await this.userRegistration();
     },
 
     async userRegistration() {
+      console.log("Registration component. Start user registration");
+
       let registrationStatus = await register();
       console.log("registration status: ", registrationStatus.data);
       switch (registrationStatus.data) {
