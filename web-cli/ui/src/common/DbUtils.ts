@@ -1,33 +1,37 @@
 import {openDB} from "idb";
 
 async function openDb(dbName: string) {
-  const db = await openDB(dbName, 1, {
+  return await openDB(dbName, 1, {
     upgrade(db) {
       let storeNames = ["meta_passwords", "commit_log"];
-
+      
       for (let storeName of storeNames) {
         db.createObjectStore(storeName);
       }
     },
   });
-  return db;
 }
 
 window.idbGet = async function (dbName: string, storeName: string, key: string): Promise<any> {
+  console.log("Get a value. Db: " + dbName + ", Store: " + storeName + ", key: ", key)
   const db = await openDb(dbName);
 
   const tx = db.transaction(storeName, 'readwrite');
   const store = tx.objectStore(storeName);
-
+  
   const entity = await store.get(key);
-
   await tx.done;
   
-  return Promise.resolve(entity);
+  if(entity !== undefined) {
+    const js_obj = Object.fromEntries(entity);
+    return Promise.resolve(js_obj);
+  } else {
+    return Promise.resolve(entity);
+  }
 }
 
 window.idbSave = async function (dbName: string, storeName: string, key: string, value: any): Promise<void> {
-  console.log("Save to db. Key: ", JSON.stringify(key, null, 2));
+  console.log("Save to db. Key: ", key);
   
   const db = await openDb(dbName);
   const tx = db.transaction(storeName, 'readwrite');

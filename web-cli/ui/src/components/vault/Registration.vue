@@ -1,8 +1,7 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
 import init, {create_meta_vault, generate_user_credentials, get_vault, register} from "meta-secret-web-cli";
-import {RegistrationStatus, VaultInfoData, VaultInfoStatus} from "@/model/models";
-import router from "@/router";
+import {type VaultInfoData, VaultInfoStatus} from "@/model/models";
 
 import "@/common/DbUtils"
 import {AppState} from "@/stores/app-state"
@@ -28,7 +27,6 @@ export default defineComponent({
       console.log("Generate vault");
 
       await init();
-
       await create_meta_vault(this.vaultName, this.deviceName);
       await generate_user_credentials();
 
@@ -57,19 +55,21 @@ export default defineComponent({
     async userRegistration() {
       console.log("Registration component. Start user registration");
 
-      let registrationStatus = await register();
-      console.log("registration status: ", registrationStatus.data);
-      switch (registrationStatus.data) {
-        case RegistrationStatus.Registered:
-          // register button gets unavailable, vaultName kept in local storage
-          router.push({path: '/vault/secrets'})
-          return;
-        case RegistrationStatus.AlreadyExists:
+      let vaultStatus = await register();
+      console.log("registration status: ", vaultStatus.data);
+      switch (vaultStatus) {
+        case VaultInfoStatus.Pending:
           alert("Join request has been sent, please wait for approval");
           return;
         default:
           alert("Unknown error!!!!! Unknown registration status! Invalid response from server");
           return;
+
+          /* TODO we need to route to devices somehow in the future (using promises?)
+           * // register button gets unavailable, vaultName kept in local storage
+           *           router.push({path: '/vault/secrets'})
+           *           return;
+           */
       }
     },
 

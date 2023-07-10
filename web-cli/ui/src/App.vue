@@ -1,17 +1,18 @@
 <script lang="ts">
 import NavBar from "@/components/NavBar.vue";
 import {defineComponent, onBeforeUnmount, onMounted} from "vue";
+import init, {WasmMetaServer} from "meta-secret-web-cli";
 
-function setupMetaServer() {
+async function setupMetaServer() {
   console.log("Setup meta server");
 
   let polling: any = null;
 
-  onMounted(() => {
+  onMounted(async () => {
     console.log("Setup meta server scheduler");
     polling = setInterval(async () => {
-      console.log("meta server scheduler !!!!!!!!!!!!!!!!11");
-      //await db_sync();
+      await init();
+      await WasmMetaServer.run_server();
     }, 3000);
   });
 
@@ -25,7 +26,7 @@ export default defineComponent({
   components: {NavBar},
 
   async setup() {
-    let polling = setupMetaServer();
+    let polling = await setupMetaServer();
     return {
       polling: polling
     }
