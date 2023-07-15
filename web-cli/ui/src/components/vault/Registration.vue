@@ -1,6 +1,6 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
-import init, {create_meta_vault, generate_user_credentials, get_vault, register} from "meta-secret-web-cli";
+import init, {create_meta_vault, generate_user_credentials} from "meta-secret-web-cli";
 import {type VaultInfoData, VaultInfoStatus} from "@/model/models";
 
 import "@/common/DbUtils"
@@ -30,14 +30,28 @@ export default defineComponent({
       await create_meta_vault(this.vaultName, this.deviceName);
       await generate_user_credentials();
 
-      let vault: VaultInfoData = await get_vault();
+      let vaultStatus: VaultInfoData = await this.appState.metaClient.get_vault();
 
-      if (vault.vaultInfo === VaultInfoStatus.NotFound) {
+      if (vaultStatus.vaultInfo === VaultInfoStatus.Member) {
+        alert("MEMBER!!!!");
+      }
+
+      if (vaultStatus.vaultInfo === VaultInfoStatus.Pending) {
+        alert("Panding!!!!");
+      }
+
+      if (vaultStatus.vaultInfo === VaultInfoStatus.Declined) {
+        alert("Declined!!!!");
+      }
+
+      if (vaultStatus.vaultInfo === VaultInfoStatus.NotFound) {
+        alert("Not found!!!!");
         await this.userRegistration();
       }
 
       // Unknown status means, user is not a member of a vault
-      if (vault.vaultInfo === VaultInfoStatus.Unknown) {
+      if (vaultStatus.vaultInfo === VaultInfoStatus.Unknown) {
+        alert("Unknown!!!!!!!!");
         //join to the vault or choose another vault name
         alert("join to the vault or choose another vault name");
         this.appState.joinComponent = true;
@@ -55,7 +69,7 @@ export default defineComponent({
     async userRegistration() {
       console.log("Registration component. Start user registration");
 
-      let vaultStatus = await register();
+      let vaultStatus = await this.appState.metaClient.register();
       console.log("registration status: ", vaultStatus.data);
       switch (vaultStatus) {
         case VaultInfoStatus.Pending:

@@ -1,6 +1,6 @@
 import {defineStore} from "pinia";
 import type {MetaVault} from "@/model/MetaVault";
-import init, {get_meta_vault} from "meta-secret-web-cli";
+import init, {get_meta_vault, WasmMetaClient} from "meta-secret-web-cli";
 import type {UserSignature} from "@/model/UserSignature";
 
 export interface DeviceUiElement {
@@ -17,7 +17,8 @@ export const AppState = defineStore({
     return {
       metaVault: undefined as MetaVault | undefined,
       joinComponent: false,
-      devices: emptyDevices
+      devices: emptyDevices,
+      metaClient: undefined as WasmMetaClient | undefined
     }
   },
 
@@ -27,6 +28,8 @@ export const AppState = defineStore({
       await init();
       let asyncMetaVault = get_meta_vault();
       this.metaVault = await asyncMetaVault;
+      this.metaClient = WasmMetaClient.new();
+      
       return asyncMetaVault;
     },
   },

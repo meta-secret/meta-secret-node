@@ -13,7 +13,7 @@ async function openDb(dbName: string) {
 }
 
 window.idbGet = async function (dbName: string, storeName: string, key: string): Promise<any> {
-  console.log("Get a value. Db: " + dbName + ", Store: " + storeName + ", key: ", key)
+  //console.log("Get a value. Db: " + dbName + ", Store: " + storeName + ", key: ", key)
   const db = await openDb(dbName);
 
   const tx = db.transaction(storeName, 'readwrite');
@@ -31,7 +31,7 @@ window.idbGet = async function (dbName: string, storeName: string, key: string):
 }
 
 window.idbSave = async function (dbName: string, storeName: string, key: string, value: any): Promise<void> {
-  console.log("Save to db. Key: ", key);
+  //console.log("Save to db. Key: ", key);
   
   const db = await openDb(dbName);
   const tx = db.transaction(storeName, 'readwrite');

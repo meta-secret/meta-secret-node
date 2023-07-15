@@ -10,7 +10,7 @@ function setupDbSync() {
   onMounted(() => {
     console.log("Setup Db sync scheduler");
     polling = setInterval(async () => {
-      console.log("db_sync!!!!!!!!!!!!!!!!11");
+      //console.log("db_sync!!!!!!!!!!!!!!!!11");
       //await db_sync();
     }, 3000);
   });

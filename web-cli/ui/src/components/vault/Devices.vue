@@ -1,6 +1,6 @@
 <script lang="ts">
 import type {UserSignature} from "@/model/UserSignature";
-import init, {get_vault, membership} from "meta-secret-web-cli";
+import init, {membership} from "meta-secret-web-cli";
 import type {VaultInfoData} from "@/model/VaultInfoData";
 import type {DeviceUiElement} from "@/stores/app-state";
 import {AppState} from "@/stores/app-state";
@@ -15,7 +15,7 @@ export default {
 
     const appState = AppState();
 
-    let vaultResp = await get_vault();
+    let vaultResp = await appState.metaClient.get_vault();
     let vault = vaultResp.data as VaultInfoData;
     console.log("vault: ", JSON.stringify(vault, null, 2));
 
