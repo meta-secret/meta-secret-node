@@ -7,7 +7,7 @@ clean:
 	rm -rf ../meta-secret-core/schema/target
 
 build_wasm:
-	cd ~/coding/github/meta-secret-core/wasm && wasm-pack build --target web
+	cd ~/coding/github/meta-secret-core/wasm && wasm-pack build --debug --target web
 
 	rm -rf ui/pkg
 	cp -R ~/coding/github/meta-secret-core/wasm/pkg ui

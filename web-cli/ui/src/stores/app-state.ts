@@ -1,36 +1,47 @@
 import {defineStore} from "pinia";
-import type {MetaVault} from "@/model/MetaVault";
-import init, {get_meta_vault, WasmMetaClient} from "meta-secret-web-cli";
-import type {UserSignature} from "@/model/UserSignature";
+import init, {ApplicationStateManager} from "meta-secret-web-cli";
+import {ApplicationState} from "@/model/ApplicationState";
 
-export interface DeviceUiElement {
-  userSig: UserSignature
-  status: string
+class JsAppStateManager {
+  appState: any
+  
+  constructor(appState) {
+    this.appState = appState;
+  }
+  
+  async updateJsState() {
+    this.appState.internalState = await this.appState.stateManager.get_state();
+    alert("Update js state: " + JSON.stringify(this.appState.internalState, null, 2));
+  }
 }
 
-export const AppState = defineStore({
-  id: "app_state",
+export const AppState = defineStore("app_state", {
   state: () => {
     console.log("App state. Init");
-    let emptyDevices: Array<DeviceUiElement> = []
+    
+    let internalState: ApplicationState = {
+      joinComponent: false,
+      metaVault: undefined,
+      vault: undefined
+    };
 
     return {
-      metaVault: undefined as MetaVault | undefined,
-      joinComponent: false,
-      devices: emptyDevices,
-      metaClient: undefined as WasmMetaClient | undefined
-    }
+      internalState: internalState,
+      stateManager: undefined as ApplicationStateManager | undefined,
+    };
   },
 
   actions: {
-    async loadMetaVault() {
+    async appStateInit() {
       console.log("Load meta vault");
       await init();
-      let asyncMetaVault = get_meta_vault();
-      this.metaVault = await asyncMetaVault;
-      this.metaClient = WasmMetaClient.new();
       
-      return asyncMetaVault;
-    },
+      let jsAppStateManager = new JsAppStateManager(this);
+      
+      let stateManager = ApplicationStateManager.new(jsAppStateManager);
+      this.stateManager = stateManager;
+      
+      await stateManager.init();
+    }
   },
 });

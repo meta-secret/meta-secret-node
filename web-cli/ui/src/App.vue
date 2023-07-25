@@ -15,7 +15,7 @@ async function setupMetaServer() {
     polling = setInterval(async () => {
       let wasmServer = WasmMetaServer.new();
       await wasmServer.run_server();
-    }, 10000);
+    }, 2000);
   });
 
   onBeforeUnmount(async () => {

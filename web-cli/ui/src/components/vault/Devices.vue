@@ -1,8 +1,5 @@
 <script lang="ts">
-import type {UserSignature} from "@/model/UserSignature";
 import init, {membership} from "meta-secret-web-cli";
-import type {VaultInfoData} from "@/model/VaultInfoData";
-import type {DeviceUiElement} from "@/stores/app-state";
 import {AppState} from "@/stores/app-state";
 import router from "@/router";
 import {MembershipRequestType} from "@/model/MembershipRequestType";
@@ -15,30 +12,11 @@ export default {
 
     const appState = AppState();
 
-    let vaultResp = await appState.metaClient.get_vault();
-    let vault = vaultResp.data as VaultInfoData;
-    console.log("vault: ", JSON.stringify(vault, null, 2));
+    console.log("Devices internal state: ", JSON.stringify(appState.internalState, null, 2));
 
-    if (vault.vault) {
-      let activeDevices = getDevices(vault.vault.signatures, "active");
-      let pendingDevices = getDevices(vault.vault.pendingJoins, "pending");
-      appState.devices = activeDevices.concat(pendingDevices);
-
-      return {
-        appState: appState,
-      };
-    }
-
-    function getDevices(signatures: Array<UserSignature>, status: string) {
-      return signatures.map((memberSig) => {
-        let el: DeviceUiElement = {
-          userSig: memberSig,
-          status: status,
-        };
-
-        return el;
-      });
-    }
+    return {
+      appState: appState,
+    };
   },
 
   methods: {
@@ -53,21 +31,21 @@ export default {
     },
 
     async membership(
-      deviceInfo: DeviceUiElement,
-      requestType: MembershipRequestType
+        deviceInfo: DeviceUiElement,
+        requestType: MembershipRequestType
     ) {
       let membershipResult = membership(deviceInfo.userSig, requestType);
       console.log("membership operation: ", membershipResult);
       //TODO check the operation status
 
-      router.push({ path: "/vault/devices" });
+      await router.push({path: "/vault/devices"});
     },
   },
 };
 </script>
 
 <template>
-  <div class="py-4" />
+  <div class="py-4"/>
 
   <!-- https://www.tailwind-kit.com/components/list -->
   <div :class="$style.devices">
@@ -79,38 +57,38 @@ export default {
     </div>
     <ul class="w-full flex flex-col divide-y divide p-2">
       <li
-        v-for="deviceInfo in appState.devices"
-        :key="deviceInfo.userSig.device.deviceId"
-        class="flex flex-row"
+          v-for="userSig in appState.internalState.vault.signatures"
+          :key="userSig.vault.device.deviceId"
+          class="flex flex-row"
       >
         <div class="flex items-center flex-1 p-4 cursor-pointer select-none">
           <div class="flex-1 pl-1 mr-16">
             <div class="font-medium dark:text-white">
-              {{ deviceInfo.userSig.device.deviceName }}
+              {{ userSig.vault.device.deviceName }}
             </div>
             <div class="text-sm text-gray-600 dark:text-gray-200 truncate">
               <p class="truncate w-24">
-                {{ deviceInfo.userSig.device.deviceId }}
+                {{ userSig.vault.device.deviceId }}
               </p>
             </div>
           </div>
           <div class="text-xs text-gray-600 dark:text-gray-200">
-            {{ deviceInfo.status }}
+            Active
           </div>
-          <button
-            v-if="deviceInfo.status === 'pending'"
-            :class="$style.actionButtonText"
-            @click="accept(deviceInfo)"
+<!--          <button
+              v-if="deviceInfo.status === 'pending'"
+              :class="$style.actionButtonText"
+              @click="accept(deviceInfo)"
           >
             Accept
           </button>
           <button
-            v-if="deviceInfo.status === 'pending'"
-            :class="$style.actionButtonText"
-            @click="decline(deviceInfo)"
+              v-if="deviceInfo.status === 'pending'"
+              :class="$style.actionButtonText"
+              @click="decline(deviceInfo)"
           >
             Decline
-          </button>
+          </button>-->
         </div>
       </li>
     </ul>

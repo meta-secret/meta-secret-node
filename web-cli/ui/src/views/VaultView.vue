@@ -17,7 +17,7 @@ export default defineComponent({
     await init();
 
     const appState = AppState();
-    await appState.loadMetaVault();
+    await appState.appStateInit();
 
     return {
       appState: appState,
@@ -26,9 +26,13 @@ export default defineComponent({
 
   methods: {
     isEmptyEnv() {
-      return this.appState.metaVault == undefined;
+      return this.appState.internalState.metaVault === undefined;
     },
-  },
+
+    getVaultName() {
+      return this.appState.internalState.metaVault!.vaultName;
+    }
+  }
 });
 </script>
 
@@ -37,13 +41,13 @@ export default defineComponent({
     <p class="text-2xl">Distributed Password Manager</p>
   </div>
 
-  <div v-if="isEmptyEnv()">
+  <div v-if="this.isEmptyEnv()">
     <RegistrationComponent />
   </div>
 
   <div v-else>
     <div class="container flex justify-center max-w-md py-2 items-stretch">
-      <p class="flex">{{ this.appState.metaVault.vaultName }}</p>
+      <p class="flex">{{ this.getVaultName() }}</p>
     </div>
 
     <div class="container flex max-w-md py-2 items-stretch">
