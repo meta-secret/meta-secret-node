@@ -11,7 +11,6 @@ class JsAppStateManager {
   
   async updateJsState() {
     this.appState.internalState = await this.appState.stateManager.get_state();
-    alert("Update js state: " + JSON.stringify(this.appState.internalState, null, 2));
   }
 }
 

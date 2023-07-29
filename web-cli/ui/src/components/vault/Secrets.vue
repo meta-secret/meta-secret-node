@@ -1,6 +1,7 @@
 <script lang="ts">
 import {defineComponent, onBeforeUnmount, onMounted} from "vue";
-import init, {cluster_distribution, recover,} from "meta-secret-web-cli";
+import init, {recover,} from "meta-secret-web-cli";
+import {AppState} from "@/stores/app-state";
 
 function setupDbSync() {
   console.log("Setup db sync");
@@ -44,7 +45,10 @@ export default defineComponent({
   methods: {
     async addPassword() {
       await init();
-      await cluster_distribution(this.newPassDescription, this.newPassword);
+
+      const appState = AppState();
+
+      await appState.stateManager.cluster_distribution(this.newPassDescription, this.newPassword);
     },
 
     async recover() {

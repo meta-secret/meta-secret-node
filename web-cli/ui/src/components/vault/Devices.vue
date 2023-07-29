@@ -1,10 +1,10 @@
 <script lang="ts">
-import init, {membership} from "meta-secret-web-cli";
+import init from "meta-secret-web-cli";
 import {AppState} from "@/stores/app-state";
-import router from "@/router";
-import {MembershipRequestType} from "@/model/MembershipRequestType";
+import Device from "@/components/vault/Device.vue";
 
 export default {
+  components: {Device},
   async setup() {
     console.log("Device component. Init")
 
@@ -17,29 +17,6 @@ export default {
     return {
       appState: appState,
     };
-  },
-
-  methods: {
-    async accept(deviceInfo: DeviceUiElement) {
-      await init();
-      await this.membership(deviceInfo, MembershipRequestType.Accept);
-    },
-
-    async decline(deviceInfo: DeviceUiElement) {
-      await init();
-      await this.membership(deviceInfo, MembershipRequestType.Decline);
-    },
-
-    async membership(
-        deviceInfo: DeviceUiElement,
-        requestType: MembershipRequestType
-    ) {
-      let membershipResult = membership(deviceInfo.userSig, requestType);
-      console.log("membership operation: ", membershipResult);
-      //TODO check the operation status
-
-      await router.push({path: "/vault/devices"});
-    },
   },
 };
 </script>
@@ -61,35 +38,15 @@ export default {
           :key="userSig.vault.device.deviceId"
           class="flex flex-row"
       >
-        <div class="flex items-center flex-1 p-4 cursor-pointer select-none">
-          <div class="flex-1 pl-1 mr-16">
-            <div class="font-medium dark:text-white">
-              {{ userSig.vault.device.deviceName }}
-            </div>
-            <div class="text-sm text-gray-600 dark:text-gray-200 truncate">
-              <p class="truncate w-24">
-                {{ userSig.vault.device.deviceId }}
-              </p>
-            </div>
-          </div>
-          <div class="text-xs text-gray-600 dark:text-gray-200">
-            Active
-          </div>
-<!--          <button
-              v-if="deviceInfo.status === 'pending'"
-              :class="$style.actionButtonText"
-              @click="accept(deviceInfo)"
-          >
-            Accept
-          </button>
-          <button
-              v-if="deviceInfo.status === 'pending'"
-              :class="$style.actionButtonText"
-              @click="decline(deviceInfo)"
-          >
-            Decline
-          </button>-->
-        </div>
+        <Device :user-sig="userSig" sig-status="active"/>
+      </li>
+
+      <li
+          v-for="userSig in appState.internalState.vault.pending"
+          :key="userSig.vault.device.deviceId"
+          class="flex flex-row"
+      >
+        <Device :user-sig="userSig" sig-status="pending"/>
       </li>
     </ul>
   </div>
