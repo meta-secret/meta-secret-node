@@ -34,7 +34,7 @@ export default {
     </div>
     <ul class="w-full flex flex-col divide-y divide p-2">
       <li
-          v-for="userSig in appState.internalState.vault.signatures"
+          v-for="userSig in appState.internalState.vault?.signatures"
           :key="userSig.vault.device.deviceId"
           class="flex flex-row"
       >
@@ -42,7 +42,7 @@ export default {
       </li>
 
       <li
-          v-for="userSig in appState.internalState.vault.pending"
+          v-for="userSig in appState.internalState.vault?.pending"
           :key="userSig.vault.device.deviceId"
           class="flex flex-row"
       >

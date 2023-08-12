@@ -21,7 +21,8 @@ export const AppState = defineStore("app_state", {
     let internalState: ApplicationState = {
       joinComponent: false,
       metaVault: undefined,
-      vault: undefined
+      vault: undefined,
+      metaPasswords: []
     };
 
     return {
@@ -32,7 +33,7 @@ export const AppState = defineStore("app_state", {
 
   actions: {
     async appStateInit() {
-      console.log("Load meta vault");
+      console.log("Js: App state init");
       await init();
       
       let jsAppStateManager = new JsAppStateManager(this);

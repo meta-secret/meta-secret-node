@@ -1,6 +1,6 @@
 <script lang="ts">
 import {defineComponent, onBeforeUnmount, onMounted} from "vue";
-import init, {recover,} from "meta-secret-web-cli";
+import init from "meta-secret-web-cli";
 import {AppState} from "@/stores/app-state";
 
 function setupDbSync() {
@@ -29,16 +29,13 @@ export default defineComponent({
     let polling = setupDbSync();
 
     await init();
-
-    let passwordsResp = {}; //await get_meta_passwords();
-    let secrets = {};//passwordsResp.data as MetaPasswordsData;
+    const appState = AppState();
 
     return {
       newPassword: "",
       newPassDescription: "",
-
-      secrets: secrets,
       polling: polling,
+      appState: appState
     };
   },
 
@@ -46,15 +43,13 @@ export default defineComponent({
     async addPassword() {
       await init();
 
-      const appState = AppState();
-
-      await appState.stateManager.cluster_distribution(this.newPassDescription, this.newPassword);
+      await this.appState.stateManager.cluster_distribution(this.newPassDescription, this.newPassword);
     },
 
     async recover() {
       await init();
       console.log("Recover password!");
-      await recover();
+      //await recover();
     },
   },
 });
@@ -93,8 +88,8 @@ export default defineComponent({
   <div :class="$style.secrets">
     <ul class="w-full flex flex-col divide-y divide p-2">
       <li
-        v-for="secret in this.secrets.passwords"
-        :key="secret.id"
+        v-for="secret in this.appState.internalState.metaPasswords"
+        :key="secret.id.id"
         class="flex flex-row"
       >
         <div class="flex items-center flex-1 p-4 cursor-pointer select-none">

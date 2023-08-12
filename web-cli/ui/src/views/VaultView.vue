@@ -30,7 +30,7 @@ export default defineComponent({
     },
 
     getVaultName() {
-      return this.appState.internalState.metaVault!.vaultName;
+      return this.appState.internalState.metaVault.vaultName;
     }
   }
 });
