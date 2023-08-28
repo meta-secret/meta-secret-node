@@ -30,6 +30,19 @@ window.idbGet = async function (dbName: string, storeName: string, key: string):
   }
 }
 
+window.idbDelete = async function (dbName: string, storeName: string, key: string): Promise<any> {
+  //console.log("Get a value. Db: " + dbName + ", Store: " + storeName + ", key: ", key)
+  const db = await openDb(dbName);
+  
+  const tx = db.transaction(storeName, 'readwrite');
+  const store = tx.objectStore(storeName);
+  
+  await store.delete(key);
+  await tx.done;
+  
+  return Promise.resolve();
+}
+
 window.idbSave = async function (dbName: string, storeName: string, key: string, value: any): Promise<void> {
   //console.log("Save to db. Key: ", key);
   

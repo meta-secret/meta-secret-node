@@ -12,8 +12,6 @@ export default {
 
     const appState = AppState();
 
-    console.log("Devices internal state: ", JSON.stringify(appState.internalState, null, 2));
-
     return {
       appState: appState,
     };

@@ -5,7 +5,7 @@ import {AppState} from "@/stores/app-state"
 export default defineComponent({
 
   async setup() {
-    console.log("Registration component. Init")
+    console.log("JS: Registration component. Init")
 
     const appState = AppState();
     return {
