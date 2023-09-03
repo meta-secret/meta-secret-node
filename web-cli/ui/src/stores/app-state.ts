@@ -1,5 +1,5 @@
 import {defineStore} from "pinia";
-import init, {ApplicationStateManager} from "meta-secret-web-cli";
+import init, {WasmApplicationStateManager} from "meta-secret-web-cli";
 import {ApplicationState} from "@/model/ApplicationState";
 
 class JsAppStateManager {
@@ -9,8 +9,8 @@ class JsAppStateManager {
     this.appState = appState;
   }
   
-  async updateJsState() {
-    this.appState.internalState = await this.appState.stateManager.get_state();
+  async updateJsState(newState) {
+    this.appState.internalState = newState;
   }
 }
 
@@ -27,7 +27,7 @@ export const AppState = defineStore("app_state", {
 
     return {
       internalState: internalState,
-      stateManager: undefined as ApplicationStateManager | undefined,
+      stateManager: undefined as WasmApplicationStateManager | undefined,
     };
   },
 
@@ -38,10 +38,10 @@ export const AppState = defineStore("app_state", {
       
       let jsAppStateManager = new JsAppStateManager(this);
       
-      let stateManager = ApplicationStateManager.new(jsAppStateManager);
-      this.stateManager = stateManager;
+      let stateManager = await WasmApplicationStateManager.new(jsAppStateManager);
+      this.stateManager = await stateManager.init();
       
-      await stateManager.init();
+      this.stateManager;
     }
   },
 });

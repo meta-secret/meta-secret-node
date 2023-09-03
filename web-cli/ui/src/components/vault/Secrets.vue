@@ -20,14 +20,15 @@ export default defineComponent({
   methods: {
     async addPassword() {
       await init();
-
-      await this.appState.stateManager.cluster_distribution(this.newPassDescription, this.newPassword);
+      await this.appState
+          .stateManager
+          .cluster_distribution(this.newPassDescription, this.newPassword);
     },
 
     async recover(metaPassId) {
       await init();
       alert("Recover password: " + JSON.stringify(metaPassId));
-      await this.appState.stateManager.recover(metaPassId);
+      await this.appState.stateManager.recover_js(metaPassId);
     },
   },
 });
