@@ -35,3 +35,9 @@ The how:
           - repeat for device 3
        decrypt:
           - так же как сплит только наоборот
+
+### Философко-статьевое
+ - [статья объясняющая механику и проблему](https://vc.ru/tribuna/622604-metasecret-decentralizovannoe-hranilishe-sekretov-parolei-s-shifrovaniem)
+ - [та же статья но только более суровая и упоротая, мемовая, ат души](https://vc.ru/flood/621986-kak-nadezhno-ne-zabyt-nadezhnyi-parol)
+ - [habrovich: философка про сложность паролей](https://habr.com/ru/articles/720606/)
+   
