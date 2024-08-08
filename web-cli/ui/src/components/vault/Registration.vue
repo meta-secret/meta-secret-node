@@ -1,15 +1,12 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
-import init, {create_meta_vault, generate_user_credentials, get_vault, register} from "meta-secret-web-cli";
-import {RegistrationStatus, VaultInfoStatus} from "@/model/models";
-import router from "@/router";
-
-import "@/common/DbUtils"
 import {AppState} from "@/stores/app-state"
 
 export default defineComponent({
 
   async setup() {
+    console.log("JS: Registration component. Init")
+
     const appState = AppState();
     return {
       appState: appState,
@@ -22,50 +19,13 @@ export default defineComponent({
 
   methods: {
 
-    async generateVault() {
-      await init();
-
-      await create_meta_vault(this.vaultName, this.deviceName);
-      await generate_user_credentials();
-
-      let vault = await get_vault();
-
-      if (vault.data.vaultInfo === VaultInfoStatus.NotFound) {
-        await this.userRegistration();
-      }
-
-      // Unknown status means, user is not a member of a vault
-      if (vault.data.vaultInfo === VaultInfoStatus.Unknown) {
-        //join to the vault or choose another vault name
-        this.appState.joinComponent = true;
-      }
-    },
-
-    async join() {
-      await init();
-      //send join request
-      return await this.userRegistration();
-    },
-
-    async userRegistration() {
-      let registrationStatus = await register();
-      console.log("registration status: ", registrationStatus.data);
-      switch (registrationStatus.data) {
-        case RegistrationStatus.Registered:
-          // register button gets unavailable, vaultName kept in local storage
-          router.push({path: '/vault/secrets'})
-          return;
-        case RegistrationStatus.AlreadyExists:
-          alert("Join request has been sent, please wait for approval");
-          return;
-        default:
-          alert("Unknown error!!!!! Unknown registration status! Invalid response from server");
-          return;
-      }
+    async registration() {
+      console.log("Generate vault");
+      await this.appState.stateManager.sign_up(this.vaultName, this.deviceName);
     },
 
     isEmptyEnv() {
-      return this.appState.metaVault == undefined;
+      return this.appState.internalState.metaVault === undefined;
     },
   }
 })
@@ -86,24 +46,29 @@ export default defineComponent({
           placeholder="vault name"
           v-model="vaultName"
       >
-      <input :class="$style.nicknameUserInput" type="text" placeholder="device name" v-model="deviceName">
+      <input
+          :class="$style.nicknameUserInput"
+          type="text"
+          placeholder="device name"
+          v-model="deviceName"
+      >
 
       <button
           :class="$style.registrationButton"
-          @click="generateVault"
-          v-if="!this.appState.joinComponent"
+          @click="registration"
+          v-if="!this.appState.internalState.joinComponent"
       >
         Register
       </button>
     </div>
   </div>
 
-  <div v-if="this.appState.joinComponent">
+  <div v-if="this.appState.internalState.joinComponent">
     <div class="container flex items-center max-w-md py-2">
       <label :class="$style.joinLabel">
         Vault already exists, would you like to join?
       </label>
-      <button :class="$style.joinButton" @click="join"> Join</button>
+      <button :class="$style.joinButton" @click="registration">Join</button>
     </div>
   </div>
 </template>

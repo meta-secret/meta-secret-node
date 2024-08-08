@@ -1,5 +1,16 @@
-<script setup lang="ts">
-import NavBar from "@/components/NavBar.vue";</script>
+<script lang="ts">
+import NavBar from "@/components/NavBar.vue";
+import {defineComponent} from "vue";
+
+export default defineComponent({
+  components: {NavBar},
+
+  async setup() {
+
+  }
+});
+
+</script>
 
 <template>
   <header>
@@ -7,12 +18,10 @@ import NavBar from "@/components/NavBar.vue";</script>
   </header>
 
   <div class="py-4"/>
-  <Suspense>
+
     <div>
       <RouterView/>
     </div>
-  </Suspense>
-
 </template>
 
 <style>

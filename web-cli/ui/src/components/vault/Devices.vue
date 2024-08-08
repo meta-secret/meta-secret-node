@@ -1,67 +1,22 @@
 <script lang="ts">
-import type {UserSignature} from "@/model/UserSignature";
-import init, {get_vault, membership} from "meta-secret-web-cli";
-import type {VaultInfoData} from "@/model/VaultInfoData";
-import type {DeviceUiElement} from "@/stores/app-state";
-import {AppState} from "@/stores/app-state"
-import router from "@/router";
-import {MembershipRequestType} from "@/model/MembershipRequestType";
-
+import init from "meta-secret-web-cli";
+import {AppState} from "@/stores/app-state";
+import Device from "@/components/vault/Device.vue";
 
 export default {
-
+  components: {Device},
   async setup() {
+    console.log("Device component. Init")
+
     await init();
 
     const appState = AppState();
 
-    let vaultResp = await get_vault();
-    let vault = vaultResp.data as VaultInfoData;
-    console.log("vault: ", JSON.stringify(vault, null, 2));
-
-    if (vault.vault) {
-      let activeDevices = getDevices(vault.vault.signatures, "active");
-      let pendingDevices = getDevices(vault.vault.pendingJoins, "pending");
-      appState.devices = activeDevices.concat(pendingDevices);
-
-      return {
-        appState: appState
-      }
-    }
-
-    function getDevices(signatures: Array<UserSignature>, status: string) {
-      return signatures.map(memberSig => {
-        let el: DeviceUiElement = {
-          userSig: memberSig,
-          status: status
-        }
-
-        return el;
-      });
-    }
+    return {
+      appState: appState,
+    };
   },
-
-  methods: {
-    async accept(deviceInfo: DeviceUiElement) {
-      await init();
-      await this.membership(deviceInfo, MembershipRequestType.Accept);
-    },
-
-    async decline(deviceInfo: DeviceUiElement) {
-      await init()
-      await this.membership(deviceInfo, MembershipRequestType.Decline);
-    },
-
-
-    async membership(deviceInfo: DeviceUiElement, requestType: MembershipRequestType) {
-      let membershipResult = membership(deviceInfo.userSig, requestType);
-      console.log("membership operation: ", membershipResult)
-      //TODO check the operation status
-
-      router.push({path: '/vault/devices'})
-    },
-  }
-}
+};
 </script>
 
 <template>
@@ -70,41 +25,30 @@ export default {
   <!-- https://www.tailwind-kit.com/components/list -->
   <div :class="$style.devices">
     <div :class="$style.listHeader">
-      <h3 :class="$style.listTitle">
-        Devices
-      </h3>
+      <h3 :class="$style.listTitle">Devices</h3>
       <p :class="$style.listDescription">
         Detailed information about user devices
       </p>
     </div>
     <ul class="w-full flex flex-col divide-y divide p-2">
-      <li v-for="deviceInfo in appState.devices" :key="deviceInfo.userSig.device.deviceId" class="flex flex-row">
-        <div class="flex items-center flex-1 p-4 cursor-pointer select-none">
-          <div class="flex-1 pl-1 mr-16">
-            <div class="font-medium dark:text-white">
-              {{ deviceInfo.userSig.device.deviceName }}
-            </div>
-            <div class="text-sm text-gray-600 dark:text-gray-200 truncate">
-              <p class="truncate w-24">
-                {{ deviceInfo.userSig.device.deviceId }}
-              </p>
-            </div>
-          </div>
-          <div class="text-xs text-gray-600 dark:text-gray-200">
-            {{ deviceInfo.status }}
-          </div>
-          <button v-if="deviceInfo.status === 'pending'" :class="$style.actionButtonText" @click="accept(deviceInfo)">
-            Accept
-          </button>
-          <button v-if="deviceInfo.status === 'pending'" :class="$style.actionButtonText" @click="decline(deviceInfo)">
-            Decline
-          </button>
-        </div>
+      <li
+          v-for="userSig in appState.internalState.vault?.signatures"
+          :key="userSig.vault.device.deviceId"
+          class="flex flex-row"
+      >
+        <Device :user-sig="userSig" sig-status="active"/>
+      </li>
+
+      <li
+          v-for="userSig in appState.internalState.vault?.pending"
+          :key="userSig.vault.device.deviceId"
+          class="flex flex-row"
+      >
+        <Device :user-sig="userSig" sig-status="pending"/>
       </li>
     </ul>
   </div>
 </template>
-
 
 <style module>
 .devices {
@@ -113,19 +57,18 @@ export default {
 }
 
 .actionButtonText {
-  @apply flex justify-end w-24 text-right
+  @apply flex justify-end w-24 text-right;
 }
 
 .listHeader {
-  @apply w-full px-4 py-5 border-b sm:px-6
+  @apply w-full px-4 py-5 border-b sm:px-6;
 }
 
 .listTitle {
-  @apply text-lg font-medium leading-6 text-gray-900 dark:text-white
+  @apply text-lg font-medium leading-6 text-gray-900 dark:text-white;
 }
 
 .listDescription {
-  @apply max-w-2xl mt-1 text-sm text-gray-500 dark:text-gray-200
+  @apply max-w-2xl mt-1 text-sm text-gray-500 dark:text-gray-200;
 }
-
 </style>
