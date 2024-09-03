@@ -55,7 +55,7 @@ jobs:
           submodules: recursive
 
       - name: Download wasm package
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: web-cli-wasm-package
           path: web-cli/ui/pkg
