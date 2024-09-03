@@ -91,17 +91,17 @@ jobs:
     needs: [cli-linux-distribution, cli-macos-distribution, cli-windows-distribution]
     steps:
       - name: Download linux cli build
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: cli-linux-package
 
       - name: Download windows cli build
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: cli-windows-package
 
       - name: Download macOS cli build
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: cli-macos-package
 
