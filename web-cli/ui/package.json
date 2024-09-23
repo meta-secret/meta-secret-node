@@ -21,7 +21,7 @@
     "qr-code-styling": "~1.6.0-rc.1",
     "serve": "~14.2.0",
     "vite-plugin-wasm": "~3.2.2",
-    "vue": "~3.3.4",
+    "vue": "~3.5.8",
     "vue-github-button": "~3.1.0",
     "vue-router": "~4.2.4",
     "wasm-pack": "~0.12.1"
